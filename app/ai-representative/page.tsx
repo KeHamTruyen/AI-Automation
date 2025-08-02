@@ -669,4 +669,30 @@ export default function AIRepresentativePage() {
                           <Label>Phương pháp tạo giọng</Label>
                           <div className="space-y-3">
                             <label className="flex items-center space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-gray-50">
-                \
+                              <input type="radio" name="voice-method" className="rounded-full" />
+                              <div>
+                                <h4 className="font-medium">Tạo giọng mới</h4>
+                                <p className="text-sm text-gray-500">Sử dụng AI để tạo giọng nói hoàn toàn mới</p>
+                              </div>
+                            </label>
+                            <label className="flex items-center space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-gray-50">
+                              <input type="radio" name="voice-method" className="rounded-full" />
+                              <div>
+                                <h4 className="font-medium">Clone giọng nói</h4>
+                                <p className="text-sm text-gray-500">Upload mẫu giọng để AI học và tái tạo</p>
+                              </div>
+                            </label>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
