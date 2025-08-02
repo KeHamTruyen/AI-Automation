@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -39,6 +39,17 @@ export default function ContentCreationPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedContent, setGeneratedContent] = useState("")
   const [publishTime, setPublishTime] = useState("immediate")
+
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [scheduleDate, setScheduleDate] = useState("")
+  const [scheduleTime, setScheduleTime] = useState("")
+
+  useEffect(() => {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    setScheduleDate(tomorrow.toISOString().split("T")[0])
+    setScheduleTime("09:00")
+  }, [])
 
   const handleGenerateContent = () => {
     setIsGenerating(true)
@@ -248,88 +259,7 @@ export default function ContentCreationPage() {
                         </div>
                       </div>
 
-                      <div className="space-y-4">
-                        <Label>Thời gian đăng bài</Label>
-                        <div className="space-y-3">
-                          <label className="flex items-center space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-gray-50">
-                            <input
-                              type="radio"
-                              name="publish-time"
-                              value="immediate"
-                              className="text-blue-600"
-                              defaultChecked
-                              onChange={() => setPublishTime("immediate")}
-                            />
-                            <div className="flex items-center space-x-2">
-                              <Share2 className="w-4 h-4 text-blue-600" />
-                              <div>
-                                <div className="font-medium text-sm">Đăng ngay lập tức</div>
-                                <div className="text-xs text-gray-600">Đăng bài ngay sau khi tạo xong</div>
-                              </div>
-                            </div>
-                          </label>
-
-                          <label className="flex items-center space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-gray-50">
-                            <input
-                              type="radio"
-                              name="publish-time"
-                              value="scheduled"
-                              className="text-green-600"
-                              onChange={() => setPublishTime("scheduled")}
-                            />
-                            <div className="flex items-center space-x-2">
-                              <Calendar className="w-4 h-4 text-green-600" />
-                              <div>
-                                <div className="font-medium text-sm">Lên lịch đăng bài</div>
-                                <div className="text-xs text-gray-600">Chọn thời gian cụ thể để đăng</div>
-                              </div>
-                            </div>
-                          </label>
-                        </div>
-
-                        {/* Schedule Options - Show when scheduled is selected */}
-                        {publishTime === "scheduled" && (
-                          <div className="space-y-3 pl-6 border-l-2 border-green-200 bg-green-50 p-3 rounded-r-lg">
-                            <div className="grid grid-cols-2 gap-3">
-                              <div className="space-y-2">
-                                <Label htmlFor="schedule-date" className="text-sm">
-                                  Ngày đăng
-                                </Label>
-                                <Input
-                                  id="schedule-date"
-                                  type="date"
-                                  className="text-sm"
-                                  defaultValue={new Date().toISOString().split("T")[0]}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="schedule-time" className="text-sm">
-                                  Giờ đăng
-                                </Label>
-                                <Input id="schedule-time" type="time" className="text-sm" defaultValue="09:00" />
-                              </div>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label className="text-sm">Thời gian tối ưu gợi ý</Label>
-                              <div className="flex flex-wrap gap-2">
-                                <Button size="sm" variant="outline" className="text-xs h-7 bg-transparent">
-                                  9:00 AM
-                                </Button>
-                                <Button size="sm" variant="outline" className="text-xs h-7 bg-transparent">
-                                  12:00 PM
-                                </Button>
-                                <Button size="sm" variant="outline" className="text-xs h-7 bg-transparent">
-                                  3:00 PM
-                                </Button>
-                                <Button size="sm" variant="outline" className="text-xs h-7 bg-transparent">
-                                  7:00 PM
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                      
 
                       <Button
                         className="w-full bg-gradient-to-r from-green-600 to-blue-600"
@@ -403,15 +333,118 @@ export default function ContentCreationPage() {
                           </div>
 
                           <div className="flex space-x-2 pt-4">
-                            <Button className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600">
+                            <Button
+                              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600"
+                              onClick={() => {
+                                // Handle immediate publish
+                                console.log("Publishing immediately...")
+                              }}
+                            >
                               <Share2 className="w-4 h-4 mr-2" />
                               Đăng ngay
                             </Button>
-                            <Button variant="outline" className="flex-1 bg-transparent">
+                            <Button
+                              variant="outline"
+                              className="flex-1 bg-transparent"
+                              onClick={() => setShowScheduleModal(true)}
+                            >
                               <Calendar className="w-4 h-4 mr-2" />
                               Chọn lịch đăng
                             </Button>
                           </div>
+
+                          {/* Schedule Modal */}
+                          {showScheduleModal && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                              <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                                <div className="flex items-center justify-between mb-4">
+                                  <h3 className="text-lg font-semibold flex items-center">
+                                    <Calendar className="w-5 h-5 mr-2 text-green-600" />
+                                    Lên lịch đăng bài
+                                  </h3>
+                                  <Button variant="ghost" size="sm" onClick={() => setShowScheduleModal(false)}>
+                                    ✕
+                                  </Button>
+                                </div>
+
+                                <div className="space-y-4">
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                      <Label htmlFor="modal-schedule-date">Ngày đăng</Label>
+                                      <Input
+                                        id="modal-schedule-date"
+                                        type="date"
+                                        value={scheduleDate}
+                                        onChange={(e) => setScheduleDate(e.target.value)}
+                                        min={new Date().toISOString().split("T")[0]}
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor="modal-schedule-time">Giờ đăng</Label>
+                                      <Input
+                                        id="modal-schedule-time"
+                                        type="time"
+                                        value={scheduleTime}
+                                        onChange={(e) => setScheduleTime(e.target.value)}
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label>Thời gian tối ưu gợi ý</Label>
+                                    <div className="flex flex-wrap gap-2">
+                                      {["09:00", "12:00", "15:00", "19:00"].map((time) => (
+                                        <Button
+                                          key={time}
+                                          size="sm"
+                                          variant="outline"
+                                          className="text-xs h-7 bg-transparent"
+                                          onClick={() => setScheduleTime(time)}
+                                        >
+                                          {time}
+                                        </Button>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  <div className="bg-blue-50 rounded-lg p-3">
+                                    <div className="flex items-center space-x-2 mb-2">
+                                      <Clock className="w-4 h-4 text-blue-600" />
+                                      <span className="text-sm font-medium">Thời gian đã chọn</span>
+                                    </div>
+                                    <p className="text-sm text-gray-600">
+                                      {scheduleDate && scheduleTime
+                                        ? `${new Date(scheduleDate).toLocaleDateString("vi-VN")} lúc ${scheduleTime}`
+                                        : "Chưa chọn thời gian"}
+                                    </p>
+                                  </div>
+
+                                  <div className="flex space-x-2 pt-2">
+                                    <Button
+                                      variant="outline"
+                                      className="flex-1 bg-transparent"
+                                      onClick={() => setShowScheduleModal(false)}
+                                    >
+                                      Hủy
+                                    </Button>
+                                    <Button
+                                      className="flex-1 bg-gradient-to-r from-green-600 to-blue-600"
+                                      disabled={!scheduleDate || !scheduleTime}
+                                      onClick={() => {
+                                        // Handle schedule
+                                        console.log("Scheduling for:", scheduleDate, scheduleTime)
+                                        setShowScheduleModal(false)
+                                        // Show success message or redirect
+                                      }}
+                                    >
+                                      <Calendar className="w-4 h-4 mr-2" />
+                                      Lên lịch
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="text-center py-12">

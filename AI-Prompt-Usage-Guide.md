@@ -47,7 +47,7 @@ authors:
 
 - Ví dụ prompt hoàn chỉnh:
 
-  ```
+  \`\`\`
   Bạn là một chuyên gia marketing digital với 10 năm kinh nghiệm.
 
   Tôi đang xây dựng chiến lược content cho một startup công nghệ tài chính.
@@ -61,7 +61,7 @@ authors:
   - Call-to-action đề xuất
 
   Giới hạn mỗi ý tưởng không quá 100 từ, sử dụng tone chuyên nghiệp nhưng thân thiện.
-  ```
+  \`\`\`
 
 **Q&A cho ví dụ 1:**
 
@@ -83,7 +83,7 @@ authors:
 
 - Ví dụ prompt technical:
 
-  ```
+  \`\`\`
   Viết Js code sử dụng FastAPI framework.
 
   Tạo REST API endpoint để quản lý user authentication.
@@ -100,7 +100,7 @@ authors:
   - Handle common errors (user not found, wrong password, etc.)
 
   Bao gồm proper error handling, type hints, và docstrings cho mỗi function.
-  ```
+  \`\`\`
 
 **Q&A cho ví dụ 2:**
 
@@ -122,7 +122,7 @@ authors:
 
 - Ví dụ prompt creative:
 
-  ```
+  \`\`\`
   Viết email marketing cho khách hàng hiện tại của một cửa hàng thời trang online.
 
   Mục đích: thông báo về sale cuối năm và khuyến khích mua hàng.
@@ -138,7 +138,7 @@ authors:
   - Professional signature
 
   Độ dài: 150-200 từ, format email marketing chuẩn.
-  ```
+  \`\`\`
 
 **Q&A cho ví dụ 3:**
 
