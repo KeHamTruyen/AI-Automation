@@ -38,6 +38,7 @@ export default function ContentCreationPage() {
   const [contentType, setContentType] = useState("social-post")
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedContent, setGeneratedContent] = useState("")
+  const [publishTime, setPublishTime] = useState("immediate")
 
   const handleGenerateContent = () => {
     setIsGenerating(true)
@@ -247,6 +248,89 @@ export default function ContentCreationPage() {
                         </div>
                       </div>
 
+                      <div className="space-y-4">
+                        <Label>Thời gian đăng bài</Label>
+                        <div className="space-y-3">
+                          <label className="flex items-center space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-gray-50">
+                            <input
+                              type="radio"
+                              name="publish-time"
+                              value="immediate"
+                              className="text-blue-600"
+                              defaultChecked
+                              onChange={() => setPublishTime("immediate")}
+                            />
+                            <div className="flex items-center space-x-2">
+                              <Share2 className="w-4 h-4 text-blue-600" />
+                              <div>
+                                <div className="font-medium text-sm">Đăng ngay lập tức</div>
+                                <div className="text-xs text-gray-600">Đăng bài ngay sau khi tạo xong</div>
+                              </div>
+                            </div>
+                          </label>
+
+                          <label className="flex items-center space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-gray-50">
+                            <input
+                              type="radio"
+                              name="publish-time"
+                              value="scheduled"
+                              className="text-green-600"
+                              onChange={() => setPublishTime("scheduled")}
+                            />
+                            <div className="flex items-center space-x-2">
+                              <Calendar className="w-4 h-4 text-green-600" />
+                              <div>
+                                <div className="font-medium text-sm">Lên lịch đăng bài</div>
+                                <div className="text-xs text-gray-600">Chọn thời gian cụ thể để đăng</div>
+                              </div>
+                            </div>
+                          </label>
+                        </div>
+
+                        {/* Schedule Options - Show when scheduled is selected */}
+                        {publishTime === "scheduled" && (
+                          <div className="space-y-3 pl-6 border-l-2 border-green-200 bg-green-50 p-3 rounded-r-lg">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-2">
+                                <Label htmlFor="schedule-date" className="text-sm">
+                                  Ngày đăng
+                                </Label>
+                                <Input
+                                  id="schedule-date"
+                                  type="date"
+                                  className="text-sm"
+                                  defaultValue={new Date().toISOString().split("T")[0]}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="schedule-time" className="text-sm">
+                                  Giờ đăng
+                                </Label>
+                                <Input id="schedule-time" type="time" className="text-sm" defaultValue="09:00" />
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label className="text-sm">Thời gian tối ưu gợi ý</Label>
+                              <div className="flex flex-wrap gap-2">
+                                <Button size="sm" variant="outline" className="text-xs h-7 bg-transparent">
+                                  9:00 AM
+                                </Button>
+                                <Button size="sm" variant="outline" className="text-xs h-7 bg-transparent">
+                                  12:00 PM
+                                </Button>
+                                <Button size="sm" variant="outline" className="text-xs h-7 bg-transparent">
+                                  3:00 PM
+                                </Button>
+                                <Button size="sm" variant="outline" className="text-xs h-7 bg-transparent">
+                                  7:00 PM
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                       <Button
                         className="w-full bg-gradient-to-r from-green-600 to-blue-600"
                         onClick={handleGenerateContent}
@@ -319,13 +403,13 @@ export default function ContentCreationPage() {
                           </div>
 
                           <div className="flex space-x-2 pt-4">
-                            <Button className="flex-1 bg-gradient-to-r from-green-600 to-blue-600">
-                              <Calendar className="w-4 h-4 mr-2" />
-                              Lên lịch đăng
-                            </Button>
-                            <Button variant="outline" className="flex-1 bg-transparent">
+                            <Button className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600">
                               <Share2 className="w-4 h-4 mr-2" />
                               Đăng ngay
+                            </Button>
+                            <Button variant="outline" className="flex-1 bg-transparent">
+                              <Calendar className="w-4 h-4 mr-2" />
+                              Chọn lịch đăng
                             </Button>
                           </div>
                         </div>
@@ -352,7 +436,7 @@ export default function ContentCreationPage() {
                         <CardTitle className="flex items-center justify-between">
                           <span className="flex items-center">
                             <Calendar className="w-5 h-5 mr-2 text-green-600" />
-                            Lịch đăng bài
+                            Lịch đăng bài đã lên kế hoạch
                           </span>
                           <div className="flex space-x-2">
                             <Button size="sm" variant="outline">
@@ -366,34 +450,17 @@ export default function ContentCreationPage() {
                             </Button>
                           </div>
                         </CardTitle>
+                        <CardDescription>Chỉ hiển thị những bài viết đã được lên lịch đăng</CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
-                          {/* Today's Posts */}
+                          {/* Today's Scheduled Posts */}
                           <div>
                             <h4 className="font-medium mb-3 flex items-center">
-                              <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                              <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
                               Hôm nay - 15/01/2024
                             </h4>
                             <div className="space-y-3">
-                              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                                <div className="flex items-center space-x-3">
-                                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                                    <span className="text-white text-xs">f</span>
-                                  </div>
-                                  <div>
-                                    <div className="text-sm font-medium">Tips Marketing cho SME</div>
-                                    <div className="text-xs text-gray-600">9:00 AM</div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <Badge className="bg-green-100 text-green-700">Đã đăng</Badge>
-                                  <Button size="sm" variant="ghost">
-                                    <Edit className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              </div>
-
                               <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                                 <div className="flex items-center space-x-3">
                                   <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-orange-500 rounded-full flex items-center justify-center">
@@ -401,11 +468,33 @@ export default function ContentCreationPage() {
                                   </div>
                                   <div>
                                     <div className="text-sm font-medium">Behind the scenes video</div>
-                                    <div className="text-xs text-gray-600">2:00 PM</div>
+                                    <div className="text-xs text-gray-600">2:00 PM - Đã lên lịch</div>
                                   </div>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                  <Badge variant="outline">Đang chờ</Badge>
+                                  <Badge variant="outline" className="bg-blue-100 text-blue-700">
+                                    Chờ đăng
+                                  </Badge>
+                                  <Button size="sm" variant="ghost">
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                                    <span className="text-white text-xs">in</span>
+                                  </div>
+                                  <div>
+                                    <div className="text-sm font-medium">Weekly newsletter</div>
+                                    <div className="text-xs text-gray-600">5:00 PM - Đã lên lịch</div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Badge variant="outline" className="bg-purple-100 text-purple-700">
+                                    Chờ đăng
+                                  </Badge>
                                   <Button size="sm" variant="ghost">
                                     <Edit className="w-4 h-4" />
                                   </Button>
@@ -414,25 +503,27 @@ export default function ContentCreationPage() {
                             </div>
                           </div>
 
-                          {/* Tomorrow's Posts */}
+                          {/* Tomorrow's Scheduled Posts */}
                           <div>
                             <h4 className="font-medium mb-3 flex items-center">
-                              <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                              <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
                               Ngày mai - 16/01/2024
                             </h4>
                             <div className="space-y-3">
-                              <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                                 <div className="flex items-center space-x-3">
-                                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                                    <span className="text-white text-xs">in</span>
+                                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                    <span className="text-white text-xs">f</span>
                                   </div>
                                   <div>
-                                    <div className="text-sm font-medium">Industry insights article</div>
-                                    <div className="text-xs text-gray-600">10:00 AM</div>
+                                    <div className="text-sm font-medium">Marketing tips for SME</div>
+                                    <div className="text-xs text-gray-600">9:00 AM - Đã lên lịch</div>
                                   </div>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                  <Badge variant="outline">Lên lịch</Badge>
+                                  <Badge variant="outline" className="bg-green-100 text-green-700">
+                                    Chờ đăng
+                                  </Badge>
                                   <Button size="sm" variant="ghost">
                                     <Edit className="w-4 h-4" />
                                   </Button>
@@ -446,11 +537,13 @@ export default function ContentCreationPage() {
                                   </div>
                                   <div>
                                     <div className="text-sm font-medium">Product demo video</div>
-                                    <div className="text-xs text-gray-600">3:00 PM</div>
+                                    <div className="text-xs text-gray-600">3:00 PM - Đã lên lịch</div>
                                   </div>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                  <Badge variant="outline">Lên lịch</Badge>
+                                  <Badge variant="outline" className="bg-orange-100 text-orange-700">
+                                    Chờ đăng
+                                  </Badge>
                                   <Button size="sm" variant="ghost">
                                     <Edit className="w-4 h-4" />
                                   </Button>
@@ -458,12 +551,78 @@ export default function ContentCreationPage() {
                               </div>
                             </div>
                           </div>
+
+                          {/* This Week's Scheduled Posts */}
+                          <div>
+                            <h4 className="font-medium mb-3 flex items-center">
+                              <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                              Tuần này
+                            </h4>
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
+                                    <span className="text-white text-xs">X</span>
+                                  </div>
+                                  <div>
+                                    <div className="text-sm font-medium">Industry insights thread</div>
+                                    <div className="text-xs text-gray-600">18/01 - 10:00 AM - Đã lên lịch</div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Badge variant="outline" className="bg-yellow-100 text-yellow-700">
+                                    Chờ đăng
+                                  </Badge>
+                                  <Button size="sm" variant="ghost">
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between p-3 bg-pink-50 rounded-lg">
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
+                                    <span className="text-white text-xs">TT</span>
+                                  </div>
+                                  <div>
+                                    <div className="text-sm font-medium">Trending challenge video</div>
+                                    <div className="text-xs text-gray-600">19/01 - 7:00 PM - Đã lên lịch</div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Badge variant="outline" className="bg-pink-100 text-pink-700">
+                                    Chờ đăng
+                                  </Badge>
+                                  <Button size="sm" variant="ghost">
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Empty State */}
+                          {false && (
+                            <div className="text-center py-12">
+                              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Calendar className="w-6 h-6 text-gray-400" />
+                              </div>
+                              <h3 className="font-medium mb-2">Chưa có bài viết nào được lên lịch</h3>
+                              <p className="text-gray-600 mb-4">
+                                Tạo nội dung và chọn "Chọn lịch đăng" để lên lịch đăng bài
+                              </p>
+                              <Button>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Tạo nội dung mới
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
                   </div>
 
-                  {/* Schedule Settings */}
+                  {/* Schedule Settings - Same as before */}
                   <div>
                     <Card>
                       <CardHeader>
@@ -525,22 +684,22 @@ export default function ContentCreationPage() {
                       <CardHeader>
                         <CardTitle className="flex items-center">
                           <TrendingUp className="w-5 h-5 mr-2 text-green-600" />
-                          Thống kê tuần này
+                          Thống kê lịch đăng
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
                           <div className="flex justify-between items-center">
-                            <span className="text-sm">Bài viết đã đăng</span>
-                            <span className="font-medium">12</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm">Bài viết đang chờ</span>
+                            <span className="text-sm">Bài viết đã lên lịch</span>
                             <span className="font-medium">8</span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-sm">Engagement trung bình</span>
-                            <span className="font-medium text-green-600">+15%</span>
+                            <span className="text-sm">Sẽ đăng hôm nay</span>
+                            <span className="font-medium">2</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Sẽ đăng tuần này</span>
+                            <span className="font-medium text-green-600">6</span>
                           </div>
                         </div>
                       </CardContent>
@@ -763,7 +922,7 @@ export default function ContentCreationPage() {
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <Label>Loại nội dung</Label>
                           <div className="space-y-2">
@@ -771,18 +930,6 @@ export default function ContentCreationPage() {
                               <label key={type} className="flex items-center space-x-2 cursor-pointer">
                                 <input type="checkbox" className="rounded" />
                                 <span className="text-sm">{type}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>Nền tảng</Label>
-                          <div className="space-y-2">
-                            {["Facebook", "Instagram", "LinkedIn", "Twitter"].map((platform) => (
-                              <label key={platform} className="flex items-center space-x-2 cursor-pointer">
-                                <input type="checkbox" className="rounded" />
-                                <span className="text-sm">{platform}</span>
                               </label>
                             ))}
                           </div>
@@ -802,6 +949,10 @@ export default function ContentCreationPage() {
                             <label className="flex items-center space-x-2 cursor-pointer">
                               <input type="checkbox" className="rounded" />
                               <span className="text-sm">Tối ưu SEO</span>
+                            </label>
+                            <label className="flex items-center space-x-2 cursor-pointer">
+                              <input type="checkbox" className="rounded" />
+                              <span className="text-sm">Tạo hình ảnh AI</span>
                             </label>
                           </div>
                         </div>
