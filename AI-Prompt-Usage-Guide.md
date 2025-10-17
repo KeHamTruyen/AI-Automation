@@ -5,7 +5,7 @@ tags:
   - hướng dẫn sử dụng
   - productivity
 authors:
-  - name: haunq
+  - name: tannn
     title: AI Prompt Specialist
     url: https://github.com/annn.g1tla6
     imageUrl: https://secure.gravatar.com/avatar/acf89a2f408a656941879d28896eb0e59e47e005ebf56214c6f3fcdfb72f6904?s=80&d=identicon
@@ -55,6 +55,7 @@ authors:
   Hãy giúp tôi tạo ra 5 ý tưởng bài viết blog thu hút khách hàng tiềm năng.
 
   Vui lòng trả lời theo format:
+
   - Tiêu đề
   - Mô tả ngắn (2-3 câu)
   - Keywords chính
@@ -89,12 +90,14 @@ authors:
   Tạo REST API endpoint để quản lý user authentication.
 
   Requirements:
+
   - POST /login: xác thực user với email/password
   - POST /register: đăng ký user mới
   - GET /profile: lấy thông tin user (cần authentication)
   - JWT token cho session management
 
   Constraints:
+
   - Sử dụng bcrypt cho password hashing
   - Validate email format
   - Handle common errors (user not found, wrong password, etc.)
@@ -130,6 +133,7 @@ authors:
   Tone: thân thiện, exciting nhưng vẫn professional.
 
   Bao gồm:
+
   - Subject line bắt mắt
   - Personal greeting
   - Highlight sale offers (20-50% off)
