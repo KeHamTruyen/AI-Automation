@@ -1,15 +1,27 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Slider } from "@/components/ui/slider"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import {
   Brain,
   Bot,
@@ -27,76 +39,40 @@ import {
   CheckCircle,
   ArrowRight,
   Globe,
-} from "lucide-react"
-import Link from "next/link"
+} from "lucide-react";
+import Link from "next/link";
 
 export default function AIRepresentativePage() {
-  const [activeTab, setActiveTab] = useState("create")
-  const [avatarStep, setAvatarStep] = useState(1)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [voicePreview, setVoicePreview] = useState(false)
+  const [activeTab, setActiveTab] = useState("create");
+  const [avatarStep, setAvatarStep] = useState(1);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [voicePreview, setVoicePreview] = useState(false);
 
   const handleGenerateAvatar = () => {
-    setIsGenerating(true)
+    setIsGenerating(true);
     setTimeout(() => {
-      setIsGenerating(false)
-      setAvatarStep(4)
-    }, 3000)
-  }
+      setIsGenerating(false);
+      setAvatarStep(4);
+    }, 3000);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-pink-50">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <Brain className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                AI Marketing Engine
-              </span>
-            </Link>
-            <div className="hidden md:flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-              <Link href="/brand-analysis">
-                <Button variant="ghost" size="sm">
-                  Phân tích thương hiệu
-                </Button>
-              </Link>
-              <Link href="/content-creation">
-                <Button variant="ghost" size="sm">
-                  Tạo nội dung
-                </Button>
-              </Link>
-              <Link href="/performance-management">
-                <Button variant="ghost" size="sm">
-                  Quản lý hiệu suất
-                </Button>
-              </Link>
-              <Button variant="ghost" size="sm" className="bg-white shadow-sm">
-                AI đại diện
-              </Button>
-            </div>
-          </div>
-          <Link href="/dashboard">
-            <Button>Dashboard</Button>
-          </Link>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <section className="py-16 px-4">
         <div className="container mx-auto text-center">
-          <Badge className="mb-4 bg-pink-100 text-pink-700">🤖 AI đại diện thương hiệu</Badge>
+          <Badge className="mb-4 bg-pink-100 text-pink-700">
+            🤖 AI đại diện thương hiệu
+          </Badge>
           <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
             Phát triển AI đại diện
             <br />
             cho thương hiệu
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Tạo AI Avatar, Voice AI, video clips và chatbot thông minh để đại diện cho thương hiệu của bạn. Tương tác
-            tự nhiên và chuyên nghiệp 24/7.
+            Tạo AI Avatar, Voice AI, video clips và chatbot thông minh để đại
+            diện cho thương hiệu của bạn. Tương tác tự nhiên và chuyên nghiệp
+            24/7.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Button
@@ -118,7 +94,11 @@ export default function AIRepresentativePage() {
       <section className="py-16 px-4 bg-white">
         <div className="container mx-auto">
           <div className="max-w-7xl mx-auto">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="space-y-8"
+            >
               <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="create">Tạo Avatar</TabsTrigger>
                 <TabsTrigger value="voice">Voice AI</TabsTrigger>
@@ -132,7 +112,9 @@ export default function AIRepresentativePage() {
                 <div className="space-y-8">
                   <div className="text-center">
                     <h2 className="text-2xl font-bold mb-4">Tạo AI Avatar</h2>
-                    <p className="text-gray-600">Tạo đại diện AI chuyên nghiệp cho thương hiệu của bạn</p>
+                    <p className="text-gray-600">
+                      Tạo đại diện AI chuyên nghiệp cho thương hiệu của bạn
+                    </p>
                   </div>
 
                   {avatarStep < 4 ? (
@@ -154,7 +136,9 @@ export default function AIRepresentativePage() {
                               {step < 3 && (
                                 <div
                                   className={`w-16 h-1 mx-2 ${
-                                    step < avatarStep ? "bg-pink-600" : "bg-gray-200"
+                                    step < avatarStep
+                                      ? "bg-pink-600"
+                                      : "bg-gray-200"
                                   }`}
                                 />
                               )}
@@ -171,13 +155,20 @@ export default function AIRepresentativePage() {
                               <User className="w-5 h-5 mr-2 text-pink-600" />
                               Thông tin cơ bản
                             </CardTitle>
-                            <CardDescription>Cung cấp thông tin cơ bản cho AI Avatar</CardDescription>
+                            <CardDescription>
+                              Cung cấp thông tin cơ bản cho AI Avatar
+                            </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                               <div className="space-y-2">
-                                <Label htmlFor="avatar-name">Tên Avatar *</Label>
-                                <Input id="avatar-name" placeholder="VD: Sarah, Alex, Minh..." />
+                                <Label htmlFor="avatar-name">
+                                  Tên Avatar *
+                                </Label>
+                                <Input
+                                  id="avatar-name"
+                                  placeholder="VD: Sarah, Alex, Minh..."
+                                />
                               </div>
                               <div className="space-y-2">
                                 <Label htmlFor="avatar-role">Vai trò *</Label>
@@ -186,18 +177,30 @@ export default function AIRepresentativePage() {
                                     <SelectValue placeholder="Chọn vai trò" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="brand-ambassador">Brand Ambassador</SelectItem>
-                                    <SelectItem value="customer-support">Customer Support</SelectItem>
-                                    <SelectItem value="sales-rep">Sales Representative</SelectItem>
-                                    <SelectItem value="educator">Educator/Trainer</SelectItem>
-                                    <SelectItem value="host">Host/Presenter</SelectItem>
+                                    <SelectItem value="brand-ambassador">
+                                      Brand Ambassador
+                                    </SelectItem>
+                                    <SelectItem value="customer-support">
+                                      Customer Support
+                                    </SelectItem>
+                                    <SelectItem value="sales-rep">
+                                      Sales Representative
+                                    </SelectItem>
+                                    <SelectItem value="educator">
+                                      Educator/Trainer
+                                    </SelectItem>
+                                    <SelectItem value="host">
+                                      Host/Presenter
+                                    </SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
                             </div>
 
                             <div className="space-y-2">
-                              <Label htmlFor="avatar-description">Mô tả tính cách *</Label>
+                              <Label htmlFor="avatar-description">
+                                Mô tả tính cách *
+                              </Label>
                               <Textarea
                                 id="avatar-description"
                                 placeholder="Mô tả tính cách, phong cách giao tiếp và đặc điểm của Avatar..."
@@ -213,10 +216,18 @@ export default function AIRepresentativePage() {
                                     <SelectValue placeholder="Chọn độ tuổi" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="20-25">20-25 tuổi</SelectItem>
-                                    <SelectItem value="26-35">26-35 tuổi</SelectItem>
-                                    <SelectItem value="36-45">36-45 tuổi</SelectItem>
-                                    <SelectItem value="46-55">46-55 tuổi</SelectItem>
+                                    <SelectItem value="20-25">
+                                      20-25 tuổi
+                                    </SelectItem>
+                                    <SelectItem value="26-35">
+                                      26-35 tuổi
+                                    </SelectItem>
+                                    <SelectItem value="36-45">
+                                      36-45 tuổi
+                                    </SelectItem>
+                                    <SelectItem value="46-55">
+                                      46-55 tuổi
+                                    </SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -229,14 +240,18 @@ export default function AIRepresentativePage() {
                                   <SelectContent>
                                     <SelectItem value="female">Nữ</SelectItem>
                                     <SelectItem value="male">Nam</SelectItem>
-                                    <SelectItem value="neutral">Trung tính</SelectItem>
+                                    <SelectItem value="neutral">
+                                      Trung tính
+                                    </SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
                             </div>
 
                             <div className="space-y-2">
-                              <Label htmlFor="avatar-expertise">Chuyên môn</Label>
+                              <Label htmlFor="avatar-expertise">
+                                Chuyên môn
+                              </Label>
                               <Textarea
                                 id="avatar-expertise"
                                 placeholder="Lĩnh vực chuyên môn, kiến thức mà Avatar sẽ chia sẻ..."
@@ -262,7 +277,9 @@ export default function AIRepresentativePage() {
                               <Palette className="w-5 h-5 mr-2 text-purple-600" />
                               Ngoại hình & Phong cách
                             </CardTitle>
-                            <CardDescription>Tùy chỉnh ngoại hình và phong cách của Avatar</CardDescription>
+                            <CardDescription>
+                              Tùy chỉnh ngoại hình và phong cách của Avatar
+                            </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -275,11 +292,21 @@ export default function AIRepresentativePage() {
                                       <SelectValue placeholder="Chọn kiểu tóc" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="short">Tóc ngắn</SelectItem>
-                                      <SelectItem value="medium">Tóc vừa</SelectItem>
-                                      <SelectItem value="long">Tóc dài</SelectItem>
-                                      <SelectItem value="curly">Tóc xoăn</SelectItem>
-                                      <SelectItem value="straight">Tóc thẳng</SelectItem>
+                                      <SelectItem value="short">
+                                        Tóc ngắn
+                                      </SelectItem>
+                                      <SelectItem value="medium">
+                                        Tóc vừa
+                                      </SelectItem>
+                                      <SelectItem value="long">
+                                        Tóc dài
+                                      </SelectItem>
+                                      <SelectItem value="curly">
+                                        Tóc xoăn
+                                      </SelectItem>
+                                      <SelectItem value="straight">
+                                        Tóc thẳng
+                                      </SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>
@@ -293,7 +320,9 @@ export default function AIRepresentativePage() {
                                     <SelectContent>
                                       <SelectItem value="black">Đen</SelectItem>
                                       <SelectItem value="brown">Nâu</SelectItem>
-                                      <SelectItem value="blonde">Vàng</SelectItem>
+                                      <SelectItem value="blonde">
+                                        Vàng
+                                      </SelectItem>
                                       <SelectItem value="red">Đỏ</SelectItem>
                                       <SelectItem value="gray">Xám</SelectItem>
                                     </SelectContent>
@@ -307,10 +336,18 @@ export default function AIRepresentativePage() {
                                       <SelectValue placeholder="Chọn phong cách" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="business">Business/Formal</SelectItem>
-                                      <SelectItem value="casual">Casual</SelectItem>
-                                      <SelectItem value="creative">Creative</SelectItem>
-                                      <SelectItem value="tech">Tech/Modern</SelectItem>
+                                      <SelectItem value="business">
+                                        Business/Formal
+                                      </SelectItem>
+                                      <SelectItem value="casual">
+                                        Casual
+                                      </SelectItem>
+                                      <SelectItem value="creative">
+                                        Creative
+                                      </SelectItem>
+                                      <SelectItem value="tech">
+                                        Tech/Modern
+                                      </SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>
@@ -343,13 +380,18 @@ export default function AIRepresentativePage() {
                                 <div className="aspect-square bg-gradient-to-br from-pink-100 to-purple-100 rounded-xl flex items-center justify-center">
                                   <div className="text-center">
                                     <Bot className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                                    <p className="text-gray-600">Avatar preview sẽ hiển thị ở đây</p>
+                                    <p className="text-gray-600">
+                                      Avatar preview sẽ hiển thị ở đây
+                                    </p>
                                     <p className="text-sm text-gray-500 mt-2">
                                       Sử dụng AI để tạo hình ảnh thực tế
                                     </p>
                                   </div>
                                 </div>
-                                <Button className="w-full bg-transparent" variant="outline">
+                                <Button
+                                  className="w-full bg-transparent"
+                                  variant="outline"
+                                >
                                   <Eye className="w-4 h-4 mr-2" />
                                   Xem trước
                                 </Button>
@@ -357,7 +399,10 @@ export default function AIRepresentativePage() {
                             </div>
 
                             <div className="flex justify-between">
-                              <Button variant="outline" onClick={() => setAvatarStep(1)}>
+                              <Button
+                                variant="outline"
+                                onClick={() => setAvatarStep(1)}
+                              >
                                 Quay lại
                               </Button>
                               <Button onClick={() => setAvatarStep(3)}>
@@ -377,7 +422,9 @@ export default function AIRepresentativePage() {
                               <Mic className="w-5 h-5 mr-2 text-blue-600" />
                               Giọng nói & Hành vi
                             </CardTitle>
-                            <CardDescription>Cấu hình giọng nói và cách hành xử của Avatar</CardDescription>
+                            <CardDescription>
+                              Cấu hình giọng nói và cách hành xử của Avatar
+                            </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -390,18 +437,33 @@ export default function AIRepresentativePage() {
                                       <SelectValue placeholder="Chọn giọng nói" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="female-young">Nữ - Trẻ trung</SelectItem>
-                                      <SelectItem value="female-mature">Nữ - Chín chắn</SelectItem>
-                                      <SelectItem value="male-young">Nam - Trẻ trung</SelectItem>
-                                      <SelectItem value="male-mature">Nam - Chín chắn</SelectItem>
-                                      <SelectItem value="neutral">Trung tính</SelectItem>
+                                      <SelectItem value="female-young">
+                                        Nữ - Trẻ trung
+                                      </SelectItem>
+                                      <SelectItem value="female-mature">
+                                        Nữ - Chín chắn
+                                      </SelectItem>
+                                      <SelectItem value="male-young">
+                                        Nam - Trẻ trung
+                                      </SelectItem>
+                                      <SelectItem value="male-mature">
+                                        Nam - Chín chắn
+                                      </SelectItem>
+                                      <SelectItem value="neutral">
+                                        Trung tính
+                                      </SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>
 
                                 <div className="space-y-2">
                                   <Label>Tốc độ nói</Label>
-                                  <Slider defaultValue={[50]} max={100} step={1} className="w-full" />
+                                  <Slider
+                                    defaultValue={[50]}
+                                    max={100}
+                                    step={1}
+                                    className="w-full"
+                                  />
                                   <div className="flex justify-between text-sm text-gray-500">
                                     <span>Chậm</span>
                                     <span>Nhanh</span>
@@ -410,7 +472,12 @@ export default function AIRepresentativePage() {
 
                                 <div className="space-y-2">
                                   <Label>Âm điệu</Label>
-                                  <Slider defaultValue={[60]} max={100} step={1} className="w-full" />
+                                  <Slider
+                                    defaultValue={[60]}
+                                    max={100}
+                                    step={1}
+                                    className="w-full"
+                                  />
                                   <div className="flex justify-between text-sm text-gray-500">
                                     <span>Trầm</span>
                                     <span>Cao</span>
@@ -421,15 +488,27 @@ export default function AIRepresentativePage() {
                                   <Label>Ngôn ngữ</Label>
                                   <div className="space-y-2">
                                     <label className="flex items-center space-x-2 cursor-pointer">
-                                      <input type="checkbox" className="rounded" defaultChecked />
-                                      <span className="text-sm">Tiếng Việt</span>
+                                      <input
+                                        type="checkbox"
+                                        className="rounded"
+                                        defaultChecked
+                                      />
+                                      <span className="text-sm">
+                                        Tiếng Việt
+                                      </span>
                                     </label>
                                     <label className="flex items-center space-x-2 cursor-pointer">
-                                      <input type="checkbox" className="rounded" />
+                                      <input
+                                        type="checkbox"
+                                        className="rounded"
+                                      />
                                       <span className="text-sm">English</span>
                                     </label>
                                     <label className="flex items-center space-x-2 cursor-pointer">
-                                      <input type="checkbox" className="rounded" />
+                                      <input
+                                        type="checkbox"
+                                        className="rounded"
+                                      />
                                       <span className="text-sm">中文</span>
                                     </label>
                                   </div>
@@ -445,11 +524,21 @@ export default function AIRepresentativePage() {
                                       <SelectValue placeholder="Chọn phong cách" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="professional">Chuyên nghiệp</SelectItem>
-                                      <SelectItem value="friendly">Thân thiện</SelectItem>
-                                      <SelectItem value="casual">Thoải mái</SelectItem>
-                                      <SelectItem value="authoritative">Uy tín</SelectItem>
-                                      <SelectItem value="enthusiastic">Nhiệt tình</SelectItem>
+                                      <SelectItem value="professional">
+                                        Chuyên nghiệp
+                                      </SelectItem>
+                                      <SelectItem value="friendly">
+                                        Thân thiện
+                                      </SelectItem>
+                                      <SelectItem value="casual">
+                                        Thoải mái
+                                      </SelectItem>
+                                      <SelectItem value="authoritative">
+                                        Uy tín
+                                      </SelectItem>
+                                      <SelectItem value="enthusiastic">
+                                        Nhiệt tình
+                                      </SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>
@@ -458,23 +547,45 @@ export default function AIRepresentativePage() {
                                   <Label>Cử chỉ & Biểu cảm</Label>
                                   <div className="space-y-2">
                                     <label className="flex items-center space-x-2 cursor-pointer">
-                                      <input type="checkbox" className="rounded" defaultChecked />
-                                      <span className="text-sm">Cử chỉ tay tự nhiên</span>
+                                      <input
+                                        type="checkbox"
+                                        className="rounded"
+                                        defaultChecked
+                                      />
+                                      <span className="text-sm">
+                                        Cử chỉ tay tự nhiên
+                                      </span>
                                     </label>
                                     <label className="flex items-center space-x-2 cursor-pointer">
-                                      <input type="checkbox" className="rounded" defaultChecked />
-                                      <span className="text-sm">Biểu cảm khuôn mặt</span>
+                                      <input
+                                        type="checkbox"
+                                        className="rounded"
+                                        defaultChecked
+                                      />
+                                      <span className="text-sm">
+                                        Biểu cảm khuôn mặt
+                                      </span>
                                     </label>
                                     <label className="flex items-center space-x-2 cursor-pointer">
-                                      <input type="checkbox" className="rounded" />
-                                      <span className="text-sm">Chuyển động cơ thể</span>
+                                      <input
+                                        type="checkbox"
+                                        className="rounded"
+                                      />
+                                      <span className="text-sm">
+                                        Chuyển động cơ thể
+                                      </span>
                                     </label>
                                   </div>
                                 </div>
 
                                 <div className="space-y-2">
                                   <Label>Mức độ tương tác</Label>
-                                  <Slider defaultValue={[70]} max={100} step={1} className="w-full" />
+                                  <Slider
+                                    defaultValue={[70]}
+                                    max={100}
+                                    step={1}
+                                    className="w-full"
+                                  />
                                   <div className="flex justify-between text-sm text-gray-500">
                                     <span>Ít tương tác</span>
                                     <span>Nhiều tương tác</span>
@@ -487,12 +598,15 @@ export default function AIRepresentativePage() {
                                     Test giọng nói
                                   </h4>
                                   <p className="text-sm text-gray-600 mb-3">
-                                    "Xin chào! Tôi là AI Avatar của bạn. Tôi sẽ giúp đại diện cho thương hiệu một cách
+                                    "Xin chào! Tôi là AI Avatar của bạn. Tôi sẽ
+                                    giúp đại diện cho thương hiệu một cách
                                     chuyên nghiệp."
                                   </p>
                                   <Button
                                     size="sm"
-                                    onClick={() => setVoicePreview(!voicePreview)}
+                                    onClick={() =>
+                                      setVoicePreview(!voicePreview)
+                                    }
                                     className="bg-blue-600"
                                   >
                                     {voicePreview ? (
@@ -512,10 +626,16 @@ export default function AIRepresentativePage() {
                             </div>
 
                             <div className="flex justify-between">
-                              <Button variant="outline" onClick={() => setAvatarStep(2)}>
+                              <Button
+                                variant="outline"
+                                onClick={() => setAvatarStep(2)}
+                              >
                                 Quay lại
                               </Button>
-                              <Button onClick={handleGenerateAvatar} disabled={isGenerating}>
+                              <Button
+                                onClick={handleGenerateAvatar}
+                                disabled={isGenerating}
+                              >
                                 {isGenerating ? (
                                   <>
                                     <Wand2 className="w-4 h-4 mr-2 animate-spin" />
@@ -553,8 +673,12 @@ export default function AIRepresentativePage() {
                               <div className="aspect-video bg-gradient-to-br from-pink-100 to-purple-100 rounded-xl flex items-center justify-center">
                                 <div className="text-center">
                                   <Bot className="w-20 h-20 text-pink-600 mx-auto mb-4" />
-                                  <h3 className="text-xl font-semibold mb-2">Sarah</h3>
-                                  <p className="text-gray-600">Brand Ambassador</p>
+                                  <h3 className="text-xl font-semibold mb-2">
+                                    Sarah
+                                  </h3>
+                                  <p className="text-gray-600">
+                                    Brand Ambassador
+                                  </p>
                                 </div>
                               </div>
                               <div className="flex space-x-2">
@@ -574,7 +698,9 @@ export default function AIRepresentativePage() {
                             {/* Avatar Details */}
                             <div className="space-y-6">
                               <div>
-                                <h4 className="font-semibold mb-3">Thông tin Avatar</h4>
+                                <h4 className="font-semibold mb-3">
+                                  Thông tin Avatar
+                                </h4>
                                 <div className="space-y-2 text-sm">
                                   <div className="flex justify-between">
                                     <span>Tên:</span>
@@ -582,19 +708,27 @@ export default function AIRepresentativePage() {
                                   </div>
                                   <div className="flex justify-between">
                                     <span>Vai trò:</span>
-                                    <span className="font-medium">Brand Ambassador</span>
+                                    <span className="font-medium">
+                                      Brand Ambassador
+                                    </span>
                                   </div>
                                   <div className="flex justify-between">
                                     <span>Giọng nói:</span>
-                                    <span className="font-medium">Nữ - Chín chắn</span>
+                                    <span className="font-medium">
+                                      Nữ - Chín chắn
+                                    </span>
                                   </div>
                                   <div className="flex justify-between">
                                     <span>Ngôn ngữ:</span>
-                                    <span className="font-medium">Tiếng Việt, English</span>
+                                    <span className="font-medium">
+                                      Tiếng Việt, English
+                                    </span>
                                   </div>
                                   <div className="flex justify-between">
                                     <span>Phong cách:</span>
-                                    <span className="font-medium">Chuyên nghiệp, Thân thiện</span>
+                                    <span className="font-medium">
+                                      Chuyên nghiệp, Thân thiện
+                                    </span>
                                   </div>
                                 </div>
                               </div>
@@ -604,27 +738,38 @@ export default function AIRepresentativePage() {
                                 <div className="space-y-2">
                                   <div className="flex items-center space-x-2">
                                     <CheckCircle className="w-4 h-4 text-green-600" />
-                                    <span className="text-sm">Trả lời câu hỏi về sản phẩm</span>
+                                    <span className="text-sm">
+                                      Trả lời câu hỏi về sản phẩm
+                                    </span>
                                   </div>
                                   <div className="flex items-center space-x-2">
                                     <CheckCircle className="w-4 h-4 text-green-600" />
-                                    <span className="text-sm">Tư vấn khách hàng</span>
+                                    <span className="text-sm">
+                                      Tư vấn khách hàng
+                                    </span>
                                   </div>
                                   <div className="flex items-center space-x-2">
                                     <CheckCircle className="w-4 h-4 text-green-600" />
-                                    <span className="text-sm">Thuyết trình sản phẩm</span>
+                                    <span className="text-sm">
+                                      Thuyết trình sản phẩm
+                                    </span>
                                   </div>
                                   <div className="flex items-center space-x-2">
                                     <CheckCircle className="w-4 h-4 text-green-600" />
-                                    <span className="text-sm">Tương tác social media</span>
+                                    <span className="text-sm">
+                                      Tương tác social media
+                                    </span>
                                   </div>
                                 </div>
                               </div>
 
                               <div className="p-4 bg-green-50 rounded-lg">
-                                <h4 className="font-medium mb-2 text-green-800">Sẵn sàng sử dụng!</h4>
+                                <h4 className="font-medium mb-2 text-green-800">
+                                  Sẵn sàng sử dụng!
+                                </h4>
                                 <p className="text-sm text-green-700 mb-3">
-                                  Avatar của bạn đã được tối ưu và sẵn sàng tích hợp vào website, chatbot hoặc video.
+                                  Avatar của bạn đã được tối ưu và sẵn sàng tích
+                                  hợp vào website, chatbot hoặc video.
                                 </p>
                                 <div className="flex space-x-2">
                                   <Button size="sm" className="bg-green-600">
@@ -651,7 +796,9 @@ export default function AIRepresentativePage() {
                 <div className="space-y-8">
                   <div className="text-center">
                     <h2 className="text-2xl font-bold mb-4">Voice AI</h2>
-                    <p className="text-gray-600">Tạo giọng nói AI tự nhiên cho thương hiệu</p>
+                    <p className="text-gray-600">
+                      Tạo giọng nói AI tự nhiên cho thương hiệu
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -662,24 +809,38 @@ export default function AIRepresentativePage() {
                           <Mic className="w-5 h-5 mr-2 text-blue-600" />
                           Tạo Voice AI
                         </CardTitle>
-                        <CardDescription>Clone giọng nói hoặc tạo giọng nói mới</CardDescription>
+                        <CardDescription>
+                          Clone giọng nói hoặc tạo giọng nói mới
+                        </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-6">
                         <div className="space-y-2">
                           <Label>Phương pháp tạo giọng</Label>
                           <div className="space-y-3">
                             <label className="flex items-center space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-gray-50">
-                              <input type="radio" name="voice-method" className="rounded-full" />
+                              <input
+                                type="radio"
+                                name="voice-method"
+                                className="rounded-full"
+                              />
                               <div>
                                 <h4 className="font-medium">Tạo giọng mới</h4>
-                                <p className="text-sm text-gray-500">Sử dụng AI để tạo giọng nói hoàn toàn mới</p>
+                                <p className="text-sm text-gray-500">
+                                  Sử dụng AI để tạo giọng nói hoàn toàn mới
+                                </p>
                               </div>
                             </label>
                             <label className="flex items-center space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-gray-50">
-                              <input type="radio" name="voice-method" className="rounded-full" />
+                              <input
+                                type="radio"
+                                name="voice-method"
+                                className="rounded-full"
+                              />
                               <div>
                                 <h4 className="font-medium">Clone giọng nói</h4>
-                                <p className="text-sm text-gray-500">Upload mẫu giọng để AI học và tái tạo</p>
+                                <p className="text-sm text-gray-500">
+                                  Upload mẫu giọng để AI học và tái tạo
+                                </p>
                               </div>
                             </label>
                           </div>
@@ -694,5 +855,5 @@ export default function AIRepresentativePage() {
         </div>
       </section>
     </div>
-  )
+  );
 }
