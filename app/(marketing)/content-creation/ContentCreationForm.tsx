@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+
 import {
   Card,
   CardContent,
@@ -41,31 +42,107 @@ import {
   Target,
   TrendingUp,
 } from "lucide-react";
+import axios from "axios";
 
 export default function ContentCreationForm() {
-  const [activeTab, setActiveTab] = useState("create");
-  const [contentType, setContentType] = useState("social-post");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedContent, setGeneratedContent] = useState("");
-  const [scheduleDate, setScheduleDate] = useState("");
-  const [scheduleTime, setScheduleTime] = useState("");
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("create"); // tab hien tai (neu sau nay co nhieu tab)
+  const [isGenerating, setIsGenerating] = useState(false); // trang thai loading khi tao noi dung
+  const [generatedContent, setGeneratedContent] = useState(""); // luu noi dung tra ve tu n8n
+  const [scheduleDate, setScheduleDate] = useState(""); // ngay hen gio dang bai
+  const [scheduleTime, setScheduleTime] = useState(""); // gio hen gio dang bai
+  const [showScheduleModal, setShowScheduleModal] = useState(false); // hien modal hen gio (neu can dung)
 
-  useEffect(() => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    setScheduleDate(tomorrow.toISOString().split("T")[0]);
-    setScheduleTime("09:00");
-  }, []);
+  //  Các trường dữ liệu động của form
+  // - người dùng có 1 vài trường dữ liệu có thể bỏ hoặc nhập
+  // - chỉ có 1 vài trường là bắt buộc
+  const [formData, setFormData] = useState({
+    contentType: "", // loại nội dung
+    topic: "", // chủ đề
+    audience: "", // đối tượng khách
+    tone: "", // phong cách
+    length: "", // độ dài
+    additionalInfo: "", // thông tin bổ sung
+    platforms: [] as string[], // danh sách mạng xã hội
+  });
 
-  const handleGenerateContent = () => {
+  // hàm cập nhật dữ liệu form
+  const handleChange = (key: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+  };
+  // hàm sử lý người dùng tick hoặc bỏ tick MXH
+  const handlePlatformToggle = (platform: string) => {
+    setFormData((prev) => {
+      const exists = prev.platforms.includes(platform);
+      return {
+        ...prev,
+        platforms: exists
+          ? prev.platforms.filter((p) => p !== platform)
+          : [...prev.platforms, platform],
+      };
+    });
+  };
+  // hàm gửi dữ liệu lên n8n để tạo ND
+  const handleGenerateContent = async () => {
+    // Kiểm tra các trường bắt buộc (chủ đề + loại nội dung)
+    if (!formData.topic || !formData.contentType) {
+      alert("Vui lòng nhập chủ đề và chọn loại nội dung!");
+      return;
+    }
+
+    // Kiểm tra người dùng có chọn ít nhất 1 nền tảng MXH chưa
+    if (!formData.platforms || formData.platforms.length === 0) {
+      alert("Vui lòng chọn ít nhất một nền tảng mạng xã hội!");
+      return;
+    }
+
+    // Bật trạng thái loading để hiển thị spinner / chặn nút
     setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-      setGeneratedContent(
-        "🚀 Khám phá sức mạnh của AI trong marketing!\n\nAI giúp doanh nghiệp:\n✅ Tự động hóa marketing\n✅ Cá nhân hóa trải nghiệm khách hàng\n✅ Tối ưu ROI chiến dịch\n\n#AIMarketing #DigitalTransformation"
+
+    try {
+      // Chuẩn bị payload gửi đến n8n webhook
+      // Lọc chỉ những trường nào có giá trị (tránh gửi dữ liệu rỗng)
+      const payload: Record<string, any> = {};
+      Object.entries(formData).forEach(([key, value]) => {
+        // Nếu là chuỗi thì kiểm tra trim(), nếu là mảng thì kiểm tra độ dài
+        if (
+          (typeof value === "string" && value.trim() !== "") ||
+          (Array.isArray(value) && value.length > 0)
+        ) {
+          payload[key] = value;
+        }
+      });
+
+      // Gọi API đến webhook của n8n
+      const response = await axios.post(
+        "https://n8n.daisuyeuthuong.com/webhook-test/generate-content",
+        payload
       );
-    }, 2000);
+
+      // In riêng data để xem nội dung server trả về
+      console.log("Response.data:", response.data);
+
+      // Xử lý phản hồi từ n8n
+      // Nếu n8n trả về có trường `content`, hiển thị ra giao diện
+      if (response.data?.content) {
+        setGeneratedContent(response.data.content);
+      } else {
+        setGeneratedContent("Không có nội dung trả về từ n8n.");
+      }
+    } catch (error: any) {
+      // hiện lỗi khi request thất bại
+      console.error("Lỗi khi gửi dữ liệu đến n8n:", error);
+      setGeneratedContent("Đã xảy ra lỗi khi tạo nội dung. Vui lòng thử lại!");
+    } finally {
+      // Dù thành công hay lỗi, đều tắt trạng thái loading
+      setIsGenerating(false);
+    }
+  };
+  // Copy nội dung ra clipboard
+  const handleCopy = () => {
+    if (generatedContent) {
+      navigator.clipboard.writeText(generatedContent);
+      alert("Đã sao chép nội dung!");
+    }
   };
 
   return (
@@ -99,7 +176,10 @@ export default function ContentCreationForm() {
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="content-type">Loại nội dung *</Label>
-                  <Select value={contentType} onValueChange={setContentType}>
+                  <Select
+                    value={formData.contentType}
+                    onValueChange={(v) => handleChange("contentType", v)}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Chọn loại nội dung" />
                     </SelectTrigger>
@@ -121,18 +201,23 @@ export default function ContentCreationForm() {
                     </SelectContent>
                   </Select>
                 </div>
-
+                {/* Chủ đề */}
                 <div className="space-y-2">
                   <Label htmlFor="topic">Chủ đề/Từ khóa *</Label>
                   <Input
+                    value={formData.topic}
+                    onChange={(e) => handleChange("topic", e.target.value)}
                     id="topic"
                     placeholder="VD: AI trong marketing, xu hướng công nghệ 2024..."
                   />
                 </div>
-
+                {/* Đối tượng */}
                 <div className="space-y-2">
                   <Label htmlFor="target-audience">Đối tượng mục tiêu</Label>
-                  <Select>
+                  <Select
+                    value={formData.audience}
+                    onValueChange={(v) => handleChange("audience", v)}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Chọn đối tượng" />
                     </SelectTrigger>
@@ -147,10 +232,13 @@ export default function ContentCreationForm() {
                     </SelectContent>
                   </Select>
                 </div>
-
+                {/* Giọng nói */}
                 <div className="space-y-2">
                   <Label htmlFor="tone">Tone of Voice</Label>
-                  <Select>
+                  <Select
+                    value={formData.tone}
+                    onValueChange={(v) => handleChange("tone", v)}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Chọn tone" />
                     </SelectTrigger>
@@ -165,10 +253,13 @@ export default function ContentCreationForm() {
                     </SelectContent>
                   </Select>
                 </div>
-
+                {/* Độ dài */}
                 <div className="space-y-2">
                   <Label htmlFor="length">Độ dài nội dung</Label>
-                  <Select>
+                  <Select
+                    value={formData.length}
+                    onValueChange={(v) => handleChange("length", v)}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Chọn độ dài" />
                     </SelectTrigger>
@@ -184,16 +275,20 @@ export default function ContentCreationForm() {
                     </SelectContent>
                   </Select>
                 </div>
-
+                {/* Thông tin bổ sung */}
                 <div className="space-y-2">
                   <Label htmlFor="additional-info">Thông tin bổ sung</Label>
                   <Textarea
                     id="additional-info"
                     placeholder="Thêm thông tin cụ thể, yêu cầu đặc biệt..."
                     rows={3}
+                    value={formData.additionalInfo}
+                    onChange={(e) =>
+                      handleChange("additionalInfo", e.target.value)
+                    }
                   />
                 </div>
-
+                {/* Nền tảng */}
                 <div className="space-y-4">
                   <Label>Nền tảng đăng bài</Label>
                   <div className="grid grid-cols-2 gap-3">
@@ -232,7 +327,8 @@ export default function ContentCreationForm() {
                         <input
                           type="checkbox"
                           className="rounded"
-                          defaultChecked
+                          checked={formData.platforms.includes(platform.name)}
+                          onChange={() => handlePlatformToggle(platform.name)}
                         />
                         <div
                           className={`w-6 h-6 ${platform.color} rounded text-white text-xs flex items-center justify-center`}
@@ -275,9 +371,10 @@ export default function ContentCreationForm() {
                   </span>
                   {generatedContent && (
                     <div className="flex space-x-2">
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={handleCopy}>
                         <Copy className="w-4 h-4" />
                       </Button>
+                      {/* để nâng cấp sao */}
                       <Button size="sm" variant="outline">
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -300,12 +397,13 @@ export default function ContentCreationForm() {
                   </div>
                 ) : generatedContent ? (
                   <div className="space-y-4">
+                    {/* Kết quả */}
                     <div className="bg-gray-50 rounded-lg p-4">
                       <pre className="whitespace-pre-wrap text-sm">
                         {generatedContent}
                       </pre>
                     </div>
-
+                    {/* Phần sao thì phải nâng cấp thêm  */}
                     {/* Content Analytics Preview */}
                     <div className="grid grid-cols-3 gap-4 pt-4 border-t">
                       <div className="text-center">

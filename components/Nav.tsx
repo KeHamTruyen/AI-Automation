@@ -129,7 +129,9 @@ function Nav() {
                   <Dialog.Title className="text-lg font-bold mb-2">
                     Menu
                   </Dialog.Title>
-
+                  <Dialog.Description className="text-sm text-gray-500">
+                    Chọn mục bạn muốn truy cập từ danh sách bên dưới.
+                  </Dialog.Description>
                   <nav className="flex flex-col space-y-2">
                     {navItems.map((item) => {
                       const isActive = pathname === item.href;
