@@ -37,13 +37,20 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (data.success) {
+        // Store user data in localStorage
+        localStorage.setItem("user", JSON.stringify(data.data.user))
+        
         toast.success("Đăng nhập thành công!")
-        router.push("/dashboard")
+        
+        // Use redirectUrl from API response or default to dashboard
+        const redirectUrl = data.data.redirectUrl || "/dashboard"
+        router.push(redirectUrl)
         router.refresh()
       } else {
         setError(data.error || "Đăng nhập thất bại")
       }
     } catch (error) {
+      console.error("Login error:", error)
       setError("Lỗi kết nối. Vui lòng thử lại.")
     } finally {
       setIsLoading(false)
@@ -122,13 +129,41 @@ export default function LoginPage() {
 
           <div className="mt-6 p-4 bg-slate-50 rounded-lg">
             <p className="text-sm font-medium text-slate-700 mb-2">Tài khoản demo:</p>
-            <div className="space-y-1 text-sm text-slate-600">
-              <p>
-                <strong>Admin:</strong> admin@company.com / admin123
-              </p>
-              <p>
-                <strong>User:</strong> user@company.com / user123
-              </p>
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEmail("admin@company.com")
+                    setPassword("admin123")
+                  }}
+                  className="text-xs"
+                >
+                  Fill Admin Demo
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEmail("user@company.com")
+                    setPassword("user123")
+                  }}
+                  className="text-xs"
+                >
+                  Fill User Demo
+                </Button>
+              </div>
+              <div className="space-y-1 text-sm text-slate-600">
+                <p>
+                  <strong>Admin:</strong> admin@company.com / admin123
+                </p>
+                <p>
+                  <strong>User:</strong> user@company.com / user123
+                </p>
+              </div>
             </div>
           </div>
         </CardContent>

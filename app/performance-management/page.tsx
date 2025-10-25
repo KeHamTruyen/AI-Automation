@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import {
   Brain,
   BarChart3,
@@ -27,6 +28,8 @@ import {
   CheckCircle,
   XCircle,
   Plus,
+  ArrowLeft,
+  Home,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -48,30 +51,43 @@ export default function PerformanceManagementPage() {
                 AI Marketing Engine
               </span>
             </Link>
-            <div className="hidden md:flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-              <Link href="/brand-analysis">
-                <Button variant="ghost" size="sm">
-                  Phân tích thương hiệu
-                </Button>
-              </Link>
-              <Link href="/content-creation">
-                <Button variant="ghost" size="sm">
-                  Tạo nội dung
-                </Button>
-              </Link>
-              <Button variant="ghost" size="sm" className="bg-white shadow-sm">
-                Quản lý hiệu suất
-              </Button>
-              <Link href="/ai-representative">
-                <Button variant="ghost" size="sm">
-                  AI đại diện
-                </Button>
-              </Link>
-            </div>
+            
+            {/* Breadcrumb */}
+            <Breadcrumb className="hidden md:block">
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href="/" className="flex items-center">
+                      <Home className="w-4 h-4" />
+                    </Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href="/dashboard">Dashboard</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <span className="font-medium">Quản lý hiệu suất</span>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
-          <Link href="/dashboard">
-            <Button>Dashboard</Button>
-          </Link>
+          <div className="flex items-center space-x-2">
+            <Link href="/dashboard">
+              <Button variant="outline" size="sm">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Dashboard
+              </Button>
+            </Link>
+            <Link href="/content-creation">
+              <Button variant="ghost" size="sm">
+                Tạo nội dung
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 

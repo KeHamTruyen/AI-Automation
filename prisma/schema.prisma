@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  lastLogin DateTime?
+  
+  // Relations
+  socialAccounts SocialAccount[]
+  contents       Content[]
+  
+  @@map("users")
+}
+
+model SocialAccount {
+  id          String   @id @default(cuid())
+  platform    String   // facebook, instagram, twitter, etc.
+  name        String
+  username    String
+  accessToken String?
+  status      AccountStatus @default(ACTIVE)
+  followers   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contents    Content[]
+  analytics   Analytics[]
+  
+  @@map("social_accounts")
+}
+
+model Content {
+  id          String      @id @default(cuid())
+  title       String
+  content     String
+  type        ContentType
+  status      ContentStatus @default(DRAFT)
+  scheduledAt DateTime?
+  publishedAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // Relations
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  socialAccountId String?
+  socialAccount   SocialAccount?  @relation(fields: [socialAccountId], references: [id])
+  
+  @@map("contents")
+}
+
+model Analytics {
+  id        String   @id @default(cuid())
+  date      DateTime
+  views     Int      @default(0)
+  likes     Int      @default(0)
+  shares    Int      @default(0)
+  comments  Int      @default(0)
+  reach     Int      @default(0)
+  createdAt DateTime @default(now())
+  
+  // Relations
+  socialAccountId String
+  socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  
+  @@unique([socialAccountId, date])
+  @@map("analytics")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+}
+
+enum ContentType {
+  POST
+  STORY
+  REEL
+  VIDEO
+  IMAGE
+}
+
+enum ContentStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}

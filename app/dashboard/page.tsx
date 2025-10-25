@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import {
   Brain,
   Calendar,
@@ -27,8 +28,10 @@ import {
   MessageCircle,
   Play,
   Edit,
+  Home,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import Link from "next/link"
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("overview")
@@ -39,25 +42,51 @@ export default function DashboardPage() {
       <header className="bg-white border-b px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <Brain className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold">AI Marketing Engine</span>
+            <div className="flex items-center space-x-4">
+              <Link href="/" className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  <Brain className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-bold">AI Marketing Engine</span>
+              </Link>
+              
+              {/* Breadcrumb */}
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link href="/" className="flex items-center">
+                        <Home className="w-4 h-4" />
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <span className="font-medium">Dashboard</span>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
             </div>
+            
             <div className="hidden md:flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
               <Button variant="ghost" size="sm" className="bg-white shadow-sm">
                 Dashboard
               </Button>
-              <Button variant="ghost" size="sm">
-                Campaigns
-              </Button>
-              <Button variant="ghost" size="sm">
-                Content
-              </Button>
-              <Button variant="ghost" size="sm">
-                Analytics
-              </Button>
+              <Link href="/content-creation">
+                <Button variant="ghost" size="sm">
+                  Content
+                </Button>
+              </Link>
+              <Link href="/performance-management">
+                <Button variant="ghost" size="sm">
+                  Analytics
+                </Button>
+              </Link>
+              <Link href="/social-accounts">
+                <Button variant="ghost" size="sm">
+                  Social
+                </Button>
+              </Link>
             </div>
           </div>
           <div className="flex items-center space-x-4">
@@ -86,30 +115,48 @@ export default function DashboardPage() {
               <BarChart3 className="w-4 h-4 mr-3" />
               Tổng quan
             </Button>
-            <Button variant="ghost" className="w-full justify-start">
-              <Brain className="w-4 h-4 mr-3" />
-              Phân tích thương hiệu
-            </Button>
-            <Button variant="ghost" className="w-full justify-start">
-              <Calendar className="w-4 h-4 mr-3" />
-              Lịch đăng bài
-            </Button>
-            <Button variant="ghost" className="w-full justify-start">
-              <MessageSquare className="w-4 h-4 mr-3" />
-              Nội dung
-            </Button>
-            <Button variant="ghost" className="w-full justify-start">
-              <Bot className="w-4 h-4 mr-3" />
-              AI Avatar
-            </Button>
-            <Button variant="ghost" className="w-full justify-start">
-              <Users className="w-4 h-4 mr-3" />
-              Audience
-            </Button>
-            <Button variant="ghost" className="w-full justify-start">
-              <TrendingUp className="w-4 h-4 mr-3" />
-              Báo cáo
-            </Button>
+            <Link href="/brand-analysis" className="w-full">
+              <Button variant="ghost" className="w-full justify-start">
+                <Brain className="w-4 h-4 mr-3" />
+                Phân tích thương hiệu
+              </Button>
+            </Link>
+            <Link href="/content-creation" className="w-full">
+              <Button variant="ghost" className="w-full justify-start">
+                <Calendar className="w-4 h-4 mr-3" />
+                Tạo nội dung
+              </Button>
+            </Link>
+            <Link href="/cms" className="w-full">
+              <Button variant="ghost" className="w-full justify-start">
+                <MessageSquare className="w-4 h-4 mr-3" />
+                Quản lý nội dung
+              </Button>
+            </Link>
+            <Link href="/ai-representative" className="w-full">
+              <Button variant="ghost" className="w-full justify-start">
+                <Bot className="w-4 h-4 mr-3" />
+                AI Avatar
+              </Button>
+            </Link>
+            <Link href="/social-accounts" className="w-full">
+              <Button variant="ghost" className="w-full justify-start">
+                <Users className="w-4 h-4 mr-3" />
+                Social Accounts
+              </Button>
+            </Link>
+            <Link href="/performance-management" className="w-full">
+              <Button variant="ghost" className="w-full justify-start">
+                <TrendingUp className="w-4 h-4 mr-3" />
+                Báo cáo
+              </Button>
+            </Link>
+            <Link href="/archive" className="w-full">
+              <Button variant="ghost" className="w-full justify-start">
+                <MessageSquare className="w-4 h-4 mr-3" />
+                Lưu trữ
+              </Button>
+            </Link>
           </nav>
         </aside>
 
@@ -175,6 +222,45 @@ export default function DashboardPage() {
             </Card>
           </div>
 
+          {/* Quick Actions */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Plus className="w-5 h-5 mr-2 text-green-600" />
+                Quick Actions
+              </CardTitle>
+              <CardDescription>Truy cập nhanh các tính năng chính</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Link href="/brand-analysis">
+                  <Button variant="outline" className="w-full h-20 flex flex-col space-y-2 hover:border-blue-300">
+                    <Brain className="w-6 h-6 text-blue-600" />
+                    <span className="text-sm">Phân tích thương hiệu</span>
+                  </Button>
+                </Link>
+                <Link href="/content-creation">
+                  <Button variant="outline" className="w-full h-20 flex flex-col space-y-2 hover:border-green-300">
+                    <Calendar className="w-6 h-6 text-green-600" />
+                    <span className="text-sm">Tạo nội dung</span>
+                  </Button>
+                </Link>
+                <Link href="/ai-representative">
+                  <Button variant="outline" className="w-full h-20 flex flex-col space-y-2 hover:border-pink-300">
+                    <Bot className="w-6 h-6 text-pink-600" />
+                    <span className="text-sm">AI Avatar</span>
+                  </Button>
+                </Link>
+                <Link href="/performance-management">
+                  <Button variant="outline" className="w-full h-20 flex flex-col space-y-2 hover:border-purple-300">
+                    <BarChart3 className="w-6 h-6 text-purple-600" />
+                    <span className="text-sm">Báo cáo</span>
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="overview">Tổng quan</TabsTrigger>
@@ -218,10 +304,12 @@ export default function DashboardPage() {
                         </div>
                       </div>
                     </div>
-                    <Button className="w-full bg-transparent" variant="outline">
-                      <Brain className="w-4 h-4 mr-2" />
-                      Phân tích lại
-                    </Button>
+                    <Link href="/brand-analysis">
+                      <Button className="w-full bg-transparent" variant="outline">
+                        <Brain className="w-4 h-4 mr-2" />
+                        Phân tích lại
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
 
@@ -267,9 +355,11 @@ export default function DashboardPage() {
                         </Badge>
                       </div>
                     </div>
-                    <Button className="w-full mt-4 bg-transparent" variant="outline">
-                      Xem tất cả
-                    </Button>
+                    <Link href="/cms">
+                      <Button className="w-full mt-4 bg-transparent" variant="outline">
+                        Xem tất cả
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
               </div>
@@ -724,7 +814,9 @@ export default function DashboardPage() {
                     <p className="text-sm text-gray-600 text-center mb-4">
                       Tạo AI Avatar hoặc Chatbot mới để đại diện thương hiệu
                     </p>
-                    <Button className="w-full">Bắt đầu tạo</Button>
+                    <Link href="/ai-representative">
+                      <Button className="w-full">Bắt đầu tạo</Button>
+                    </Link>
                   </CardContent>
                 </Card>
               </div>

@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import {
   Brain,
   Calendar,
@@ -28,10 +29,13 @@ import {
   Plus,
   ArrowRight,
   Wand2,
+  ArrowLeft,
+  Home,
   Target,
   TrendingUp,
 } from "lucide-react"
 import Link from "next/link"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function ContentCreationPage() {
   const [activeTab, setActiveTab] = useState("create")
@@ -39,6 +43,15 @@ export default function ContentCreationPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedContent, setGeneratedContent] = useState("")
   const [publishTime, setPublishTime] = useState("immediate")
+
+  // Controlled inputs to send to n8n
+  const [topic, setTopic] = useState("")
+  // Khởi tạo giá trị mặc định để tránh fallback ở workflow (hiển thị rõ ràng khi chưa chọn)
+  const [tone, setTone] = useState<string>("friendly")
+  const [lengthPref, setLengthPref] = useState<string>("short")
+  const [platform, setPlatform] = useState<string>("facebook")
+
+  const { toast } = useToast()
 
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [scheduleDate, setScheduleDate] = useState("")
@@ -51,15 +64,42 @@ export default function ContentCreationPage() {
     setScheduleTime("09:00")
   }, [])
 
-  const handleGenerateContent = () => {
+  const handleGenerateContent = async () => {
+    if (!topic.trim()) {
+      toast({ title: "Thiếu chủ đề", description: "Vui lòng nhập Chủ đề/Từ khóa trước khi tạo.", variant: "destructive" })
+      return
+    }
+
     setIsGenerating(true)
-    // Simulate content generation
-    setTimeout(() => {
+    setGeneratedContent("")
+    try {
+      const res = await fetch("/api/content/generate/proxy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: topic,
+          tone: tone || "than thien",
+          length: lengthPref || "ngan",
+          platform: platform || "facebook",
+        }),
+      })
+
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        console.error("Generate failed", data)
+        toast({ title: "Tạo nội dung thất bại", description: data?.data?.message || data?.error || "Có lỗi xảy ra trong workflow.", variant: "destructive" })
+        return
+      }
+
+      const text = data?.data?.content_text || data?.content_text || JSON.stringify(data)
+      setGeneratedContent(text || "")
+      toast({ title: "Đã tạo nội dung", description: "Nội dung đã sẵn sàng ở khung bên phải." })
+    } catch (e: any) {
+      console.error(e)
+      toast({ title: "Lỗi kết nối", description: "Không gọi được API proxy.", variant: "destructive" })
+    } finally {
       setIsGenerating(false)
-      setGeneratedContent(
-        "🚀 Khám phá sức mạnh của AI trong marketing!\n\nTrong thời đại số hóa, AI không chỉ là xu hướng mà đã trở thành công cụ thiết yếu giúp doanh nghiệp:\n\n✅ Tự động hóa quy trình marketing\n✅ Cá nhân hóa trải nghiệm khách hàng\n✅ Tối ưu ROI từ các chiến dịch\n\nBạn đã sẵn sàng ứng dụng AI vào chiến lược marketing chưa?\n\n#AIMarketing #DigitalTransformation #MarketingAutomation",
-      )
-    }, 2000)
+    }
   }
 
   return (
@@ -76,30 +116,43 @@ export default function ContentCreationPage() {
                 AI Marketing Engine
               </span>
             </Link>
-            <div className="hidden md:flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-              <Link href="/brand-analysis">
-                <Button variant="ghost" size="sm">
-                  Phân tích thương hiệu
-                </Button>
-              </Link>
-              <Button variant="ghost" size="sm" className="bg-white shadow-sm">
-                Tạo nội dung
-              </Button>
-              <Link href="/performance-management">
-                <Button variant="ghost" size="sm">
-                  Quản lý hiệu suất
-                </Button>
-              </Link>
-              <Link href="/ai-representative">
-                <Button variant="ghost" size="sm">
-                  AI đại diện
-                </Button>
-              </Link>
-            </div>
+            
+            {/* Breadcrumb */}
+            <Breadcrumb className="hidden md:block">
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href="/" className="flex items-center">
+                      <Home className="w-4 h-4" />
+                    </Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href="/dashboard">Dashboard</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <span className="font-medium">Tạo nội dung</span>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
-          <Link href="/dashboard">
-            <Button>Dashboard</Button>
-          </Link>
+          <div className="flex items-center space-x-2">
+            <Link href="/dashboard">
+              <Button variant="outline" size="sm">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Dashboard
+              </Button>
+            </Link>
+            <Link href="/brand-analysis">
+              <Button variant="ghost" size="sm">
+                Phân tích thương hiệu
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -176,7 +229,12 @@ export default function ContentCreationPage() {
 
                       <div className="space-y-2">
                         <Label htmlFor="topic">Chủ đề/Từ khóa *</Label>
-                        <Input id="topic" placeholder="VD: AI trong marketing, xu hướng công nghệ 2024..." />
+                        <Input
+                          id="topic"
+                          placeholder="VD: AI trong marketing, xu hướng công nghệ 2024..."
+                          value={topic}
+                          onChange={(e) => setTopic(e.target.value)}
+                        />
                       </div>
 
                       <div className="space-y-2">
@@ -197,7 +255,7 @@ export default function ContentCreationPage() {
 
                       <div className="space-y-2">
                         <Label htmlFor="tone">Tone of Voice</Label>
-                        <Select>
+                        <Select value={tone} onValueChange={setTone}>
                           <SelectTrigger>
                             <SelectValue placeholder="Chọn tone" />
                           </SelectTrigger>
@@ -213,7 +271,7 @@ export default function ContentCreationPage() {
 
                       <div className="space-y-2">
                         <Label htmlFor="length">Độ dài nội dung</Label>
-                        <Select>
+                        <Select value={lengthPref} onValueChange={setLengthPref}>
                           <SelectTrigger>
                             <SelectValue placeholder="Chọn độ dài" />
                           </SelectTrigger>
@@ -239,24 +297,29 @@ export default function ContentCreationPage() {
                         <Label>Nền tảng đăng bài</Label>
                         <div className="grid grid-cols-2 gap-3">
                           {[
-                            { name: "Facebook", icon: "f", color: "bg-blue-500" },
-                            { name: "Instagram", icon: "IG", color: "bg-gradient-to-r from-pink-500 to-orange-500" },
-                            { name: "LinkedIn", icon: "in", color: "bg-blue-600" },
-                            { name: "TikTok", icon: "TT", color: "bg-black" },
-                            { name: "YouTube", icon: "YT", color: "bg-red-500" },
-                            { name: "Twitter", icon: "X", color: "bg-gray-800" },
-                          ].map((platform) => (
-                            <label key={platform.name} className="flex items-center space-x-2 cursor-pointer">
-                              <input type="checkbox" className="rounded" defaultChecked />
-                              <div
-                                className={`w-6 h-6 ${platform.color} rounded text-white text-xs flex items-center justify-center`}
-                              >
-                                {platform.icon}
+                            { name: "Facebook", value: "facebook", icon: "f", color: "bg-blue-500" },
+                            { name: "Instagram", value: "instagram", icon: "IG", color: "bg-gradient-to-r from-pink-500 to-orange-500" },
+                            { name: "LinkedIn", value: "linkedin", icon: "in", color: "bg-blue-600" },
+                            { name: "TikTok", value: "tiktok", icon: "TT", color: "bg-black" },
+                            { name: "YouTube", value: "youtube", icon: "YT", color: "bg-red-500" },
+                            { name: "Twitter", value: "twitter", icon: "X", color: "bg-gray-800" },
+                          ].map((p) => (
+                            <button
+                              type="button"
+                              key={p.value}
+                              onClick={() => setPlatform(p.value)}
+                              className={`flex items-center space-x-2 p-2 rounded border transition-colors ${
+                                platform === p.value ? "border-green-600 bg-green-50" : "border-gray-200 hover:bg-gray-50"
+                              }`}
+                            >
+                              <div className={`w-6 h-6 ${p.color} rounded text-white text-xs flex items-center justify-center`}>
+                                {p.icon}
                               </div>
-                              <span className="text-sm">{platform.name}</span>
-                            </label>
+                              <span className="text-sm">{p.name}</span>
+                            </button>
                           ))}
                         </div>
+                        <p className="text-xs text-gray-500">Đang chọn: <span className="font-medium">{platform}</span></p>
                       </div>
 
                       

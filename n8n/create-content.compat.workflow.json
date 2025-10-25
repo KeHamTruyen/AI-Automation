@@ -1,0 +1,149 @@
+{
+  "name": "Create Content (AI) - Compat",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-content",
+        "respond": true,
+        "responseMode": "responseNode",
+        "options": {},
+        "authentication": "headerAuth",
+        "headerName": "X-Webhook-Secret",
+        "headerValue": "REPLACE_WITH_N8N_WEBHOOK_SECRET"
+      },
+      "id": "Webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        280,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const prompt = $json.prompt || '';\nconst tone = $json.tone || 'professional';\nconst length = $json.length || 'medium';\nconst platform = $json.platform || 'facebook';\nconst hasOpenAI = !!$env.OPENAI_API_KEY && $env.OPENAI_API_KEY !== '';\nreturn [{ json: { prompt, tone, length, platform, hasOpenAI } }];"
+      },
+      "id": "Normalize",
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        540,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.hasOpenAI}}"
+            }
+          ]
+        }
+      },
+      "id": "UseOpenAI",
+      "name": "Use OpenAI?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        780,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "options": {
+          "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "=Bearer {{$env.OPENAI_API_KEY}}"
+          },
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "jsonParameters": true,
+        "optionsUi": {
+          "bodyContentType": "json"
+        },
+        "bodyParametersJson": "={\n  \"model\": \"gpt-4o-mini\",\n  \"response_format\": { \"type\": \"json_object\" },\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a content generator that outputs strictly JSON with keys: content_text (string), hashtags (array of strings, max 10), suggested_images (array of URLs). Avoid markdown.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Prompt: {{$json.prompt}} | Tone: {{$json.tone}} | Length: {{$json.length}} | Platform: {{$json.platform}}\"\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 400\n}"
+      },
+      "id": "OpenAIChat",
+      "name": "OpenAI Chat",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1040,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const item = items[0];\nconst data = item.json;\nlet contentJson = {};\ntry {\n  const str = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content ? data.choices[0].message.content : '{}';\n  contentJson = JSON.parse(str);\n} catch (e) {\n  contentJson = { error: 'Failed to parse OpenAI JSON content' };\n}\nreturn [{ json: {\n  success: true,\n  data: {\n    content_text: contentJson.content_text || '',\n    hashtags: Array.isArray(contentJson.hashtags) ? contentJson.hashtags.slice(0, 10) : [],\n    suggested_images: Array.isArray(contentJson.suggested_images) ? contentJson.suggested_images : [],\n    platform: $json.platform,\n    tone: $json.tone,\n    length: $json.length,\n    generatedAt: new Date().toISOString()\n  }\n}}];"
+      },
+      "id": "AssembleFromOpenAI",
+      "name": "Assemble Output (AI)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const prompt = $json.prompt; const platform = $json.platform; const tone = $json.tone; const length = $json.length;\nconst presets = {\n  facebook: { content_text: `🚀 ${prompt}\n\nKhám phá giải pháp đổi mới giúp tăng trưởng vượt bậc!`, hashtags: ['#Innovation','#Business','#Growth','#Success'], suggested_images: ['/placeholder.jpg'] },\n  instagram: { content_text: `✨ ${prompt}\n\n#InstaGood #Lifestyle #Trending`, hashtags: ['#InstaGood','#Lifestyle','#Trending','#Motivation'], suggested_images: ['/placeholder.jpg','/placeholder.jpg'] },\n  twitter: { content_text: `🔥 ${prompt} — Tương lai đã đến!`, hashtags: ['#Tech','#Innovation','#Business'], suggested_images: ['/placeholder.jpg'] },\n  linkedin: { content_text: `${prompt}\n\nCác chiến lược đổi mới giúp doanh nghiệp bứt phá bền vững.`, hashtags: ['#BusinessStrategy','#Innovation','#Growth','#Leadership'], suggested_images: ['/placeholder.jpg'] }\n};\nconst preset = presets[platform] || presets.facebook;\nreturn [{ json: { success: true, data: { ...preset, platform, tone, length, generatedAt: new Date().toISOString() } } }];"
+      },
+      "id": "MockContent",
+      "name": "Mock Output",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "responseBody": "={{$json}}",
+        "responseCode": 200
+      },
+      "id": "RespondOK",
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "responseBody": "={{$json}}",
+        "responseCode": 200
+      },
+      "id": "RespondMock",
+      "name": "Respond 200 (Mock)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {"main": [[{"node": "Normalize Input", "type": "main", "index": 0}]]},
+    "Normalize Input": {"main": [[{"node": "Use OpenAI?", "type": "main", "index": 0}]]},
+    "Use OpenAI?": {"main": [[{"node": "OpenAI Chat", "type": "main", "index": 0}], [{"node": "Mock Output", "type": "main", "index": 0}]]},
+    "OpenAI Chat": {"main": [[{"node": "Assemble Output (AI)", "type": "main", "index": 0}]]},
+    "Assemble Output (AI)": {"main": [[{"node": "Respond 200", "type": "main", "index": 0}]]},
+    "Mock Output": {"main": [[{"node": "Respond 200 (Mock)", "type": "main", "index": 0}]]}
+  },
+  "pinData": {},
+  "staticData": null,
+  "settings": {"executionOrder": "v1"},
+  "meta": {"templateCredsSetup": []}
+}

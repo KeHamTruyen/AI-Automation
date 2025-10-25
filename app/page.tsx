@@ -1,3 +1,5 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -15,23 +17,28 @@ import {
   CheckCircle,
   ArrowRight,
   Globe,
+  Menu,
+  X,
 } from "lucide-react"
 import Link from "next/link"
+import { useState } from "react"
 
 export default function HomePage() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
               <Brain className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               AI Marketing Engine
             </span>
-          </div>
+          </Link>
           <nav className="hidden md:flex items-center space-x-6">
             <Link href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">
               Tính năng
@@ -42,9 +49,65 @@ export default function HomePage() {
             <Link href="#contact" className="text-gray-600 hover:text-blue-600 transition-colors">
               Liên hệ
             </Link>
-            <Button>Dùng thử miễn phí</Button>
+            <Link href="/dashboard" className="text-gray-600 hover:text-blue-600 transition-colors">
+              Dashboard
+            </Link>
+            <Link href="/login">
+              <Button>Đăng nhập</Button>
+            </Link>
           </nav>
+          
+          {/* Mobile menu button */}
+          <button
+            className="md:hidden p-2"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
+          </button>
         </div>
+        
+        {/* Mobile menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-t bg-white">
+            <nav className="container mx-auto px-4 py-4 space-y-4">
+              <Link 
+                href="#features" 
+                className="block text-gray-600 hover:text-blue-600 transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Tính năng
+              </Link>
+              <Link 
+                href="#pricing" 
+                className="block text-gray-600 hover:text-blue-600 transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Bảng giá
+              </Link>
+              <Link 
+                href="#contact" 
+                className="block text-gray-600 hover:text-blue-600 transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Liên hệ
+              </Link>
+              <Link 
+                href="/dashboard" 
+                className="block text-gray-600 hover:text-blue-600 transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+              <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button className="w-full">Đăng nhập</Button>
+              </Link>
+            </nav>
+          </div>
+        )}
       </header>
 
       {/* Hero Section */}
@@ -61,17 +124,21 @@ export default function HomePage() {
             phát triển hình ảnh AI đại diện cho doanh nghiệp của bạn.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Button
-              size="lg"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              <Zap className="w-5 h-5 mr-2" />
-              Bắt đầu miễn phí
-            </Button>
-            <Button size="lg" variant="outline">
-              <Video className="w-5 h-5 mr-2" />
-              Xem demo
-            </Button>
+            <Link href="/login">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                <Zap className="w-5 h-5 mr-2" />
+                Bắt đầu miễn phí
+              </Button>
+            </Link>
+            <Link href="/dashboard">
+              <Button size="lg" variant="outline">
+                <Video className="w-5 h-5 mr-2" />
+                Xem demo
+              </Button>
+            </Link>
           </div>
 
           {/* Hero Image/Dashboard Preview */}
@@ -134,7 +201,7 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
             {/* Feature 1: Brand Analysis */}
-            <Card className="border-2 hover:border-blue-200 transition-colors">
+            <Card className="border-2 hover:border-blue-200 transition-colors group">
               <CardHeader>
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
                   <Target className="w-6 h-6 text-blue-600" />
@@ -145,7 +212,7 @@ export default function HomePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm text-gray-600">
+                <ul className="space-y-2 text-sm text-gray-600 mb-4">
                   <li className="flex items-center">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                     Phân tích tone of voice
@@ -159,11 +226,17 @@ export default function HomePage() {
                     Phong cách thương hiệu
                   </li>
                 </ul>
+                <Link href="/brand-analysis">
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700 group-hover:bg-blue-700">
+                    Bắt đầu phân tích
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 
             {/* Feature 2: Auto Content Creation */}
-            <Card className="border-2 hover:border-green-200 transition-colors">
+            <Card className="border-2 hover:border-green-200 transition-colors group">
               <CardHeader>
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
                   <Calendar className="w-6 h-6 text-green-600" />
@@ -172,7 +245,7 @@ export default function HomePage() {
                 <CardDescription>Tự động tạo bài viết, video, note và social post theo lịch trình</CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm text-gray-600">
+                <ul className="space-y-2 text-sm text-gray-600 mb-4">
                   <li className="flex items-center">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                     Đăng đa nền tảng
@@ -186,11 +259,17 @@ export default function HomePage() {
                     Tối ưu thời gian
                   </li>
                 </ul>
+                <Link href="/content-creation">
+                  <Button className="w-full bg-green-600 hover:bg-green-700 group-hover:bg-green-700">
+                    Tạo nội dung
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 
             {/* Feature 3: Analytics */}
-            <Card className="border-2 hover:border-purple-200 transition-colors">
+            <Card className="border-2 hover:border-purple-200 transition-colors group">
               <CardHeader>
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
                   <BarChart3 className="w-6 h-6 text-purple-600" />
@@ -199,7 +278,7 @@ export default function HomePage() {
                 <CardDescription>Theo dõi hiệu quả nội dung với báo cáo chi tiết và insights</CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm text-gray-600">
+                <ul className="space-y-2 text-sm text-gray-600 mb-4">
                   <li className="flex items-center">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                     Thống kê real-time
@@ -213,11 +292,17 @@ export default function HomePage() {
                     ROI tracking
                   </li>
                 </ul>
+                <Link href="/performance-management">
+                  <Button className="w-full bg-purple-600 hover:bg-purple-700 group-hover:bg-purple-700">
+                    Xem báo cáo
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 
             {/* Feature 4: AI Avatar */}
-            <Card className="border-2 hover:border-pink-200 transition-colors">
+            <Card className="border-2 hover:border-pink-200 transition-colors group">
               <CardHeader>
                 <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4">
                   <Bot className="w-6 h-6 text-pink-600" />
@@ -226,7 +311,7 @@ export default function HomePage() {
                 <CardDescription>Tạo avatar AI, voice AI và chatbot đại diện cho thương hiệu</CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm text-gray-600">
+                <ul className="space-y-2 text-sm text-gray-600 mb-4">
                   <li className="flex items-center">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                     Avatar AI chuyên nghiệp
@@ -240,6 +325,12 @@ export default function HomePage() {
                     Chatbot thông minh
                   </li>
                 </ul>
+                <Link href="/ai-representative">
+                  <Button className="w-full bg-pink-600 hover:bg-pink-700 group-hover:bg-pink-700">
+                    Tạo AI Avatar
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </div>
@@ -606,22 +697,22 @@ export default function HomePage() {
               <h4 className="font-semibold mb-4">Sản phẩm</h4>
               <ul className="space-y-2 text-gray-400">
                 <li>
-                  <Link href="#" className="hover:text-white transition-colors">
+                  <Link href="/brand-analysis" className="hover:text-white transition-colors">
                     Phân tích thương hiệu
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-white transition-colors">
+                  <Link href="/content-creation" className="hover:text-white transition-colors">
                     Tạo nội dung AI
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-white transition-colors">
+                  <Link href="/social-accounts" className="hover:text-white transition-colors">
                     Quản lý đa nền tảng
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-white transition-colors">
+                  <Link href="/ai-representative" className="hover:text-white transition-colors">
                     AI Avatar
                   </Link>
                 </li>

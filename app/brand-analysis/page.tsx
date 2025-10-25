@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import {
   Brain,
   Target,
@@ -25,6 +26,8 @@ import {
   Share2,
   Download,
   RefreshCw,
+  ArrowLeft,
+  Home,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -56,30 +59,43 @@ export default function BrandAnalysisPage() {
                 AI Marketing Engine
               </span>
             </Link>
-            <div className="hidden md:flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-              <Button variant="ghost" size="sm" className="bg-white shadow-sm">
-                Phân tích thương hiệu
-              </Button>
-              <Link href="/content-creation">
-                <Button variant="ghost" size="sm">
-                  Tạo nội dung
-                </Button>
-              </Link>
-              <Link href="/performance-management">
-                <Button variant="ghost" size="sm">
-                  Quản lý hiệu suất
-                </Button>
-              </Link>
-              <Link href="/ai-representative">
-                <Button variant="ghost" size="sm">
-                  AI đại diện
-                </Button>
-              </Link>
-            </div>
+            
+            {/* Breadcrumb */}
+            <Breadcrumb className="hidden md:block">
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href="/" className="flex items-center">
+                      <Home className="w-4 h-4" />
+                    </Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href="/dashboard">Dashboard</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <span className="font-medium">Phân tích thương hiệu</span>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
-          <Link href="/dashboard">
-            <Button>Dashboard</Button>
-          </Link>
+          <div className="flex items-center space-x-2">
+            <Link href="/dashboard">
+              <Button variant="outline" size="sm">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Dashboard
+              </Button>
+            </Link>
+            <Link href="/content-creation">
+              <Button variant="ghost" size="sm">
+                Tạo nội dung
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
