@@ -42,6 +42,8 @@ export default function ContentCreationPage() {
   const [contentType, setContentType] = useState("social-post")
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedContent, setGeneratedContent] = useState("")
+  const [apiResult, setApiResult] = useState<any>(null)
+  const [showDebug, setShowDebug] = useState(false)
   const [publishTime, setPublishTime] = useState("immediate")
 
   // Controlled inputs to send to n8n
@@ -49,7 +51,8 @@ export default function ContentCreationPage() {
   // Khởi tạo giá trị mặc định để tránh fallback ở workflow (hiển thị rõ ràng khi chưa chọn)
   const [tone, setTone] = useState<string>("friendly")
   const [lengthPref, setLengthPref] = useState<string>("short")
-  const [platform, setPlatform] = useState<string>("facebook")
+  // Cho phép chọn nhiều nền tảng cùng lúc
+  const [platforms, setPlatforms] = useState<string[]>(["facebook"]) 
 
   const { toast } = useToast()
 
@@ -70,8 +73,14 @@ export default function ContentCreationPage() {
       return
     }
 
+    if (!platforms.length) {
+      toast({ title: "Chưa chọn nền tảng", description: "Vui lòng chọn ít nhất 1 nền tảng.", variant: "destructive" })
+      return
+    }
+
     setIsGenerating(true)
     setGeneratedContent("")
+    setApiResult(null)
     try {
       const res = await fetch("/api/content/generate/proxy", {
         method: "POST",
@@ -80,7 +89,10 @@ export default function ContentCreationPage() {
           prompt: topic,
           tone: tone || "than thien",
           length: lengthPref || "ngan",
-          platform: platform || "facebook",
+          // Giữ tương thích ngược với workflow hiện tại (chuỗi đơn)
+          platform: platforms[0] || "facebook",
+          // Truyền thêm mảng nền tảng để hỗ trợ đăng đa nền tảng
+          platforms,
         }),
       })
 
@@ -91,7 +103,9 @@ export default function ContentCreationPage() {
         return
       }
 
-      const text = data?.data?.content_text || data?.content_text || JSON.stringify(data)
+      setApiResult(data)
+
+      const text = data?.data?.content_text || data?.content_text || data?.draft || JSON.stringify(data)
       setGeneratedContent(text || "")
       toast({ title: "Đã tạo nội dung", description: "Nội dung đã sẵn sàng ở khung bên phải." })
     } catch (e: any) {
@@ -101,6 +115,19 @@ export default function ContentCreationPage() {
       setIsGenerating(false)
     }
   }
+
+  // Helpers
+  function extractHashtags(source: any, fallbackText: string): string[] {
+    if (Array.isArray(source)) return source.filter((x) => typeof x === "string")
+    if (typeof source === "string") return source.split(/\s+/).filter((s) => s.startsWith("#"))
+    // Try extract from last line of the text
+    const lines = (fallbackText || "").split(/\n+/)
+    const last = lines[lines.length - 1] || ""
+    const tags = last.split(/\s+/).filter((s) => s.startsWith("#"))
+    return tags
+  }
+
+  const hashtags: string[] = extractHashtags(apiResult?.data?.hashtags ?? apiResult?.hashtags, generatedContent)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50">
@@ -294,7 +321,7 @@ export default function ContentCreationPage() {
                       </div>
 
                       <div className="space-y-4">
-                        <Label>Nền tảng đăng bài</Label>
+                        <Label>Nền tảng đăng bài (chọn nhiều)</Label>
                         <div className="grid grid-cols-2 gap-3">
                           {[
                             { name: "Facebook", value: "facebook", icon: "f", color: "bg-blue-500" },
@@ -307,9 +334,15 @@ export default function ContentCreationPage() {
                             <button
                               type="button"
                               key={p.value}
-                              onClick={() => setPlatform(p.value)}
+                              onClick={() =>
+                                setPlatforms((prev) =>
+                                  prev.includes(p.value)
+                                    ? prev.filter((v) => v !== p.value)
+                                    : [...prev, p.value]
+                                )
+                              }
                               className={`flex items-center space-x-2 p-2 rounded border transition-colors ${
-                                platform === p.value ? "border-green-600 bg-green-50" : "border-gray-200 hover:bg-gray-50"
+                                platforms.includes(p.value) ? "border-green-600 bg-green-50" : "border-gray-200 hover:bg-gray-50"
                               }`}
                             >
                               <div className={`w-6 h-6 ${p.color} rounded text-white text-xs flex items-center justify-center`}>
@@ -319,7 +352,16 @@ export default function ContentCreationPage() {
                             </button>
                           ))}
                         </div>
-                        <p className="text-xs text-gray-500">Đang chọn: <span className="font-medium">{platform}</span></p>
+                        <div className="text-xs text-gray-500 flex items-center gap-2 flex-wrap">
+                          <span>Đang chọn:</span>
+                          {platforms.length === 0 ? (
+                            <span className="font-medium">Chưa chọn</span>
+                          ) : (
+                            platforms.map((pf) => (
+                              <span key={pf} className="px-2 py-0.5 rounded-full bg-green-100 text-green-700">{pf}</span>
+                            ))
+                          )}
+                        </div>
                       </div>
 
                       
@@ -354,10 +396,10 @@ export default function ContentCreationPage() {
                         </span>
                         {generatedContent && (
                           <div className="flex space-x-2">
-                            <Button size="sm" variant="outline">
+                            <Button size="sm" variant="outline" onClick={() => navigator.clipboard?.writeText(generatedContent)}>
                               <Copy className="w-4 h-4" />
                             </Button>
-                            <Button size="sm" variant="outline">
+                            <Button size="sm" variant="outline" onClick={() => setShowDebug((s) => !s)}>
                               <Edit className="w-4 h-4" />
                             </Button>
                           </div>
@@ -375,9 +417,32 @@ export default function ContentCreationPage() {
                         </div>
                       ) : generatedContent ? (
                         <div className="space-y-4">
-                          <div className="bg-gray-50 rounded-lg p-4">
-                            <pre className="whitespace-pre-wrap text-sm">{generatedContent}</pre>
+                          {/* Pretty preview */}
+                          <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                            {/* Content */}
+                            <div className="text-sm leading-6 whitespace-pre-wrap">
+                              {generatedContent}
+                            </div>
+
+                            {hashtags && hashtags.length > 0 && (
+                              <div className="pt-2 flex flex-wrap gap-2">
+                                {hashtags.map((tag) => (
+                                  <Badge key={tag} variant="outline" className="bg-white">{tag}</Badge>
+                                ))}
+                                <Button size="sm" variant="outline" className="ml-auto"
+                                  onClick={() => navigator.clipboard?.writeText(hashtags.join(" "))}>
+                                  <Copy className="w-4 h-4 mr-2" /> Copy hashtags
+                                </Button>
+                              </div>
+                            )}
                           </div>
+
+                          {/* Raw JSON (debug) */}
+                          {showDebug && (
+                            <div className="bg-white border rounded-lg p-3">
+                              <pre className="text-xs overflow-auto max-h-60">{JSON.stringify(apiResult, null, 2)}</pre>
+                            </div>
+                          )}
 
                           {/* Content Analytics Preview */}
                           <div className="grid grid-cols-3 gap-4 pt-4 border-t">
