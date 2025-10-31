@@ -50,6 +50,8 @@ model Content {
   id          String      @id @default(cuid())
   title       String
   content     String
+  hashtags    String[]   @default([])
+  platforms   String[]   @default([])
   type        ContentType
   status      ContentStatus @default(DRAFT)
   scheduledAt DateTime?

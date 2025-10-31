@@ -116,6 +116,35 @@ export default function ContentCreationPage() {
     }
   }
 
+  const handleSaveDraft = async () => {
+    if (!generatedContent.trim()) {
+      toast({ title: "Chưa có nội dung", description: "Hãy tạo nội dung trước khi lưu nháp.", variant: "destructive" })
+      return
+    }
+    try {
+      const title = generatedContent.split(/\n+/)[0]?.slice(0, 80) || "Bản nháp"
+      const res = await fetch("/api/drafts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          content_text: generatedContent,
+          hashtags: hashtags,
+          platforms,
+        }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        toast({ title: "Lưu nháp thất bại", description: data?.error || "Không lưu được vào DB.", variant: "destructive" })
+        return
+      }
+      toast({ title: "Đã lưu bản nháp", description: "Xem tại mục Archive → Bản nháp." })
+    } catch (e) {
+      console.error(e)
+      toast({ title: "Lỗi", description: "Không gọi được API drafts.", variant: "destructive" })
+    }
+  }
+
   // Helpers
   function extractHashtags(source: any, fallbackText: string): string[] {
     if (Array.isArray(source)) return source.filter((x) => typeof x === "string")
@@ -417,24 +446,14 @@ export default function ContentCreationPage() {
                         </div>
                       ) : generatedContent ? (
                         <div className="space-y-4">
-                          {/* Pretty preview */}
-                          <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                            {/* Content */}
-                            <div className="text-sm leading-6 whitespace-pre-wrap">
-                              {generatedContent}
-                            </div>
-
-                            {hashtags && hashtags.length > 0 && (
-                              <div className="pt-2 flex flex-wrap gap-2">
-                                {hashtags.map((tag) => (
-                                  <Badge key={tag} variant="outline" className="bg-white">{tag}</Badge>
-                                ))}
-                                <Button size="sm" variant="outline" className="ml-auto"
-                                  onClick={() => navigator.clipboard?.writeText(hashtags.join(" "))}>
-                                  <Copy className="w-4 h-4 mr-2" /> Copy hashtags
-                                </Button>
-                              </div>
-                            )}
+                          {/* Editable content */}
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <Textarea
+                              rows={14}
+                              value={generatedContent}
+                              onChange={(e) => setGeneratedContent(e.target.value)}
+                              className="w-full text-sm leading-6"
+                            />
                           </div>
 
                           {/* Raw JSON (debug) */}
@@ -444,23 +463,16 @@ export default function ContentCreationPage() {
                             </div>
                           )}
 
-                          {/* Content Analytics Preview */}
-                          <div className="grid grid-cols-3 gap-4 pt-4 border-t">
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-green-600">8.5/10</div>
-                              <div className="text-xs text-gray-600">Engagement Score</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-blue-600">92%</div>
-                              <div className="text-xs text-gray-600">Brand Match</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-purple-600">156</div>
-                              <div className="text-xs text-gray-600">Từ</div>
-                            </div>
-                          </div>
+                          {/* Removed analytics preview (Engagement/Brand/Words) per request */}
 
                           <div className="flex space-x-2 pt-4">
+                            <Button
+                              variant="outline"
+                              className="flex-1 bg-transparent"
+                              onClick={handleSaveDraft}
+                            >
+                              Lưu nháp
+                            </Button>
                             <Button
                               className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600"
                               onClick={() => {
