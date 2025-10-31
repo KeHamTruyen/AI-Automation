@@ -38,8 +38,9 @@ export async function middleware(request: NextRequest) {
       // Verify JWT token
       const { payload } = await jwtVerify(token, JWT_SECRET)
 
-      // Kiểm tra admin route
-      if (isAdminRoute && payload.role !== "admin") {
+      // Kiểm tra admin route (chuẩn hoá role về lowercase để tránh sai lệch ADMIN/admin)
+      const role = String((payload as any).role ?? "").toLowerCase()
+      if (isAdminRoute && role !== "admin") {
         return NextResponse.redirect(new URL("/dashboard", request.url))
       }
 
