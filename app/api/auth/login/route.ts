@@ -33,12 +33,35 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: "Email hoặc password không đúng" }, { status: 401 })
       }
 
-      // Kiểm tra password (tạm thời dùng plain text, sau này sẽ dùng bcrypt)
-      const isPasswordValid = password === user.password // Temporary plain text check
-      // const isPasswordValid = await bcrypt.compare(password, user.password) // Use this for hashed passwords
+      // Kiểm tra password: hỗ trợ cả hashed (bcrypt) và nâng cấp từ plain-text nếu gặp dữ liệu cũ
+      let isPasswordValid = false
+      const storedPassword = user.password || ""
+      const looksHashed = storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$")
+      if (looksHashed) {
+        isPasswordValid = await bcrypt.compare(password, storedPassword)
+      } else {
+        // Plain-text legacy mode
+        isPasswordValid = password === storedPassword
+        if (isPasswordValid) {
+          // Nâng cấp lên bcrypt để bảo mật tốt hơn (best-effort, không chặn đăng nhập nếu lỗi hash)
+          try {
+            const hashed = await bcrypt.hash(password, 10)
+            await prisma.user.update({ where: { id: user.id }, data: { password: hashed } })
+          } catch (e) {
+            console.warn("Password upgrade to bcrypt failed:", e)
+          }
+        }
+      }
 
       if (!isPasswordValid) {
         return NextResponse.json({ success: false, error: "Email hoặc password không đúng" }, { status: 401 })
+      }
+
+      // Cảnh báo nếu thiếu JWT_SECRET trong production
+      if (
+        process.env.NODE_ENV === "production" && (!process.env.JWT_SECRET || process.env.JWT_SECRET === "your-secret-key")
+      ) {
+        console.warn("[Auth] Weak or missing JWT_SECRET in production environment.")
       }
 
       // Tạo JWT token
