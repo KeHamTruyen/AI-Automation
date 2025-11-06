@@ -216,7 +216,36 @@ Xem [`AI-Prompt-Usage-Guide.md`](./AI-Prompt-Usage-Guide.md) để học:
 - Content management: `/api/content/*`
 - Social accounts: `/api/social-accounts/*`
 
-## 🐛 Troubleshooting
+## 🔄 n8n Per-User Workflows
+
+This project can provision a dedicated n8n workflow and credential per connected social account. Ensure these environment variables are set in `.env.local` and restart the dev server:
+
+- `N8N_API_BASE_URL` e.g. `http://localhost:5678/api/v1` (Public API base; use `/api/v1` for API key auth)
+- `N8N_API_KEY` your n8n API key (Settings → API)
+- `N8N_BASE_URL` e.g. `http://localhost:5678` (used to build webhook URLs)
+- `N8N_TEMPLATE_WORKFLOW_ID` the workflow ID of the template to clone for each user
+
+Provisioning endpoint: `POST /api/integrations/n8n/provision`
+
+Payloads:
+
+- Token mode
+  - `{ platform, name, username, mode: "token", accessToken }`
+- BYO mode (client credentials only)
+  - `{ platform, name, username, mode: "byo", clientId, clientSecret }`
+
+Notes:
+
+- BYO currently stores client_id/client_secret in an n8n credential but does not run OAuth token exchange yet.
+- If you see 401/500 errors when provisioning, verify env vars and that `N8N_API_BASE_URL` points to the Public API (`/api/v1`). Using `/rest` with API keys typically yields 401 unless session cookies are present.
+
+### OAuth follow-up (next steps)
+
+- Add OAuth start/callback routes per platform to complete authorization.
+- Exchange client credentials for access/refresh tokens and store them securely (prefer n8n credentials with encryption).
+- Update the per-user workflow to use platform-specific nodes/credentials when available.
+
+## �🐛 Troubleshooting
 
 ### **Common Issues**
 

@@ -32,6 +32,12 @@ model SocialAccount {
   name        String
   username    String
   accessToken String?
+  // n8n per-user provisioning metadata (Approach B)
+  n8nCredentialId   String?
+  n8nCredentialName String?
+  n8nWorkflowId     String?
+  n8nWorkflowName   String?
+  n8nWebhookUrl     String?
   status      AccountStatus @default(ACTIVE)
   followers   Int      @default(0)
   createdAt   DateTime @default(now())

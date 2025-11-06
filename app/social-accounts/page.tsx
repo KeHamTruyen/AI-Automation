@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -66,6 +66,7 @@ interface SocialAccount {
   engagement: number
   posts: number
   avatar: string
+  n8nWebhookUrl?: string | null
 }
 
 const platformConfig = {
@@ -77,52 +78,41 @@ const platformConfig = {
 }
 
 export default function SocialAccountsPage() {
-  const [accounts, setAccounts] = useState<SocialAccount[]>([
-    {
-      id: "1",
-      platform: "facebook",
-      name: "Công ty ABC",
-      username: "@congtyabc",
-      followers: 15420,
-      isActive: true,
-      status: "connected",
-      lastSync: "2024-01-15T10:30:00Z",
-      engagement: 85,
-      posts: 142,
-      avatar: "/placeholder-user.jpg",
-    },
-    {
-      id: "2",
-      platform: "instagram",
-      name: "ABC Company",
-      username: "@abc_company",
-      followers: 8750,
-      isActive: true,
-      status: "connected",
-      lastSync: "2024-01-15T09:15:00Z",
-      engagement: 92,
-      posts: 89,
-      avatar: "/placeholder-user.jpg",
-    },
-    {
-      id: "3",
-      platform: "twitter",
-      name: "ABC Corp",
-      username: "@abccorp",
-      followers: 5230,
-      isActive: false,
-      status: "error",
-      lastSync: "2024-01-14T16:45:00Z",
-      engagement: 67,
-      posts: 234,
-      avatar: "/placeholder-user.jpg",
-    },
-  ])
+  const [accounts, setAccounts] = useState<SocialAccount[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [provLoading, setProvLoading] = useState(false)
+  const [provPlatform, setProvPlatform] = useState<string>("")
+  const [provName, setProvName] = useState("")
+  const [provUsername, setProvUsername] = useState("")
+  const [provMode, setProvMode] = useState<"token" | "byo">("token")
+  const [provAccessToken, setProvAccessToken] = useState("")
+  const [provClientId, setProvClientId] = useState("")
+  const [provClientSecret, setProvClientSecret] = useState("")
+  const [provResult, setProvResult] = useState<{ webhookUrl?: string } | null>(null)
   const [selectedAccount, setSelectedAccount] = useState<SocialAccount | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [syncingAccounts, setSyncingAccounts] = useState<Set<string>>(new Set())
+
+  async function loadAccounts() {
+    try {
+      setLoading(true)
+      const res = await fetch("/api/social-accounts", { cache: "no-store" })
+      const data = await res.json()
+      if (!res.ok || !data?.success) throw new Error(data?.error || "Không tải được danh sách tài khoản")
+      setAccounts(data.data || [])
+    } catch (e: any) {
+      console.error(e)
+      toast.error(e?.message || "Lỗi tải danh sách tài khoản")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadAccounts()
+  }, [])
 
   const totalFollowers = accounts.reduce((sum, account) => sum + account.followers, 0)
   const activeAccounts = accounts.filter((account) => account.isActive).length
@@ -157,8 +147,28 @@ export default function SocialAccountsPage() {
   }
 
   const handleDeleteAccount = async (accountId: string) => {
-    setAccounts((prev) => prev.filter((account) => account.id !== accountId))
-    toast.success("Xóa tài khoản thành công")
+    try {
+      // Deprovision n8n resources and clear metadata first
+      const res = await fetch(`/api/integrations/n8n/provision?socialAccountId=${encodeURIComponent(accountId)}`, {
+        method: "DELETE",
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || data?.success === false) {
+        // Not fatal: still try to delete the account locally
+        console.warn("Deprovision failed or partial:", data?.error)
+      }
+      // Remove the account from DB entirely
+      const del = await fetch(`/api/social-accounts/${encodeURIComponent(accountId)}`, { method: "DELETE" })
+      if (!del.ok) {
+        const j = await del.json().catch(() => ({}))
+        throw new Error(j?.error || "Xóa tài khoản thất bại")
+      }
+      await loadAccounts()
+      toast.success("Xóa tài khoản thành công")
+    } catch (e: any) {
+      console.error(e)
+      toast.error(e?.message || "Không thể xóa tài khoản")
+    }
   }
 
   const formatNumber = (num: number) => {
@@ -214,7 +224,20 @@ export default function SocialAccountsPage() {
             <p className="text-muted-foreground">Quản lý và theo dõi các tài khoản mạng xã hội đã liên kết</p>
           </div>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+          setIsAddDialogOpen(open)
+          if (!open) {
+            setProvPlatform("")
+            setProvName("")
+            setProvUsername("")
+            setProvMode("token")
+            setProvAccessToken("")
+            setProvClientId("")
+            setProvClientSecret("")
+            setProvResult(null)
+            setProvLoading(false)
+          }
+        }}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -224,28 +247,116 @@ export default function SocialAccountsPage() {
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Thêm tài khoản mạng xã hội</DialogTitle>
-              <DialogDescription>Chọn nền tảng mạng xã hội bạn muốn kết nối</DialogDescription>
+              <DialogDescription>Nhập thông tin để kết nối và provision workflow trên n8n</DialogDescription>
             </DialogHeader>
-            <div className="grid grid-cols-2 gap-4 py-4">
-              {Object.entries(platformConfig).map(([platform, config]) => {
-                const Icon = config.icon
-                return (
-                  <Button
-                    key={platform}
-                    variant="outline"
-                    className="h-20 flex-col space-y-2 bg-transparent"
-                    onClick={() => {
-                      toast.success(`Đang kết nối với ${config.name}...`)
-                      setIsAddDialogOpen(false)
-                    }}
-                  >
-                    <div className={`p-2 rounded-lg ${config.color}`}>
-                      <Icon className="h-6 w-6 text-white" />
-                    </div>
-                    <span className="text-sm">{config.name}</span>
-                  </Button>
-                )
-              })}
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>Chế độ kết nối</Label>
+                <Select value={provMode} onValueChange={(v: string) => setProvMode(v as 'token' | 'byo')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn chế độ" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="token">Dùng Access Token</SelectItem>
+                    <SelectItem value="byo">BYO Client ID/Secret</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Nền tảng</Label>
+                <Select value={provPlatform} onValueChange={setProvPlatform}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn nền tảng" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="facebook">Facebook</SelectItem>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="twitter">Twitter / X</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="acc-name">Tên hiển thị</Label>
+                <Input id="acc-name" value={provName} onChange={(e) => setProvName(e.target.value)} placeholder="VD: Fanpage Công ty" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="acc-username">Username</Label>
+                <Input id="acc-username" value={provUsername} onChange={(e) => setProvUsername(e.target.value)} placeholder="VD: @company_page" />
+              </div>
+              {provMode === "token" ? (
+                <div className="space-y-2">
+                  <Label htmlFor="acc-token">Access Token (tạm thời cho POC)</Label>
+                  <Input id="acc-token" value={provAccessToken} onChange={(e) => setProvAccessToken(e.target.value)} placeholder="Dán token nền tảng ở đây" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="client-id">Client ID</Label>
+                    <Input id="client-id" value={provClientId} onChange={(e) => setProvClientId(e.target.value)} placeholder="Nhập Client ID" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="client-secret">Client Secret</Label>
+                    <Input id="client-secret" type="password" value={provClientSecret} onChange={(e) => setProvClientSecret(e.target.value)} placeholder="Nhập Client Secret" />
+                  </div>
+                  <div className="col-span-1 md:col-span-2 text-xs text-muted-foreground">
+                    Lưu ý: BYO sẽ lưu cặp Client ID/Secret vào credential trong n8n. Việc trao đổi token OAuth chưa được thực hiện trong bước này.
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center justify-between gap-2">
+                <Button
+                  className="w-full"
+                  disabled={provLoading}
+                  onClick={async () => {
+                    if (!provPlatform || !provName || !provUsername) {
+                      toast.error("Vui lòng điền đủ thông tin")
+                      return
+                    }
+                    if (provMode === 'token' && !provAccessToken) {
+                      toast.error("Thiếu access token")
+                      return
+                    }
+                    if (provMode === 'byo' && (!provClientId || !provClientSecret)) {
+                      toast.error("Thiếu Client ID/Secret")
+                      return
+                    }
+                    setProvLoading(true)
+                    setProvResult(null)
+                    try {
+                      const res = await fetch("/api/integrations/n8n/provision", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(
+                          provMode === 'token'
+                            ? { platform: provPlatform, name: provName, username: provUsername, accessToken: provAccessToken, mode: 'token' }
+                            : { platform: provPlatform, name: provName, username: provUsername, mode: 'byo', clientId: provClientId, clientSecret: provClientSecret }
+                        ),
+                      })
+                      const data = await res.json()
+                      if (!res.ok || !data?.success) {
+                        throw new Error(data?.error || "Provision thất bại")
+                      }
+                      const webhookUrl = data?.data?.socialAccount?.n8nWebhookUrl
+                      setProvResult({ webhookUrl })
+                      toast.success("Kết nối & provision thành công")
+                      // Reload list from backend
+                      await loadAccounts()
+                    } catch (e: any) {
+                      console.error(e)
+                      toast.error(e?.message || "Provision thất bại")
+                    } finally {
+                      setProvLoading(false)
+                    }
+                  }}
+                >
+                  {provLoading ? "Đang kết nối..." : "Kết nối"}
+                </Button>
+              </div>
+              {provResult?.webhookUrl && (
+                <div className="text-sm text-muted-foreground">
+                  Webhook riêng của tài khoản: <span className="break-all font-mono">{provResult.webhookUrl}</span>
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>
@@ -302,7 +413,14 @@ export default function SocialAccountsPage() {
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Danh sách tài khoản</h2>
 
-        {accounts.length === 0 ? (
+        {loading ? (
+          <Card className="p-12 text-center">
+            <div className="space-y-2">
+              <div className="text-lg font-medium">Đang tải dữ liệu...</div>
+              <p className="text-muted-foreground">Vui lòng đợi trong giây lát</p>
+            </div>
+          </Card>
+        ) : accounts.length === 0 ? (
           <Card className="p-12 text-center">
             <div className="space-y-4">
               <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center">
@@ -370,8 +488,13 @@ export default function SocialAccountsPage() {
                     </div>
 
                     {/* Last Sync */}
-                    <div className="text-xs text-muted-foreground">
-                      Đồng bộ lần cuối: {formatDate(account.lastSync)}
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <div>Đồng bộ lần cuối: {formatDate(account.lastSync)}</div>
+                      {account.n8nWebhookUrl && (
+                        <div className="truncate">
+                          Webhook: <span title={account.n8nWebhookUrl} className="font-mono">{account.n8nWebhookUrl}</span>
+                        </div>
+                      )}
                     </div>
 
                     <Separator />
