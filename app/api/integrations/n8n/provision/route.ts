@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { jwtVerify } from "jose"
 import { prisma } from "@/lib/prisma"
-import { createHttpHeaderBearerCredential, createBasicAuthCredential, cloneWorkflowFromTemplate } from "@/lib/n8n"
+import { createHttpHeaderBearerCredential, createBasicAuthCredential, createTwitterOAuth2Credential, createFacebookGraphApiCredential, cloneWorkflowFromTemplate } from "@/lib/n8n"
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key")
 
@@ -72,11 +72,20 @@ export async function POST(request: NextRequest) {
 
     // 2) Tạo n8n Credential theo mode
     let credential
-    let credentialType: 'httpBasicAuth' | 'httpHeaderAuth'
+    let credentialType: 'httpBasicAuth' | 'httpHeaderAuth' | 'twitterOAuth2Api' | 'facebookGraphApi'
     if (useByo) {
       const credName = `client-${platform}-${userId}-${Date.now()}`
-      credential = await createBasicAuthCredential(credName, clientId!, clientSecret!)
-      credentialType = 'httpBasicAuth'
+      if (platform === 'twitter' || platform === 'x') {
+        credential = await createTwitterOAuth2Credential(credName, clientId!, clientSecret!)
+        credentialType = 'twitterOAuth2Api'
+      } else if (platform === 'facebook') {
+        credential = await createFacebookGraphApiCredential(credName, clientId!, clientSecret!)
+        credentialType = 'facebookGraphApi'
+      } else {
+        // Fallback to basic auth shell for unsupported platforms; user can switch later
+        credential = await createBasicAuthCredential(credName, clientId!, clientSecret!)
+        credentialType = 'httpBasicAuth'
+      }
     } else {
       const credName = `bearer-${platform}-${userId}-${Date.now()}`
       credential = await createHttpHeaderBearerCredential(credName, accessToken!)
@@ -105,7 +114,8 @@ export async function POST(request: NextRequest) {
       } as any,
     })
 
-  return NextResponse.json({ success: true, data: { socialAccount: updated, mode: useByo ? 'byo' : 'token' } })
+  const connectUrl = process.env.N8N_BASE_URL ? `${process.env.N8N_BASE_URL.replace(/\/$/, '')}/credentials/${updated.n8nCredentialId}` : undefined
+  return NextResponse.json({ success: true, data: { socialAccount: updated, mode: useByo ? 'byo' : 'token', connectUrl, oauthNeeded: useByo } })
   } catch (error: any) {
     console.error("[n8n provision] error:", error)
     const message = process.env.NODE_ENV !== 'production' && error?.message

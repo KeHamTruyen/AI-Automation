@@ -74,6 +74,61 @@ export async function createBasicAuthCredential(name: string, username: string, 
   return created
 }
 
+// Create Twitter OAuth2 credential shell to be used with Twitter node (user must authorize it in n8n UI)
+export async function createTwitterOAuth2Credential(
+  name: string,
+  clientId: string,
+  clientSecret: string,
+  scope?: string
+): Promise<N8NCredential> {
+  // Some n8n versions (>=1.40+) validate credential schema strictly.
+  // Error you saw: additional property "scope"; requires sendAdditionalBodyProperties & additionalBodyProperties.
+  // We'll send only permitted core fields and required flags. (Scope can be chosen later via UI OAuth if supported.)
+  const data: Record<string, any> = {
+    clientId,
+    clientSecret,
+    sendAdditionalBodyProperties: false,
+    additionalBodyProperties: {},
+  }
+  // Include scope only if provided AND not empty (some versions still allow it). We can feature-detect later if needed.
+  if (scope) {
+    data.scope = scope
+  }
+  const body = {
+    name,
+    type: 'twitterOAuth2Api',
+    data,
+  }
+  const created = await n8nRequest<N8NCredential>('/credentials', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+  return created
+}
+
+// Create Facebook Graph API credential shell (app-level). User must finish connecting/selecting page in n8n UI.
+export async function createFacebookGraphApiCredential(
+  name: string,
+  appId: string,
+  appSecret: string
+): Promise<N8NCredential> {
+  const body = {
+    name,
+    type: 'facebookGraphApi',
+    data: {
+      appId,
+      appSecret,
+      sendAdditionalBodyProperties: false,
+      additionalBodyProperties: {},
+    },
+  }
+  const created = await n8nRequest<N8NCredential>('/credentials', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+  return created
+}
+
 export async function deleteCredential(id: string): Promise<void> {
   await n8nRequest(`/credentials/${id}`, { method: 'DELETE' })
 }
@@ -155,6 +210,33 @@ export async function cloneWorkflowFromTemplate(opts: {
           node.credentials[credKey] = {
             id: opts.credentialId,
             name: opts.credentialName,
+          }
+        }
+      }
+      // Attach native credentials (twitter/facebook) to their nodes when present in template
+      const nativeTypes = ['twitterOAuth2Api', 'facebookGraphApi']
+      const credIsNative = nativeTypes.includes(String(opts.credentialType))
+      if (credIsNative) {
+        const platformHint = String(opts.platform || '').toLowerCase()
+        const nodeType = String(node.type || '').toLowerCase()
+        const looksRelevant = nodeType.includes(platformHint) || (node.credentials && (opts.credentialType! in (node.credentials || {})))
+        if (looksRelevant) {
+          node.credentials = node.credentials || {}
+          node.credentials[opts.credentialType!] = {
+            id: opts.credentialId,
+            name: opts.credentialName,
+          }
+        }
+
+        // Disable irrelevant platform posting nodes so n8n doesn't block activation due to missing credentials
+        // Example: when provisioning Twitter, disable Facebook node; when provisioning Facebook, disable Twitter node.
+        if (platformHint === 'twitter') {
+          if (nodeType.includes('facebook')) {
+            node.disabled = true
+          }
+        } else if (platformHint === 'facebook') {
+          if (nodeType.includes('twitter')) {
+            node.disabled = true
           }
         }
       }

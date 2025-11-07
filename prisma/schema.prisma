@@ -92,6 +92,23 @@ model Analytics {
   @@map("analytics")
 }
 
+// Logs for n8n workflow executions per social account
+model ExecutionLog {
+  id               String          @id @default(cuid())
+  socialAccountId  String
+  socialAccount    SocialAccount   @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  workflowId       String?
+  executionId      String?
+  status           ExecutionStatus @default(SUCCESS)
+  request          Json?
+  response         Json?
+  errorMessage     String?
+  createdAt        DateTime        @default(now())
+
+  @@index([socialAccountId, createdAt])
+  @@map("execution_logs")
+}
+
 enum Role {
   USER
   ADMIN
@@ -116,4 +133,9 @@ enum ContentStatus {
   SCHEDULED
   PUBLISHED
   ARCHIVED
+}
+
+enum ExecutionStatus {
+  SUCCESS
+  FAIL
 }

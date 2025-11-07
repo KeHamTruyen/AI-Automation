@@ -1,5 +1,5 @@
 {
-  "name": "Per-User Post via Webhook (Template - Native Nodes)",
+  "name": "Per-User Post via Webhook (Template - IF Variant)",
   "nodes": [
     {
       "parameters": {
@@ -15,7 +15,7 @@
     },
     {
       "parameters": {
-        "functionCode": "// Validate and normalize input\nconst body = items[0].json || {};\nconst content = body.content_text || body.content || '';\nlet platform = (body.platform || '').toLowerCase();\n// Map aliases\nif (platform === 'x') platform = 'twitter';\nif (!content || !platform) {\n  return [{ json: { success: false, error: 'Missing content_text or platform' } }];\n}\n// Optional: media URLs\nconst media = Array.isArray(body.media) ? body.media : (body.media ? [body.media] : []);\nreturn [{ json: { content_text: content, platform, media, raw: body } }];"
+        "functionCode": "// Validate and normalize input\nconst body = items[0].json || {};\nconst content = body.content_text || body.content || '';\nlet platform = (body.platform || '').toLowerCase();\nif (platform === 'x') platform = 'twitter';\nif (!content || !platform) {\n  return [{ json: { success: false, error: 'Missing content_text or platform' } }];\n}\nconst media = Array.isArray(body.media) ? body.media : (body.media ? [body.media] : []);\nreturn [{ json: { content_text: content, platform, media, raw: body } }];"
       },
       "name": "Validate / Normalize",
       "type": "n8n-nodes-base.function",
@@ -24,17 +24,37 @@
     },
     {
       "parameters": {
-        "dataType": "string",
-        "value1": "={{$json.platform}}",
-        "switches": [
-          { "value": "twitter" },
-          { "value": "facebook" }
-        ]
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.platform}}",
+              "operation": "equal",
+              "value2": "twitter"
+            }
+          ]
+        }
       },
-      "name": "Route Platform",
-      "type": "n8n-nodes-base.switch",
+      "name": "IF Twitter",
+      "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [780, 250]
+      "position": [780, 150]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.platform}}",
+              "operation": "equal",
+              "value2": "facebook"
+            }
+          ]
+        }
+      },
+      "name": "IF Facebook",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [780, 350]
     },
     {
       "parameters": {
@@ -72,7 +92,7 @@
     },
     {
       "parameters": {
-        "functionCode": "// Normalize result\nconst res = items[0].json || {};\n// Try common id fields\nconst id = res.id || res.externalPostId || res.data?.id || null;\nreturn [{ json: { success: true, externalPostId: id, raw: res } }];"
+        "functionCode": "// Normalize result\nconst res = items[0].json || {};\nconst id = res.id || res.externalPostId || res.data?.id || null;\nreturn [{ json: { success: true, externalPostId: id, raw: res } }];"
       },
       "name": "Normalize Result",
       "type": "n8n-nodes-base.function",
@@ -92,23 +112,24 @@
   ],
   "connections": {
     "Inbound Post (Webhook)": {
-      "main": [
-        [
-          {
-            "node": "Validate / Normalize",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": [ [ { "node": "Validate / Normalize", "type": "main", "index": 0 } ] ]
     },
     "Validate / Normalize": {
-      "main": [ [ { "node": "Route Platform", "type": "main", "index": 0 } ] ]
+      "main": [
+        [ { "node": "IF Twitter", "type": "main", "index": 0 } ],
+        [ { "node": "IF Facebook", "type": "main", "index": 0 } ]
+      ]
     },
-    "Route Platform": {
+    "IF Twitter": {
       "main": [
         [ { "node": "Post Tweet", "type": "main", "index": 0 } ],
-        [ { "node": "Post Facebook Page", "type": "main", "index": 0 } ]
+        [ ]
+      ]
+    },
+    "IF Facebook": {
+      "main": [
+        [ { "node": "Post Facebook Page", "type": "main", "index": 0 } ],
+        [ ]
       ]
     },
     "Post Tweet": {
@@ -118,15 +139,7 @@
       "main": [ [ { "node": "Normalize Result", "type": "main", "index": 0 } ] ]
     },
     "Normalize Result": {
-      "main": [
-        [
-          {
-            "node": "Respond",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": [ [ { "node": "Respond", "type": "main", "index": 0 } ] ]
     }
   },
   "active": false,

@@ -45,6 +45,9 @@ export default function ContentCreationPage() {
   const [apiResult, setApiResult] = useState<any>(null)
   const [showDebug, setShowDebug] = useState(false)
   const [publishTime, setPublishTime] = useState("immediate")
+  // Publishing state
+  const [isPublishing, setIsPublishing] = useState(false)
+  const [publishResults, setPublishResults] = useState<{ platform: string; ok: boolean; error?: string; externalPostId?: string }[]>([])
 
   // Controlled inputs to send to n8n
   const [topic, setTopic] = useState("")
@@ -157,6 +160,84 @@ export default function ContentCreationPage() {
   }
 
   const hashtags: string[] = extractHashtags(apiResult?.data?.hashtags ?? apiResult?.hashtags, generatedContent)
+
+  // Publish immediately to provisioned social account workflows (native n8n nodes)
+  const handlePublishNow = async () => {
+    if (!generatedContent.trim()) {
+      toast({ title: "Chưa có nội dung", description: "Hãy tạo nội dung trước khi đăng.", variant: "destructive" })
+      return
+    }
+    if (!platforms.length) {
+      toast({ title: "Chưa chọn nền tảng", description: "Chọn ít nhất một nền tảng để đăng.", variant: "destructive" })
+      return
+    }
+    setIsPublishing(true)
+    setPublishResults([])
+    try {
+      // Lấy danh sách tài khoản đã provision (có webhook riêng)
+      const accountsRes = await fetch(`/api/social-accounts`, { cache: "no-store" })
+      const accountsJson = await accountsRes.json().catch(() => ({}))
+      const accountList: Array<{ platform: string; n8nWebhookUrl?: string | null }> = accountsJson?.data || []
+
+      // Map platform -> webhook URL (chỉ lấy những cái đã có)
+      const platformWebhookMap: Record<string, string> = {}
+      for (const acc of accountList) {
+        const p = (acc.platform || '').toLowerCase()
+        if (acc.n8nWebhookUrl && !platformWebhookMap[p]) {
+          platformWebhookMap[p] = acc.n8nWebhookUrl
+        }
+      }
+
+      // Chuẩn bị payload cơ bản
+      const basePayload = {
+        content_text: generatedContent,
+        hashtags,
+        // Giữ field platform riêng từng lần gửi; gửi thêm mảng đầy đủ để workflow có thể mở rộng đa nền tảng sau này
+        platforms,
+        media: [], // TODO: gắn URLs nếu có
+      }
+
+      // Thực hiện gửi song song tới từng nền tảng được chọn
+      const results: { platform: string; ok: boolean; error?: string; externalPostId?: string }[] = []
+      await Promise.all(platforms.map(async (pfRaw) => {
+        const pf = pfRaw.toLowerCase()
+        const webhook = platformWebhookMap[pf]
+        if (!webhook) {
+          results.push({ platform: pfRaw, ok: false, error: 'Chưa provision hoặc thiếu webhook.' })
+          return
+        }
+        try {
+          const res = await fetch(webhook, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...basePayload, platform: pf })
+          })
+          let data: any = null
+          try { data = await res.json() } catch { /* ignore */ }
+          if (!res.ok) {
+            results.push({ platform: pfRaw, ok: false, error: data?.error || `HTTP ${res.status}` })
+            return
+          }
+          const externalId = data?.externalPostId || data?.data?.externalPostId || data?.id || null
+          results.push({ platform: pfRaw, ok: true, externalPostId: externalId || undefined })
+        } catch (e: any) {
+          results.push({ platform: pfRaw, ok: false, error: e?.message || 'Fetch error' })
+        }
+      }))
+      setPublishResults(results)
+      const successCount = results.filter(r => r.ok).length
+      const failCount = results.length - successCount
+      if (successCount) {
+        toast({ title: 'Đăng thành công', description: `${successCount} nền tảng ok${failCount ? `, ${failCount} lỗi` : ''}` })
+      } else {
+        toast({ title: 'Đăng thất bại', description: 'Không đăng được lên nền tảng nào.', variant: 'destructive' })
+      }
+    } catch (e: any) {
+      toast({ title: 'Lỗi đăng bài', description: e?.message || 'Không rõ nguyên nhân', variant: 'destructive' })
+    } finally {
+      setIsPublishing(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50">
@@ -475,13 +556,18 @@ export default function ContentCreationPage() {
                             </Button>
                             <Button
                               className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600"
-                              onClick={() => {
-                                // Handle immediate publish
-                                console.log("Publishing immediately...")
-                              }}
+                              disabled={isPublishing}
+                              onClick={handlePublishNow}
                             >
-                              <Share2 className="w-4 h-4 mr-2" />
-                              Đăng ngay
+                              {isPublishing ? (
+                                <>
+                                  <Share2 className="w-4 h-4 mr-2 animate-pulse" /> Đang đăng...
+                                </>
+                              ) : (
+                                <>
+                                  <Share2 className="w-4 h-4 mr-2" /> Đăng ngay
+                                </>
+                              )}
                             </Button>
                             <Button
                               variant="outline"
@@ -492,6 +578,19 @@ export default function ContentCreationPage() {
                               Chọn lịch đăng
                             </Button>
                           </div>
+
+                          {publishResults.length > 0 && (
+                            <div className="bg-white border rounded-lg p-3 space-y-2">
+                              <div className="font-medium text-sm">Kết quả đăng:</div>
+                              <ul className="text-xs space-y-1">
+                                {publishResults.map(r => (
+                                  <li key={r.platform} className={r.ok ? 'text-green-600' : 'text-red-600'}>
+                                    {r.platform}: {r.ok ? `OK${r.externalPostId ? ` (ID: ${r.externalPostId})` : ''}` : `Lỗi - ${r.error}`}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
 
                           {/* Schedule Modal */}
                           {showScheduleModal && (

@@ -50,6 +50,7 @@ import {
   BarChart3,
   MessageSquare,
   Heart,
+  Play,
 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -90,7 +91,7 @@ export default function SocialAccountsPage() {
   const [provAccessToken, setProvAccessToken] = useState("")
   const [provClientId, setProvClientId] = useState("")
   const [provClientSecret, setProvClientSecret] = useState("")
-  const [provResult, setProvResult] = useState<{ webhookUrl?: string } | null>(null)
+  const [provResult, setProvResult] = useState<{ webhookUrl?: string; connectUrl?: string; oauthNeeded?: boolean } | null>(null)
   const [selectedAccount, setSelectedAccount] = useState<SocialAccount | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [syncingAccounts, setSyncingAccounts] = useState<Set<string>>(new Set())
@@ -168,6 +169,25 @@ export default function SocialAccountsPage() {
     } catch (e: any) {
       console.error(e)
       toast.error(e?.message || "Không thể xóa tài khoản")
+    }
+  }
+
+  const handleTestAccount = async (account: SocialAccount) => {
+    try {
+      const res = await fetch('/api/integrations/n8n/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ socialAccountId: account.id, platform: account.platform })
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || data?.success === false) {
+        throw new Error(data?.error || `Test thất bại (${res.status})`)
+      }
+      const extId = data?.data?.externalPostId || data?.data?.id || null
+      toast.success(`Test ${account.platform} OK${extId ? ` (ID: ${extId})` : ''}`)
+    } catch (e: any) {
+      console.error(e)
+      toast.error(e?.message || `Không test được ${account.platform}`)
     }
   }
 
@@ -337,7 +357,9 @@ export default function SocialAccountsPage() {
                         throw new Error(data?.error || "Provision thất bại")
                       }
                       const webhookUrl = data?.data?.socialAccount?.n8nWebhookUrl
-                      setProvResult({ webhookUrl })
+                      const connectUrl = data?.data?.connectUrl
+                      const oauthNeeded = data?.data?.oauthNeeded
+                      setProvResult({ webhookUrl, connectUrl, oauthNeeded })
                       toast.success("Kết nối & provision thành công")
                       // Reload list from backend
                       await loadAccounts()
@@ -355,6 +377,12 @@ export default function SocialAccountsPage() {
               {provResult?.webhookUrl && (
                 <div className="text-sm text-muted-foreground">
                   Webhook riêng của tài khoản: <span className="break-all font-mono">{provResult.webhookUrl}</span>
+                </div>
+              )}
+              {provResult?.oauthNeeded && provResult?.connectUrl && (
+                <div className="text-sm text-muted-foreground">
+                  Bước tiếp theo: mở credential trong n8n để kết nối OAuth →{" "}
+                  <a className="underline" href={provResult.connectUrl} target="_blank" rel="noreferrer">Open in n8n</a>
                 </div>
               )}
             </div>
@@ -670,6 +698,15 @@ export default function SocialAccountsPage() {
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleTestAccount(account)}
+                          title="Test đăng bài qua webhook"
+                        >
+                          <Play className="h-4 w-4 text-green-600" />
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
