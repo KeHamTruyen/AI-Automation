@@ -62,7 +62,7 @@ AI Marketing Engine là một nền tảng marketing tự động hoàn chỉnh,
 
 ## 🏗️ Project Structure
 
-```
+\`\`\`
 ├── app/                          # Next.js App Router
 │   ├── api/                      # API endpoints
 │   │   ├── auth/                 # Authentication routes
@@ -82,39 +82,39 @@ AI Marketing Engine là một nền tảng marketing tự động hoàn chỉnh,
 │   └── seed.ts                   # Demo data seeding
 ├── middleware.ts                 # Route protection
 └── public/                       # Static assets
-```
+\`\`\`
 
 ## 🚀 Quick Start
 
 ### 1. **Clone Repository**
 
-```bash
+\`\`\`bash
 git clone <repository-url>
 cd AI-Automation
-```
+\`\`\`
 
 ### 2. **Install Dependencies**
 
-```bash
+\`\`\`bash
 npm install
-```
+\`\`\`
 
 ### 3. **Database Setup (Choose One)**
 
 #### 🚀 Option A: Mock Data (RECOMMENDED FOR TESTING)
 
-```bash
+\`\`\`bash
 # No database required! Set in .env:
 DATABASE_URL=""
 
 # System will automatically use mock data with demo accounts:
 # Admin: admin@company.com / admin123
 # User: user@company.com / user123
-```
+\`\`\`
 
 #### 🐘 Option B: PostgreSQL (Production Ready)
 
-```bash
+\`\`\`bash
 # 1. Install PostgreSQL
 # 2. Create database: ai_marketing_engine
 # 3. Update .env:
@@ -124,23 +124,23 @@ DATABASE_URL="postgresql://username:password@localhost:5432/ai_marketing_engine"
 npm run db:generate
 npm run db:push
 npm run db:seed
-```
+\`\`\`
 
 #### 🛠️ Option C: Auto Setup Script
 
-```bash
+\`\`\`bash
 # Windows
 setup-db.bat
 
 # Linux/macOS
 chmod +x setup-db.sh && ./setup-db.sh
-```
+\`\`\`
 
 ### 4. **Start Development Server**
 
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 🎉 **Application will be available at: http://localhost:3000**
 
@@ -160,22 +160,22 @@ npm run dev
 
 ### **Development**
 
-```bash
+\`\`\`bash
 npm run dev          # Start development server
 npm run build        # Build for production
 npm start           # Start production server
 npm run lint        # Run ESLint
-```
+\`\`\`
 
 ### **Database**
 
-```bash
+\`\`\`bash
 npm run db:generate  # Generate Prisma client
 npm run db:push      # Push schema to database (dev)
 npm run db:migrate   # Run migrations (production)
 npm run db:seed      # Seed demo data
 npm run db:studio    # Open Prisma Studio
-```
+\`\`\`
 
 ## 🗄️ Database Setup
 

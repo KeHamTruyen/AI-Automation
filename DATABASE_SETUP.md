@@ -12,37 +12,37 @@
 
 #### macOS:
 
-```bash
+\`\`\`bash
 brew install postgresql
 brew services start postgresql
-```
+\`\`\`
 
 #### Ubuntu/Linux:
 
-```bash
+\`\`\`bash
 sudo apt update
 sudo apt install postgresql postgresql-contrib
 sudo systemctl start postgresql
-```
+\`\`\`
 
 ### 2. Tạo Database
 
-```sql
+\`\`\`sql
 -- Connect to PostgreSQL as postgres user
 CREATE DATABASE ai_marketing_engine;
 CREATE USER your_username WITH PASSWORD 'your_password';
 GRANT ALL PRIVILEGES ON DATABASE ai_marketing_engine TO your_username;
-```
+\`\`\`
 
 ### 3. Cập nhật .env file
 
-```env
+\`\`\`env
 DATABASE_URL="postgresql://your_username:your_password@localhost:5432/ai_marketing_engine"
-```
+\`\`\`
 
 ### 4. Chạy Migration và Seed
 
-```bash
+\`\`\`bash
 # Generate Prisma client
 npm run db:generate
 
@@ -54,14 +54,14 @@ npm run db:migrate
 
 # Seed database with demo data
 npm run db:seed
-```
+\`\`\`
 
 ### 5. Test Database Connection
 
-```bash
+\`\`\`bash
 # Open Prisma Studio to view data
 npm run db:studio
-```
+\`\`\`
 
 ## Alternative: Quick Test with Mock Data
 
@@ -72,7 +72,7 @@ Nếu chưa setup PostgreSQL, bạn vẫn có thể test login với mock data:
 
 ## Commands Summary
 
-```bash
+\`\`\`bash
 # Database commands
 npm run db:generate  # Generate Prisma client
 npm run db:push      # Push schema to DB (dev)
@@ -84,7 +84,7 @@ npm run db:studio    # Open Prisma Studio
 npm run dev          # Start development server
 npm run build        # Build for production
 npm start           # Start production server
-```
+\`\`\`
 
 ## Troubleshooting
 

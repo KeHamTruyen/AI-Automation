@@ -14,13 +14,13 @@ Bạn cần tạo **3 Developer Apps** để lấy API keys:
 
 1. **Chạy script setup**:
 
-   ```bash
+   \`\`\`bash
    # Windows
    setup-oauth.bat
 
    # Linux/Mac
    ./setup-oauth.sh
-   ```
+   \`\`\`
 
 2. **Script sẽ**:
    - Tạo file `.env`
@@ -54,9 +54,9 @@ Bạn cần tạo **3 Developer Apps** để lấy API keys:
 
 **Không cần đợi OAuth setup**, bạn có thể test ngay:
 
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 - Frontend: http://localhost:3000
 - Tạo bài đăng → Sẽ hiển thị mock responses
