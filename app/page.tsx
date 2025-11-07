@@ -16,11 +16,9 @@ import {
   Target,
   Share2,
   TrendingUp,
-  MessageSquare,
   Video,
   CheckCircle,
   ArrowRight,
-  Globe,
 } from "lucide-react";
 import Link from "next/link";
 import Footer from "../components/Footer";
@@ -58,7 +56,9 @@ export default function HomePage() {
             >
               Liên hệ
             </Link>
-            <Button>Dùng thử miễn phí</Button>
+            <Link href="/login">
+              <Button>Đăng Nhập</Button>
+            </Link>
           </nav>
         </div>
       </header>

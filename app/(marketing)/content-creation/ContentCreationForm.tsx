@@ -43,8 +43,10 @@ import {
   TrendingUp,
 } from "lucide-react";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 export default function ContentCreationForm() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("create"); // tab hien tai (neu sau nay co nhieu tab)
   const [isGenerating, setIsGenerating] = useState(false); // trang thai loading khi tao noi dung
   const [generatedContent, setGeneratedContent] = useState(""); // luu noi dung tra ve tu n8n
@@ -64,13 +66,25 @@ export default function ContentCreationForm() {
     additionalInfo: "", // thông tin bổ sung
     platforms: [] as string[], // danh sách mạng xã hội
   });
+  // Trạng thái API key đã lưu
+  const [apiKeys, setApiKeys] = useState<{ [key: string]: string }>({});
+  // Khi trang mở -> đọc API keys từ localStorage
 
+  useEffect(() => {
+    // Lấy dữ liệu API key đã lưu
+    const savedKeys = localStorage.getItem("social_api_keys");
+    if (savedKeys) {
+      setApiKeys(JSON.parse(savedKeys));
+    }
+  }, []);
   // hàm cập nhật dữ liệu form
   const handleChange = (key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
   // hàm sử lý người dùng tick hoặc bỏ tick MXH
   const handlePlatformToggle = (platform: string) => {
+    // Chỉ cho phép toggle nếu có API key
+    if (!apiKeys[platform.toLowerCase()]) return;
     setFormData((prev) => {
       const exists = prev.platforms.includes(platform);
       return {
@@ -81,6 +95,7 @@ export default function ContentCreationForm() {
       };
     });
   };
+
   // hàm gửi dữ liệu lên n8n để tạo ND
   const handleGenerateContent = async () => {
     // Kiểm tra các trường bắt buộc (chủ đề + loại nội dung)
@@ -144,6 +159,37 @@ export default function ContentCreationForm() {
       alert("Đã sao chép nội dung!");
     }
   };
+  const handleAddApiKey = () => {
+    router.push("/formImportAPI");
+  };
+  const platforms = [
+    {
+      name: "Facebook",
+      icon: "f",
+      color: "bg-blue-500",
+    },
+    {
+      name: "Instagram",
+      icon: "IG",
+      color: "bg-gradient-to-r from-pink-500 to-orange-500",
+    },
+    {
+      name: "LinkedIn",
+      icon: "in",
+      color: "bg-blue-600",
+    },
+    { name: "TikTok", icon: "TT", color: "bg-black" },
+    {
+      name: "YouTube",
+      icon: "YT",
+      color: "bg-red-500",
+    },
+    {
+      name: "Twitter",
+      icon: "X",
+      color: "bg-gray-800",
+    },
+  ];
 
   return (
     <>
@@ -292,53 +338,43 @@ export default function ContentCreationForm() {
                 <div className="space-y-4">
                   <Label>Nền tảng đăng bài</Label>
                   <div className="grid grid-cols-2 gap-3">
-                    {[
-                      {
-                        name: "Facebook",
-                        icon: "f",
-                        color: "bg-blue-500",
-                      },
-                      {
-                        name: "Instagram",
-                        icon: "IG",
-                        color: "bg-gradient-to-r from-pink-500 to-orange-500",
-                      },
-                      {
-                        name: "LinkedIn",
-                        icon: "in",
-                        color: "bg-blue-600",
-                      },
-                      { name: "TikTok", icon: "TT", color: "bg-black" },
-                      {
-                        name: "YouTube",
-                        icon: "YT",
-                        color: "bg-red-500",
-                      },
-                      {
-                        name: "Twitter",
-                        icon: "X",
-                        color: "bg-gray-800",
-                      },
-                    ].map((platform) => (
-                      <label
-                        key={platform.name}
-                        className="flex items-center space-x-2 cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          className="rounded"
-                          checked={formData.platforms.includes(platform.name)}
-                          onChange={() => handlePlatformToggle(platform.name)}
-                        />
-                        <div
-                          className={`w-6 h-6 ${platform.color} rounded text-white text-xs flex items-center justify-center`}
+                    {platforms.map((p) => {
+                      const lower = p.name.toLowerCase();
+                      const hasKey =
+                        apiKeys[lower] && apiKeys[lower].trim() !== "";
+                      const checked = formData.platforms.includes(p.name);
+                      return (
+                        <label
+                          key={p.name}
+                          className={`flex items-center gap-2 p-2 rounded border ${
+                            hasKey
+                              ? "border-green-400 shadow-md animate-pulse"
+                              : "border-gray-200 opacity-50 cursor-not-allowed"
+                          }`}
                         >
-                          {platform.icon}
-                        </div>
-                        <span className="text-sm">{platform.name}</span>
-                      </label>
-                    ))}
+                          <input
+                            type="checkbox"
+                            disabled={!hasKey}
+                            checked={checked}
+                            onChange={() => handlePlatformToggle(p.name)}
+                          />
+                          <div
+                            className={`w-6 h-6 ${p.color} rounded text-white text-xs flex items-center justify-center`}
+                          >
+                            {p.name[0]}
+                          </div>
+                          <span className="text-sm">{p.name}</span>
+                        </label>
+                      );
+                    })}
                   </div>
+                  <Button
+                    onClick={handleAddApiKey}
+                    variant="outline"
+                    className="mt-4 flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" /> Thêm API Key
+                  </Button>
                 </div>
 
                 <Button
