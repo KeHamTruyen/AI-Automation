@@ -44,7 +44,10 @@ export default function LoginPage() {
 
       if (data.success) {
         toast.success("Đăng nhập thành công!");
-        // Lưu trạng thái đăng nhập vào  cookie
+        // Lưu token người dùng (dùng cho Workflow A/B)
+        document.cookie = `userToken=${data.token}; path=/;`;
+
+        // Lưu trạng thái đăng nhập
         document.cookie = "isLoggedIn=true; path=/;";
         // tại sao là vào dashboard trước
         // router.push("/dashboard");

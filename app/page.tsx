@@ -56,7 +56,7 @@ export default function HomePage() {
             >
               Liên hệ
             </Link>
-            <Link href="/login">
+            <Link href="/brand-analysis">
               <Button>Đăng Nhập</Button>
             </Link>
           </nav>
@@ -80,13 +80,15 @@ export default function HomePage() {
             cho doanh nghiệp của bạn.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Button
-              size="lg"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              <Zap className="w-5 h-5 mr-2" />
-              Bắt đầu miễn phí
-            </Button>
+            <Link href="/brand-analysis">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                <Zap className="w-5 h-5 mr-2" />
+                Bắt đầu miễn phí
+              </Button>
+            </Link>
             <Button size="lg" variant="outline">
               <Video className="w-5 h-5 mr-2" />
               Xem demo

@@ -53,7 +53,7 @@ export default function ContentCreationForm() {
   const [scheduleDate, setScheduleDate] = useState(""); // ngay hen gio dang bai
   const [scheduleTime, setScheduleTime] = useState(""); // gio hen gio dang bai
   const [showScheduleModal, setShowScheduleModal] = useState(false); // hien modal hen gio (neu can dung)
-
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   //  Các trường dữ liệu động của form
   // - người dùng có 1 vài trường dữ liệu có thể bỏ hoặc nhập
   // - chỉ có 1 vài trường là bắt buộc
@@ -98,57 +98,46 @@ export default function ContentCreationForm() {
 
   // hàm gửi dữ liệu lên n8n để tạo ND
   const handleGenerateContent = async () => {
-    // Kiểm tra các trường bắt buộc (chủ đề + loại nội dung)
     if (!formData.topic || !formData.contentType) {
       alert("Vui lòng nhập chủ đề và chọn loại nội dung!");
       return;
     }
-
-    // Kiểm tra người dùng có chọn ít nhất 1 nền tảng MXH chưa
-    if (!formData.platforms || formData.platforms.length === 0) {
+    if (!formData.platforms.length) {
       alert("Vui lòng chọn ít nhất một nền tảng mạng xã hội!");
       return;
     }
-
-    // Bật trạng thái loading để hiển thị spinner / chặn nút
     setIsGenerating(true);
-
     try {
-      // Chuẩn bị payload gửi đến n8n webhook
-      // Lọc chỉ những trường nào có giá trị (tránh gửi dữ liệu rỗng)
-      const payload: Record<string, any> = {};
-      Object.entries(formData).forEach(([key, value]) => {
-        // Nếu là chuỗi thì kiểm tra trim(), nếu là mảng thì kiểm tra độ dài
-        if (
-          (typeof value === "string" && value.trim() !== "") ||
-          (Array.isArray(value) && value.length > 0)
-        ) {
-          payload[key] = value;
-        }
-      });
+      const apiKeysStored = JSON.parse(
+        localStorage.getItem("social_api_keys") || "{}"
+      );
+      const payload = {
+        user_id: getCookie("userToken"),
+        api_keys: apiKeysStored,
+        content_type: formData.contentType,
+        topic: formData.topic,
+        audience: formData.audience,
+        tone: formData.tone,
+        length: formData.length,
+        additional_info: formData.additionalInfo,
+        platforms: formData.platforms,
+      };
 
-      // Gọi API đến webhook của n8n
-      const response = await axios.post(
-        "https://n8n.daisuyeuthuong.com/webhook-test/generate-content",
+      const res = await axios.post(
+        "https://n8n.daisuyeuthuong.com/webhook/APIKey-register",
         payload
       );
 
-      // In riêng data để xem nội dung server trả về
-      console.log("Response.data:", response.data);
+      const data = res.data;
+      console.log("Response from Workflow A/B:", data);
 
-      // Xử lý phản hồi từ n8n
-      // Nếu n8n trả về có trường `content`, hiển thị ra giao diện
-      if (response.data?.content) {
-        setGeneratedContent(response.data.content);
-      } else {
-        setGeneratedContent("Không có nội dung trả về từ n8n.");
-      }
-    } catch (error: any) {
-      // hiện lỗi khi request thất bại
-      console.error("Lỗi khi gửi dữ liệu đến n8n:", error);
-      setGeneratedContent("Đã xảy ra lỗi khi tạo nội dung. Vui lòng thử lại!");
+      setGeneratedContent(data.content || "Không có nội dung trả về.");
+      setGeneratedImage(data.image || null);
+    } catch (err) {
+      console.error(err);
+      setGeneratedContent("Đã xảy ra lỗi khi tạo nội dung!");
+      setGeneratedImage(null);
     } finally {
-      // Dù thành công hay lỗi, đều tắt trạng thái loading
       setIsGenerating(false);
     }
   };
@@ -438,6 +427,15 @@ export default function ContentCreationForm() {
                       <pre className="whitespace-pre-wrap text-sm">
                         {generatedContent}
                       </pre>
+                      {generatedImage && (
+                        <div>
+                          <img
+                            src={generatedImage}
+                            alt="Generated content"
+                            className="max-w-full rounded-md"
+                          />
+                        </div>
+                      )}
                     </div>
                     {/* Phần sao thì phải nâng cấp thêm  */}
                     {/* Content Analytics Preview */}
@@ -1314,4 +1312,12 @@ export default function ContentCreationForm() {
       </Tabs>
     </>
   );
+}
+function getCookie(name: string): string | null {
+  const matches = document.cookie.match(
+    new RegExp(
+      "(?:^|; )" + name.replace(/([.$?*|{}()[\]\\/+^])/g, "\\$1") + "=([^;]*)"
+    )
+  );
+  return matches ? decodeURIComponent(matches[1]) : null;
 }

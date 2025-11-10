@@ -56,6 +56,9 @@ const SocialMediaManager = () => {
       color: "text-blue-700",
     },
   ];
+  // URL webhook n8n để gửi API key
+  const N8N_WEBHOOK_URL =
+    "https://n8n.daisuyeuthuong.com/webhook/APIKey-register";
 
   // Khi component mount → đọc API keys đã lưu trong localStorage
   useEffect(() => {
@@ -105,7 +108,7 @@ const SocialMediaManager = () => {
   };
 
   // Khi bấm “Tiếp tục”
-  const handleSubmitApiKeys = () => {
+  const handleSubmitApiKeys = async () => {
     const hasAtLeastOneKey = Object.values(apiKeys).some(
       (key) => key.trim() !== ""
     );
@@ -115,7 +118,30 @@ const SocialMediaManager = () => {
     }
 
     localStorage.setItem("social_api_keys", JSON.stringify(apiKeys));
-    router.push("/brand-analysis"); // chuyển sang trang phân tích thương hiệu
+    try {
+      const payload = Object.entries(apiKeys)
+        .filter(([platform, key]) => key.trim() !== "")
+        .map(([platform, api_key]) => ({
+          user_id: userToken, // hoặc user ID thật nếu bạn lưu
+          platform,
+          api_key,
+        }));
+
+      // Gửi từng API key một
+      for (const data of payload) {
+        await fetch(N8N_WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+      }
+
+      console.log("Workflow A response:", payload);
+      router.push("/brand-analysis"); // chuyển trang sau khi gửi xong
+    } catch (err) {
+      console.error(err);
+      setError("Gửi API key thất bại. Vui lòng thử lại.");
+    }
   };
 
   return (
