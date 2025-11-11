@@ -18,10 +18,10 @@
 
 1. Copy "Client ID" và "Client Secret" từ tab "Auth"
 2. Thêm vào file `server/.env`:
-   ```
+   \`\`\`
    LINKEDIN_CLIENT_ID=your-client-id-here
    LINKEDIN_CLIENT_SECRET=your-client-secret-here
-   ```
+   \`\`\`
 
 ### 2.2 OAuth 2.0 Redirect URLs
 

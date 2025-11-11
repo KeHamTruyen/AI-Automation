@@ -117,3 +117,8 @@ enum ContentStatus {
   PUBLISHED
   ARCHIVED
 }
+
+enum ExecutionStatus {
+  SUCCESS
+  FAIL
+}

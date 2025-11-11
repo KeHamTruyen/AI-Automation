@@ -12,7 +12,7 @@ MVP cho công cụ đăng bài lên nhiều nền tảng mạng xã hội với 
 
 ## 🏗️ Kiến trúc
 
-```
+\`\`\`
 Frontend (Next.js + TypeScript + Tailwind CSS)
 ├── Dashboard - Giao diện tạo bài đăng
 ├── Platform Connections - Kết nối tài khoản
@@ -23,7 +23,7 @@ Backend (Node.js + Express)
 ├── Post API - Tạo và quản lý bài đăng
 ├── Queue System - Xử lý bài đăng bất đồng bộ
 └── Platform Adapters - Tích hợp với từng nền tảng
-```
+\`\`\`
 
 ## 📋 Yêu cầu hệ thống
 
@@ -35,35 +35,35 @@ Backend (Node.js + Express)
 
 ### 1. Clone dự án
 
-```bash
+\`\`\`bash
 git clone <repository-url>
 cd multi-platform-poster
-```
+\`\`\`
 
 ### 2. Cài đặt dependencies
 
-```bash
+\`\`\`bash
 npm run install-all
-```
+\`\`\`
 
 ### 3. Thiết lập OAuth Apps & Environment Variables
 
 #### Quick Setup Script
 
-```bash
+\`\`\`bash
 # Windows
 setup-oauth.bat
 
 # Linux/Mac
 ./setup-oauth.sh
-```
+\`\`\`
 
 #### Manual Setup
 
-```bash
+\`\`\`bash
 cd server
 cp .env.example .env
-```
+\`\`\`
 
 Sau đó follow hướng dẫn chi tiết:
 
@@ -75,7 +75,7 @@ Sau đó follow hướng dẫn chi tiết:
 
 #### Environment Variables Template:
 
-```env
+\`\`\`env
 # Facebook (Free - Khuyến nghị setup trước)
 FACEBOOK_APP_ID=your-facebook-app-id
 FACEBOOK_APP_SECRET=your-facebook-app-secret
@@ -91,28 +91,28 @@ TWITTER_CONSUMER_SECRET=your-twitter-consumer-secret
 # Optional Services
 MONGODB_URI=mongodb://localhost:27017/multiplatform-poster
 REDIS_URL=redis://localhost:6379
-```
+\`\`\`
 
 ### 4. Khởi động services
 
 #### Khởi động Redis (Windows)
 
-```bash
+\`\`\`bash
 # Tải và cài đặt Redis từ https://redis.io/download
 redis-server
-```
+\`\`\`
 
 #### Khởi động MongoDB (tùy chọn)
 
-```bash
+\`\`\`bash
 mongod
-```
+\`\`\`
 
 ### 5. Chạy ứng dụng
 
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:5000

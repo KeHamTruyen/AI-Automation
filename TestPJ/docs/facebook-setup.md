@@ -29,10 +29,10 @@
 2. **Copy "App ID"**
 3. **Click "Show"** bên cạnh "App Secret" → **Copy "App Secret"**
 4. **Paste vào file** `server/.env`:
-   ```env
+   \`\`\`env
    FACEBOOK_APP_ID=1234567890123456
    FACEBOOK_APP_SECRET=abcd1234efgh5678ijkl9012mnop3456
-   ```
+   \`\`\`
 
 ### 2.2 Cấu hình App Domains (Development)
 

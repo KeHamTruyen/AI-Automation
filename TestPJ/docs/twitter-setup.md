@@ -34,10 +34,10 @@
    - Consumer Key (API Key)
    - Consumer Secret (API Secret)
 3. **Paste vào file** `server/.env`:
-   ```env
+   \`\`\`env
    TWITTER_CONSUMER_KEY=your-api-key-here
    TWITTER_CONSUMER_SECRET=your-api-secret-here
-   ```
+   \`\`\`
 
 ### Bước 4: Cấu hình OAuth
 
@@ -68,10 +68,10 @@ Cảm ơn bạn đã correct! 🙏
    - API Key (Consumer Key)
    - API Secret Key (Consumer Secret)
 3. Thêm vào `server/.env`:
-   ```
+   \`\`\`
    TWITTER_CONSUMER_KEY=your-api-key-here
    TWITTER_CONSUMER_SECRET=your-api-secret-here
-   ```
+   \`\`\`
 
 ### 3.2 OAuth 1.0a Settings
 
@@ -103,11 +103,11 @@ Trong MVP, tôi đã implement mock Twitter posting:
 
 ## Bước 5: Test Implementation
 
-```javascript
+\`\`\`javascript
 // File: server/services/adapters/twitterAdapter.js
 // Đã có sẵn mock implementation
 // Uncomment phần thực khi có paid API access
-```
+\`\`\`
 
 ⚠️ **Khuyến nghị**:
 
