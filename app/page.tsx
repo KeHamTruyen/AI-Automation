@@ -1,8 +1,12 @@
-"use client"
-
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Brain,
   Calendar,
@@ -12,16 +16,12 @@ import {
   Target,
   Share2,
   TrendingUp,
-  MessageSquare,
   Video,
   CheckCircle,
   ArrowRight,
-  Globe,
-  Menu,
-  X,
-} from "lucide-react"
-import Link from "next/link"
-import { useState } from "react"
+} from "lucide-react";
+import Link from "next/link";
+import Footer from "../components/Footer";
 
 export default function HomePage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -40,20 +40,26 @@ export default function HomePage() {
             </span>
           </Link>
           <nav className="hidden md:flex items-center space-x-6">
-            <Link href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">
+            <Link
+              href="#features"
+              className="text-gray-600 hover:text-blue-600 transition-colors"
+            >
               Tính năng
             </Link>
-            <Link href="#pricing" className="text-gray-600 hover:text-blue-600 transition-colors">
+            <Link
+              href="#pricing"
+              className="text-gray-600 hover:text-blue-600 transition-colors"
+            >
               Bảng giá
             </Link>
-            <Link href="#contact" className="text-gray-600 hover:text-blue-600 transition-colors">
+            <Link
+              href="#contact"
+              className="text-gray-600 hover:text-blue-600 transition-colors"
+            >
               Liên hệ
             </Link>
-            <Link href="/dashboard" className="text-gray-600 hover:text-blue-600 transition-colors">
-              Dashboard
-            </Link>
-            <Link href="/login">
-              <Button>Đăng nhập</Button>
+            <Link href="/brand-analysis">
+              <Button>Đăng Nhập</Button>
             </Link>
           </nav>
           
@@ -113,18 +119,21 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
-          <Badge className="mb-4 bg-blue-100 text-blue-700 hover:bg-blue-100">🚀 Ra mắt AI Marketing Engine 2024</Badge>
+          <Badge className="mb-4 bg-blue-100 text-blue-700 hover:bg-blue-100">
+            🚀 Ra mắt AI Marketing Engine 2024
+          </Badge>
           <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
             Xây dựng thương hiệu với
             <br />
             AI Marketing Engine
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Nền tảng AI toàn diện giúp phân tích chân dung thương hiệu, tạo nội dung tự động, quản lý đa nền tảng và
-            phát triển hình ảnh AI đại diện cho doanh nghiệp của bạn.
+            Nền tảng AI toàn diện giúp phân tích chân dung thương hiệu, tạo nội
+            dung tự động, quản lý đa nền tảng và phát triển hình ảnh AI đại diện
+            cho doanh nghiệp của bạn.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link href="/login">
+            <Link href="/brand-analysis">
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
@@ -133,12 +142,10 @@ export default function HomePage() {
                 Bắt đầu miễn phí
               </Button>
             </Link>
-            <Link href="/dashboard">
-              <Button size="lg" variant="outline">
-                <Video className="w-5 h-5 mr-2" />
-                Xem demo
-              </Button>
-            </Link>
+            <Button size="lg" variant="outline">
+              <Video className="w-5 h-5 mr-2" />
+              Xem demo
+            </Button>
           </div>
 
           {/* Hero Image/Dashboard Preview */}
@@ -150,23 +157,33 @@ export default function HomePage() {
                     <CardHeader className="pb-3">
                       <div className="flex items-center space-x-2">
                         <Brain className="w-5 h-5 text-blue-600" />
-                        <CardTitle className="text-sm">Phân tích thương hiệu</CardTitle>
+                        <CardTitle className="text-sm">
+                          Phân tích thương hiệu
+                        </CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-blue-600">95%</div>
-                      <p className="text-xs text-gray-600">Độ chính xác phân tích</p>
+                      <div className="text-2xl font-bold text-blue-600">
+                        95%
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        Độ chính xác phân tích
+                      </p>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardHeader className="pb-3">
                       <div className="flex items-center space-x-2">
                         <Calendar className="w-5 h-5 text-green-600" />
-                        <CardTitle className="text-sm">Nội dung tự động</CardTitle>
+                        <CardTitle className="text-sm">
+                          Nội dung tự động
+                        </CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-green-600">247</div>
+                      <div className="text-2xl font-bold text-green-600">
+                        247
+                      </div>
                       <p className="text-xs text-gray-600">Bài viết/tháng</p>
                     </CardContent>
                   </Card>
@@ -178,7 +195,9 @@ export default function HomePage() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-purple-600">+340%</div>
+                      <div className="text-2xl font-bold text-purple-600">
+                        +340%
+                      </div>
                       <p className="text-xs text-gray-600">Engagement rate</p>
                     </CardContent>
                   </Card>
@@ -193,9 +212,12 @@ export default function HomePage() {
       <section id="features" className="py-20 px-4 bg-white">
         <div className="container mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Tính năng vượt trội</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Tính năng vượt trội
+            </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Bộ công cụ AI marketing toàn diện giúp doanh nghiệp xây dựng thương hiệu mạnh mẽ
+              Bộ công cụ AI marketing toàn diện giúp doanh nghiệp xây dựng
+              thương hiệu mạnh mẽ
             </p>
           </div>
 
@@ -206,9 +228,12 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
                   <Target className="w-6 h-6 text-blue-600" />
                 </div>
-                <CardTitle className="text-lg">Phân tích chân dung thương hiệu</CardTitle>
+                <CardTitle className="text-lg">
+                  Phân tích chân dung thương hiệu
+                </CardTitle>
                 <CardDescription>
-                  AI phân tích sâu định hướng, phong cách và nội dung phù hợp với thương hiệu
+                  AI phân tích sâu định hướng, phong cách và nội dung phù hợp
+                  với thương hiệu
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -242,7 +267,10 @@ export default function HomePage() {
                   <Calendar className="w-6 h-6 text-green-600" />
                 </div>
                 <CardTitle className="text-lg">Tạo nội dung tự động</CardTitle>
-                <CardDescription>Tự động tạo bài viết, video, note và social post theo lịch trình</CardDescription>
+                <CardDescription>
+                  Tự động tạo bài viết, video, note và social post theo lịch
+                  trình
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 text-sm text-gray-600 mb-4">
@@ -275,7 +303,9 @@ export default function HomePage() {
                   <BarChart3 className="w-6 h-6 text-purple-600" />
                 </div>
                 <CardTitle className="text-lg">Quản lý & thống kê</CardTitle>
-                <CardDescription>Theo dõi hiệu quả nội dung với báo cáo chi tiết và insights</CardDescription>
+                <CardDescription>
+                  Theo dõi hiệu quả nội dung với báo cáo chi tiết và insights
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 text-sm text-gray-600 mb-4">
@@ -307,8 +337,12 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4">
                   <Bot className="w-6 h-6 text-pink-600" />
                 </div>
-                <CardTitle className="text-lg">AI đại diện thương hiệu</CardTitle>
-                <CardDescription>Tạo avatar AI, voice AI và chatbot đại diện cho thương hiệu</CardDescription>
+                <CardTitle className="text-lg">
+                  AI đại diện thương hiệu
+                </CardTitle>
+                <CardDescription>
+                  Tạo avatar AI, voice AI và chatbot đại diện cho thương hiệu
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 text-sm text-gray-600 mb-4">
@@ -340,11 +374,16 @@ export default function HomePage() {
             {/* Brand Analysis Detail */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div>
-                <Badge className="mb-4 bg-blue-100 text-blue-700">Phân tích thương hiệu</Badge>
-                <h3 className="text-3xl font-bold mb-4">AI hiểu sâu về thương hiệu của bạn</h3>
+                <Badge className="mb-4 bg-blue-100 text-blue-700">
+                  Phân tích thương hiệu
+                </Badge>
+                <h3 className="text-3xl font-bold mb-4">
+                  AI hiểu sâu về thương hiệu của bạn
+                </h3>
                 <p className="text-gray-600 mb-6">
-                  Công nghệ AI tiên tiến phân tích toàn diện chân dung thương hiệu, từ định hướng chiến lược đến phong
-                  cách giao tiếp, giúp xây dựng nội dung nhất quán và hiệu quả.
+                  Công nghệ AI tiên tiến phân tích toàn diện chân dung thương
+                  hiệu, từ định hướng chiến lược đến phong cách giao tiếp, giúp
+                  xây dựng nội dung nhất quán và hiệu quả.
                 </p>
                 <div className="space-y-4">
                   <div className="flex items-start space-x-3">
@@ -353,7 +392,9 @@ export default function HomePage() {
                     </div>
                     <div>
                       <h4 className="font-semibold">Phân tích tone of voice</h4>
-                      <p className="text-sm text-gray-600">Xác định giọng điệu và cách giao tiếp phù hợp</p>
+                      <p className="text-sm text-gray-600">
+                        Xác định giọng điệu và cách giao tiếp phù hợp
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
@@ -362,7 +403,9 @@ export default function HomePage() {
                     </div>
                     <div>
                       <h4 className="font-semibold">Định hướng nội dung</h4>
-                      <p className="text-sm text-gray-600">Gợi ý chủ đề và hướng phát triển nội dung</p>
+                      <p className="text-sm text-gray-600">
+                        Gợi ý chủ đề và hướng phát triển nội dung
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
@@ -371,7 +414,9 @@ export default function HomePage() {
                     </div>
                     <div>
                       <h4 className="font-semibold">Phân tích đối thủ</h4>
-                      <p className="text-sm text-gray-600">So sánh và tìm điểm khác biệt cạnh tranh</p>
+                      <p className="text-sm text-gray-600">
+                        So sánh và tìm điểm khác biệt cạnh tranh
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -428,7 +473,9 @@ export default function HomePage() {
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                       <div className="flex-1">
                         <div className="text-sm font-medium">Facebook Post</div>
-                        <div className="text-xs text-gray-600">Hôm nay 9:00 AM</div>
+                        <div className="text-xs text-gray-600">
+                          Hôm nay 9:00 AM
+                        </div>
                       </div>
                       <Badge variant="secondary" className="text-xs">
                         Đã đăng
@@ -437,8 +484,12 @@ export default function HomePage() {
                     <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                       <div className="flex-1">
-                        <div className="text-sm font-medium">Instagram Story</div>
-                        <div className="text-xs text-gray-600">Hôm nay 2:00 PM</div>
+                        <div className="text-sm font-medium">
+                          Instagram Story
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          Hôm nay 2:00 PM
+                        </div>
                       </div>
                       <Badge variant="outline" className="text-xs">
                         Đang chờ
@@ -447,8 +498,12 @@ export default function HomePage() {
                     <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
                       <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                       <div className="flex-1">
-                        <div className="text-sm font-medium">LinkedIn Article</div>
-                        <div className="text-xs text-gray-600">Ngày mai 10:00 AM</div>
+                        <div className="text-sm font-medium">
+                          LinkedIn Article
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          Ngày mai 10:00 AM
+                        </div>
                       </div>
                       <Badge variant="outline" className="text-xs">
                         Lên lịch
@@ -458,11 +513,16 @@ export default function HomePage() {
                 </div>
               </div>
               <div className="order-1 lg:order-2">
-                <Badge className="mb-4 bg-green-100 text-green-700">Tự động hóa nội dung</Badge>
-                <h3 className="text-3xl font-bold mb-4">Đăng bài đa nền tảng chỉ với 1 nút</h3>
+                <Badge className="mb-4 bg-green-100 text-green-700">
+                  Tự động hóa nội dung
+                </Badge>
+                <h3 className="text-3xl font-bold mb-4">
+                  Đăng bài đa nền tảng chỉ với 1 nút
+                </h3>
                 <p className="text-gray-600 mb-6">
-                  Hệ thống AI tự động tạo và tối ưu nội dung cho từng nền tảng, lên lịch đăng bài thông minh và quản lý
-                  toàn bộ chiến dịch marketing.
+                  Hệ thống AI tự động tạo và tối ưu nội dung cho từng nền tảng,
+                  lên lịch đăng bài thông minh và quản lý toàn bộ chiến dịch
+                  marketing.
                 </p>
                 <div className="space-y-4">
                   <div className="flex items-start space-x-3">
@@ -471,7 +531,9 @@ export default function HomePage() {
                     </div>
                     <div>
                       <h4 className="font-semibold">Đa nền tảng</h4>
-                      <p className="text-sm text-gray-600">Facebook, Instagram, LinkedIn, TikTok, YouTube</p>
+                      <p className="text-sm text-gray-600">
+                        Facebook, Instagram, LinkedIn, TikTok, YouTube
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
@@ -480,7 +542,9 @@ export default function HomePage() {
                     </div>
                     <div>
                       <h4 className="font-semibold">Tối ưu tự động</h4>
-                      <p className="text-sm text-gray-600">Điều chỉnh nội dung phù hợp với từng platform</p>
+                      <p className="text-sm text-gray-600">
+                        Điều chỉnh nội dung phù hợp với từng platform
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
@@ -489,7 +553,9 @@ export default function HomePage() {
                     </div>
                     <div>
                       <h4 className="font-semibold">Lịch trình thông minh</h4>
-                      <p className="text-sm text-gray-600">AI phân tích thời gian tối ưu để đăng bài</p>
+                      <p className="text-sm text-gray-600">
+                        AI phân tích thời gian tối ưu để đăng bài
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -502,8 +568,12 @@ export default function HomePage() {
       {/* Stats Section */}
       <section className="py-20 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
         <div className="container mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Được tin tưởng bởi hàng nghìn doanh nghiệp</h2>
-          <p className="text-xl opacity-90 mb-12">Kết quả ấn tượng từ khách hàng sử dụng AI Marketing Engine</p>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Được tin tưởng bởi hàng nghìn doanh nghiệp
+          </h2>
+          <p className="text-xl opacity-90 mb-12">
+            Kết quả ấn tượng từ khách hàng sử dụng AI Marketing Engine
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <div className="text-4xl font-bold mb-2">10,000+</div>
@@ -529,8 +599,12 @@ export default function HomePage() {
       <section id="pricing" className="py-20 px-4 bg-gray-50">
         <div className="container mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Bảng giá linh hoạt</h2>
-            <p className="text-xl text-gray-600">Chọn gói phù hợp với quy mô doanh nghiệp của bạn</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Bảng giá linh hoạt
+            </h2>
+            <p className="text-xl text-gray-600">
+              Chọn gói phù hợp với quy mô doanh nghiệp của bạn
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -540,7 +614,10 @@ export default function HomePage() {
                 <CardTitle className="text-xl">Starter</CardTitle>
                 <CardDescription>Phù hợp cho doanh nghiệp nhỏ</CardDescription>
                 <div className="text-3xl font-bold">
-                  $99<span className="text-lg font-normal text-gray-600">/tháng</span>
+                  $99
+                  <span className="text-lg font-normal text-gray-600">
+                    /tháng
+                  </span>
                 </div>
               </CardHeader>
               <CardContent>
@@ -562,7 +639,10 @@ export default function HomePage() {
                     <span>1 AI Avatar</span>
                   </li>
                 </ul>
-                <Button className="w-full mt-6 bg-transparent" variant="outline">
+                <Button
+                  className="w-full mt-6 bg-transparent"
+                  variant="outline"
+                >
                   Bắt đầu dùng thử
                 </Button>
               </CardContent>
@@ -577,7 +657,10 @@ export default function HomePage() {
                 <CardTitle className="text-xl">Professional</CardTitle>
                 <CardDescription>Phù hợp cho doanh nghiệp vừa</CardDescription>
                 <div className="text-3xl font-bold">
-                  $299<span className="text-lg font-normal text-gray-600">/tháng</span>
+                  $299
+                  <span className="text-lg font-normal text-gray-600">
+                    /tháng
+                  </span>
                 </div>
               </CardHeader>
               <CardContent>
@@ -603,7 +686,9 @@ export default function HomePage() {
                     <span>Video AI</span>
                   </li>
                 </ul>
-                <Button className="w-full mt-6 bg-blue-500 hover:bg-blue-600">Chọn gói này</Button>
+                <Button className="w-full mt-6 bg-blue-500 hover:bg-blue-600">
+                  Chọn gói này
+                </Button>
               </CardContent>
             </Card>
 
@@ -613,7 +698,10 @@ export default function HomePage() {
                 <CardTitle className="text-xl">Enterprise</CardTitle>
                 <CardDescription>Phù hợp cho doanh nghiệp lớn</CardDescription>
                 <div className="text-3xl font-bold">
-                  $999<span className="text-lg font-normal text-gray-600">/tháng</span>
+                  $999
+                  <span className="text-lg font-normal text-gray-600">
+                    /tháng
+                  </span>
                 </div>
               </CardHeader>
               <CardContent>
@@ -639,7 +727,10 @@ export default function HomePage() {
                     <span>Hỗ trợ 24/7</span>
                   </li>
                 </ul>
-                <Button className="w-full mt-6 bg-transparent" variant="outline">
+                <Button
+                  className="w-full mt-6 bg-transparent"
+                  variant="outline"
+                >
                   Liên hệ tư vấn
                 </Button>
               </CardContent>
@@ -651,12 +742,18 @@ export default function HomePage() {
       {/* CTA Section */}
       <section className="py-20 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
         <div className="container mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Sẵn sàng xây dựng thương hiệu với AI?</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Sẵn sàng xây dựng thương hiệu với AI?
+          </h2>
           <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
-            Tham gia cùng hàng nghìn doanh nghiệp đã tin tưởng AI Marketing Engine để phát triển thương hiệu của họ.
+            Tham gia cùng hàng nghìn doanh nghiệp đã tin tưởng AI Marketing
+            Engine để phát triển thương hiệu của họ.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100">
+            <Button
+              size="lg"
+              className="bg-white text-purple-600 hover:bg-gray-100"
+            >
               <Zap className="w-5 h-5 mr-2" />
               Dùng thử miễn phí 14 ngày
             </Button>
@@ -673,107 +770,11 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-16 px-4">
-        <div className="container mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <Brain className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold">AI Marketing Engine</span>
-              </div>
-              <p className="text-gray-400 mb-4">Nền tảng AI marketing toàn diện cho doanh nghiệp hiện đại.</p>
-              <div className="flex space-x-4">
-                <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
-                  <Globe className="w-4 h-4" />
-                </div>
-                <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
-                  <MessageSquare className="w-4 h-4" />
-                </div>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Sản phẩm</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>
-                  <Link href="/brand-analysis" className="hover:text-white transition-colors">
-                    Phân tích thương hiệu
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/content-creation" className="hover:text-white transition-colors">
-                    Tạo nội dung AI
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/social-accounts" className="hover:text-white transition-colors">
-                    Quản lý đa nền tảng
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/ai-representative" className="hover:text-white transition-colors">
-                    AI Avatar
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Hỗ trợ</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Trung tâm trợ giúp
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Hướng dẫn sử dụng
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    API Documentation
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Liên hệ
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Công ty</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Về chúng tôi
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Blog
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Tuyển dụng
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Chính sách bảo mật
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 AI Marketing Engine. Tất cả quyền được bảo lưu.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
-  )
+  );
 }
+function useState(arg0: boolean): [any, any] {
+  throw new Error("Function not implemented.");
+}
+

@@ -1,12 +1,24 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import {
   Brain,
   Calendar,
@@ -29,12 +41,12 @@ import {
   Play,
   Edit,
   Home,
-} from "lucide-react"
-import { Input } from "@/components/ui/input"
-import Link from "next/link"
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import Link from "next/link";
 
 export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState("overview")
+  const [activeTab, setActiveTab] = useState("overview");
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -42,52 +54,33 @@ export default function DashboardPage() {
       <header className="bg-white border-b px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <Brain className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold">AI Marketing Engine</span>
-              </Link>
-              
-              {/* Breadcrumb */}
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink asChild>
-                      <Link href="/" className="flex items-center">
-                        <Home className="w-4 h-4" />
-                      </Link>
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    <span className="font-medium">Dashboard</span>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <Brain className="w-5 h-5 text-white" />
+              </div>
+              <span className="lg:block hidden text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                AI Marketing Engine
+              </span>
+              <span className="lg:hidden text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                AIME
+              </span>
             </div>
-            
-            <div className="hidden md:flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-              <Button variant="ghost" size="sm" className="bg-white shadow-sm">
-                Dashboard
-              </Button>
-              <Link href="/content-creation">
-                <Button variant="ghost" size="sm">
-                  Content
-                </Button>
-              </Link>
-              <Link href="/performance-management">
-                <Button variant="ghost" size="sm">
-                  Analytics
-                </Button>
-              </Link>
-              <Link href="/social-accounts">
-                <Button variant="ghost" size="sm">
-                  Social
-                </Button>
-              </Link>
-            </div>
+            {/* Breadcrumb */}
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href="/brand-analysis" className="flex items-center">
+                      <Home className="w-4 h-4" />
+                    </Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <span className="font-medium">Dashboard</span>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
           <div className="flex items-center space-x-4">
             <div className="relative">
@@ -111,7 +104,10 @@ export default function DashboardPage() {
         {/* Sidebar */}
         <aside className="w-64 bg-white border-r min-h-screen p-6">
           <nav className="space-y-2">
-            <Button variant="ghost" className="w-full justify-start bg-blue-50 text-blue-600">
+            <Button
+              variant="ghost"
+              className="w-full justify-start bg-blue-50 text-blue-600"
+            >
               <BarChart3 className="w-4 h-4 mr-3" />
               Tổng quan
             </Button>
@@ -164,104 +160,84 @@ export default function DashboardPage() {
         <main className="flex-1 p-6">
           <div className="mb-6">
             <h1 className="text-2xl font-bold mb-2">Dashboard</h1>
-            <p className="text-gray-600">Chào mừng trở lại! Đây là tổng quan về hoạt động marketing của bạn.</p>
+            <p className="text-gray-600">
+              Chào mừng trở lại! Đây là tổng quan về hoạt động marketing của
+              bạn.
+            </p>
           </div>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Tổng bài viết</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Tổng bài viết
+                </CardTitle>
                 <MessageSquare className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">247</div>
                 <p className="text-xs text-muted-foreground">
-                  <span className="text-green-600">+12%</span> so với tháng trước
+                  <span className="text-green-600">+12%</span> so với tháng
+                  trước
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Tổng lượt xem</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Tổng lượt xem
+                </CardTitle>
                 <Eye className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">1.2M</div>
                 <p className="text-xs text-muted-foreground">
-                  <span className="text-green-600">+25%</span> so với tháng trước
+                  <span className="text-green-600">+25%</span> so với tháng
+                  trước
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Engagement Rate
+                </CardTitle>
                 <Heart className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">8.4%</div>
                 <p className="text-xs text-muted-foreground">
-                  <span className="text-green-600">+2.1%</span> so với tháng trước
+                  <span className="text-green-600">+2.1%</span> so với tháng
+                  trước
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Followers mới</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Followers mới
+                </CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">+2,350</div>
                 <p className="text-xs text-muted-foreground">
-                  <span className="text-green-600">+18%</span> so với tháng trước
+                  <span className="text-green-600">+18%</span> so với tháng
+                  trước
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Quick Actions */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Plus className="w-5 h-5 mr-2 text-green-600" />
-                Quick Actions
-              </CardTitle>
-              <CardDescription>Truy cập nhanh các tính năng chính</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Link href="/brand-analysis">
-                  <Button variant="outline" className="w-full h-20 flex flex-col space-y-2 hover:border-blue-300">
-                    <Brain className="w-6 h-6 text-blue-600" />
-                    <span className="text-sm">Phân tích thương hiệu</span>
-                  </Button>
-                </Link>
-                <Link href="/content-creation">
-                  <Button variant="outline" className="w-full h-20 flex flex-col space-y-2 hover:border-green-300">
-                    <Calendar className="w-6 h-6 text-green-600" />
-                    <span className="text-sm">Tạo nội dung</span>
-                  </Button>
-                </Link>
-                <Link href="/ai-representative">
-                  <Button variant="outline" className="w-full h-20 flex flex-col space-y-2 hover:border-pink-300">
-                    <Bot className="w-6 h-6 text-pink-600" />
-                    <span className="text-sm">AI Avatar</span>
-                  </Button>
-                </Link>
-                <Link href="/performance-management">
-                  <Button variant="outline" className="w-full h-20 flex flex-col space-y-2 hover:border-purple-300">
-                    <BarChart3 className="w-6 h-6 text-purple-600" />
-                    <span className="text-sm">Báo cáo</span>
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="space-y-6"
+          >
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="overview">Tổng quan</TabsTrigger>
               <TabsTrigger value="content">Nội dung</TabsTrigger>
@@ -278,7 +254,9 @@ export default function DashboardPage() {
                       <Brain className="w-5 h-5 mr-2 text-blue-600" />
                       Phân tích thương hiệu
                     </CardTitle>
-                    <CardDescription>Kết quả phân tích chân dung thương hiệu của bạn</CardDescription>
+                    <CardDescription>
+                      Kết quả phân tích chân dung thương hiệu của bạn
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-3">
@@ -320,15 +298,21 @@ export default function DashboardPage() {
                       <Calendar className="w-5 h-5 mr-2 text-green-600" />
                       Nội dung gần đây
                     </CardTitle>
-                    <CardDescription>Các bài viết được tạo và đăng gần đây</CardDescription>
+                    <CardDescription>
+                      Các bài viết được tạo và đăng gần đây
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                         <div className="flex-1">
-                          <div className="text-sm font-medium">5 Tips Marketing hiệu quả</div>
-                          <div className="text-xs text-gray-600">Facebook • 2 giờ trước</div>
+                          <div className="text-sm font-medium">
+                            5 Tips Marketing hiệu quả
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            Facebook • 2 giờ trước
+                          </div>
                         </div>
                         <Badge variant="secondary" className="text-xs">
                           1.2K views
@@ -337,8 +321,12 @@ export default function DashboardPage() {
                       <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
                         <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                         <div className="flex-1">
-                          <div className="text-sm font-medium">Video giới thiệu sản phẩm</div>
-                          <div className="text-xs text-gray-600">Instagram • 4 giờ trước</div>
+                          <div className="text-sm font-medium">
+                            Video giới thiệu sản phẩm
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            Instagram • 4 giờ trước
+                          </div>
                         </div>
                         <Badge variant="secondary" className="text-xs">
                           856 views
@@ -347,19 +335,24 @@ export default function DashboardPage() {
                       <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
                         <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                         <div className="flex-1">
-                          <div className="text-sm font-medium">Bài viết chuyên sâu</div>
-                          <div className="text-xs text-gray-600">LinkedIn • 6 giờ trước</div>
+                          <div className="text-sm font-medium">
+                            Bài viết chuyên sâu
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            LinkedIn • 6 giờ trước
+                          </div>
                         </div>
                         <Badge variant="secondary" className="text-xs">
                           432 views
                         </Badge>
                       </div>
                     </div>
-                    <Link href="/cms">
-                      <Button className="w-full mt-4 bg-transparent" variant="outline">
-                        Xem tất cả
-                      </Button>
-                    </Link>
+                    <Button
+                      className="w-full mt-4 bg-transparent"
+                      variant="outline"
+                    >
+                      Xem tất cả
+                    </Button>
                   </CardContent>
                 </Card>
               </div>
@@ -373,7 +366,9 @@ export default function DashboardPage() {
                         <Calendar className="w-5 h-5 mr-2 text-orange-600" />
                         Lịch đăng bài sắp tới
                       </CardTitle>
-                      <CardDescription>Các bài viết đã được lên lịch đăng</CardDescription>
+                      <CardDescription>
+                        Các bài viết đã được lên lịch đăng
+                      </CardDescription>
                     </div>
                     <Button>
                       <Plus className="w-4 h-4 mr-2" />
@@ -389,8 +384,12 @@ export default function DashboardPage() {
                           <MessageSquare className="w-6 h-6 text-blue-600" />
                         </div>
                         <div>
-                          <h4 className="font-medium">Xu hướng Marketing 2024</h4>
-                          <p className="text-sm text-gray-600">Facebook, Instagram • Hôm nay 2:00 PM</p>
+                          <h4 className="font-medium">
+                            Xu hướng Marketing 2024
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            Facebook, Instagram • Hôm nay 2:00 PM
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -406,8 +405,12 @@ export default function DashboardPage() {
                           <Video className="w-6 h-6 text-green-600" />
                         </div>
                         <div>
-                          <h4 className="font-medium">Video hướng dẫn sử dụng</h4>
-                          <p className="text-sm text-gray-600">YouTube, TikTok • Ngày mai 10:00 AM</p>
+                          <h4 className="font-medium">
+                            Video hướng dẫn sử dụng
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            YouTube, TikTok • Ngày mai 10:00 AM
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -452,9 +455,12 @@ export default function DashboardPage() {
                     <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg mb-3 flex items-center justify-center">
                       <ImageIcon className="w-8 h-8 text-gray-400" />
                     </div>
-                    <h4 className="font-medium mb-2">5 Tips Marketing hiệu quả cho SME</h4>
+                    <h4 className="font-medium mb-2">
+                      5 Tips Marketing hiệu quả cho SME
+                    </h4>
                     <p className="text-sm text-gray-600 mb-3">
-                      Chia sẻ những bí quyết marketing hiệu quả dành cho doanh nghiệp vừa và nhỏ...
+                      Chia sẻ những bí quyết marketing hiệu quả dành cho doanh
+                      nghiệp vừa và nhỏ...
                     </p>
                     <div className="flex items-center justify-between text-sm text-gray-500">
                       <div className="flex items-center space-x-4">
@@ -482,7 +488,10 @@ export default function DashboardPage() {
                 <Card>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <Badge variant="secondary" className="bg-pink-100 text-pink-700">
+                      <Badge
+                        variant="secondary"
+                        className="bg-pink-100 text-pink-700"
+                      >
                         Instagram
                       </Badge>
                       <Button variant="ghost" size="sm">
@@ -494,9 +503,12 @@ export default function DashboardPage() {
                     <div className="aspect-video bg-gradient-to-br from-pink-100 to-orange-100 rounded-lg mb-3 flex items-center justify-center">
                       <Video className="w-8 h-8 text-gray-400" />
                     </div>
-                    <h4 className="font-medium mb-2">Behind the scenes - Quy trình sản xuất</h4>
+                    <h4 className="font-medium mb-2">
+                      Behind the scenes - Quy trình sản xuất
+                    </h4>
                     <p className="text-sm text-gray-600 mb-3">
-                      Video hậu trường cho thấy quy trình sản xuất chuyên nghiệp của công ty...
+                      Video hậu trường cho thấy quy trình sản xuất chuyên nghiệp
+                      của công ty...
                     </p>
                     <div className="flex items-center justify-between text-sm text-gray-500">
                       <div className="flex items-center space-x-4">
@@ -524,7 +536,10 @@ export default function DashboardPage() {
                 <Card>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                      <Badge
+                        variant="secondary"
+                        className="bg-blue-100 text-blue-700"
+                      >
                         LinkedIn
                       </Badge>
                       <Button variant="ghost" size="sm">
@@ -536,9 +551,12 @@ export default function DashboardPage() {
                     <div className="aspect-video bg-gradient-to-br from-blue-100 to-cyan-100 rounded-lg mb-3 flex items-center justify-center">
                       <MessageSquare className="w-8 h-8 text-gray-400" />
                     </div>
-                    <h4 className="font-medium mb-2">Xu hướng công nghệ 2024</h4>
+                    <h4 className="font-medium mb-2">
+                      Xu hướng công nghệ 2024
+                    </h4>
                     <p className="text-sm text-gray-600 mb-3">
-                      Phân tích sâu về những xu hướng công nghệ sẽ định hình tương lai...
+                      Phân tích sâu về những xu hướng công nghệ sẽ định hình
+                      tương lai...
                     </p>
                     <div className="flex items-center justify-between text-sm text-gray-500">
                       <div className="flex items-center space-x-4">
@@ -555,7 +573,9 @@ export default function DashboardPage() {
                           18
                         </span>
                       </div>
-                      <Badge className="text-xs bg-orange-100 text-orange-700">Đang chờ</Badge>
+                      <Badge className="text-xs bg-orange-100 text-orange-700">
+                        Đang chờ
+                      </Badge>
                     </div>
                   </CardContent>
                 </Card>
@@ -567,14 +587,18 @@ export default function DashboardPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Hiệu suất theo nền tảng</CardTitle>
-                    <CardDescription>So sánh engagement rate trên các nền tảng</CardDescription>
+                    <CardDescription>
+                      So sánh engagement rate trên các nền tảng
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">f</span>
+                            <span className="text-white text-xs font-bold">
+                              f
+                            </span>
                           </div>
                           <span className="font-medium">Facebook</span>
                         </div>
@@ -586,7 +610,9 @@ export default function DashboardPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-orange-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">IG</span>
+                            <span className="text-white text-xs font-bold">
+                              IG
+                            </span>
                           </div>
                           <span className="font-medium">Instagram</span>
                         </div>
@@ -598,7 +624,9 @@ export default function DashboardPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">in</span>
+                            <span className="text-white text-xs font-bold">
+                              in
+                            </span>
                           </div>
                           <span className="font-medium">LinkedIn</span>
                         </div>
@@ -610,7 +638,9 @@ export default function DashboardPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">TT</span>
+                            <span className="text-white text-xs font-bold">
+                              TT
+                            </span>
                           </div>
                           <span className="font-medium">TikTok</span>
                         </div>
@@ -626,25 +656,37 @@ export default function DashboardPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Thống kê tháng này</CardTitle>
-                    <CardDescription>Tổng quan hiệu suất nội dung</CardDescription>
+                    <CardDescription>
+                      Tổng quan hiệu suất nội dung
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="text-center p-4 bg-blue-50 rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600">247</div>
+                        <div className="text-2xl font-bold text-blue-600">
+                          247
+                        </div>
                         <div className="text-sm text-gray-600">Bài viết</div>
                       </div>
                       <div className="text-center p-4 bg-green-50 rounded-lg">
-                        <div className="text-2xl font-bold text-green-600">1.2M</div>
+                        <div className="text-2xl font-bold text-green-600">
+                          1.2M
+                        </div>
                         <div className="text-sm text-gray-600">Lượt xem</div>
                       </div>
                       <div className="text-center p-4 bg-purple-50 rounded-lg">
-                        <div className="text-2xl font-bold text-purple-600">89K</div>
+                        <div className="text-2xl font-bold text-purple-600">
+                          89K
+                        </div>
                         <div className="text-sm text-gray-600">Tương tác</div>
                       </div>
                       <div className="text-center p-4 bg-orange-50 rounded-lg">
-                        <div className="text-2xl font-bold text-orange-600">2.3K</div>
-                        <div className="text-sm text-gray-600">Followers mới</div>
+                        <div className="text-2xl font-bold text-orange-600">
+                          2.3K
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Followers mới
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -656,7 +698,9 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle>Top bài viết hiệu suất cao</CardTitle>
-                      <CardDescription>Những bài viết có engagement rate cao nhất</CardDescription>
+                      <CardDescription>
+                        Những bài viết có engagement rate cao nhất
+                      </CardDescription>
                     </div>
                     <Button variant="outline">
                       <Download className="w-4 h-4 mr-2" />
@@ -672,8 +716,12 @@ export default function DashboardPage() {
                           <MessageSquare className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                          <h4 className="font-medium">5 Tips Marketing hiệu quả cho SME</h4>
-                          <p className="text-sm text-gray-600">Facebook • 2 ngày trước</p>
+                          <h4 className="font-medium">
+                            5 Tips Marketing hiệu quả cho SME
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            Facebook • 2 ngày trước
+                          </p>
                         </div>
                       </div>
                       <div className="text-right">
@@ -687,8 +735,12 @@ export default function DashboardPage() {
                           <Video className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                          <h4 className="font-medium">Behind the scenes - Quy trình sản xuất</h4>
-                          <p className="text-sm text-gray-600">Instagram • 1 ngày trước</p>
+                          <h4 className="font-medium">
+                            Behind the scenes - Quy trình sản xuất
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            Instagram • 1 ngày trước
+                          </p>
                         </div>
                       </div>
                       <div className="text-right">
@@ -702,8 +754,12 @@ export default function DashboardPage() {
                           <ImageIcon className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                          <h4 className="font-medium">Infographic: Xu hướng Digital 2024</h4>
-                          <p className="text-sm text-gray-600">LinkedIn • 3 ngày trước</p>
+                          <h4 className="font-medium">
+                            Infographic: Xu hướng Digital 2024
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            LinkedIn • 3 ngày trước
+                          </p>
                         </div>
                       </div>
                       <div className="text-right">
@@ -730,10 +786,16 @@ export default function DashboardPage() {
                 <Card>
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">Sarah - Brand Ambassador</CardTitle>
-                      <Badge className="bg-green-100 text-green-700">Hoạt động</Badge>
+                      <CardTitle className="text-lg">
+                        Sarah - Brand Ambassador
+                      </CardTitle>
+                      <Badge className="bg-green-100 text-green-700">
+                        Hoạt động
+                      </Badge>
                     </div>
-                    <CardDescription>AI Avatar chính đại diện thương hiệu</CardDescription>
+                    <CardDescription>
+                      AI Avatar chính đại diện thương hiệu
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="aspect-square bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl mb-4 flex items-center justify-center">
@@ -769,10 +831,14 @@ export default function DashboardPage() {
                 <Card>
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">Alex - Support Agent</CardTitle>
+                      <CardTitle className="text-lg">
+                        Alex - Support Agent
+                      </CardTitle>
                       <Badge variant="outline">Tạm dừng</Badge>
                     </div>
-                    <CardDescription>AI Chatbot hỗ trợ khách hàng</CardDescription>
+                    <CardDescription>
+                      AI Chatbot hỗ trợ khách hàng
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="aspect-square bg-gradient-to-br from-green-100 to-blue-100 rounded-xl mb-4 flex items-center justify-center">
@@ -825,24 +891,44 @@ export default function DashboardPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Hiệu suất AI Avatar</CardTitle>
-                  <CardDescription>Thống kê tương tác và hiệu quả của các AI Avatar</CardDescription>
+                  <CardDescription>
+                    Thống kê tương tác và hiệu quả của các AI Avatar
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <div className="text-3xl font-bold text-blue-600 mb-2">1,247</div>
-                      <div className="text-sm text-gray-600">Tương tác hôm nay</div>
-                      <div className="text-xs text-green-600 mt-1">+15% so với hôm qua</div>
+                      <div className="text-3xl font-bold text-blue-600 mb-2">
+                        1,247
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Tương tác hôm nay
+                      </div>
+                      <div className="text-xs text-green-600 mt-1">
+                        +15% so với hôm qua
+                      </div>
                     </div>
                     <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <div className="text-3xl font-bold text-green-600 mb-2">94%</div>
-                      <div className="text-sm text-gray-600">Độ hài lòng trung bình</div>
-                      <div className="text-xs text-green-600 mt-1">+2% so với tuần trước</div>
+                      <div className="text-3xl font-bold text-green-600 mb-2">
+                        94%
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Độ hài lòng trung bình
+                      </div>
+                      <div className="text-xs text-green-600 mt-1">
+                        +2% so với tuần trước
+                      </div>
                     </div>
                     <div className="text-center p-4 bg-purple-50 rounded-lg">
-                      <div className="text-3xl font-bold text-purple-600 mb-2">89%</div>
-                      <div className="text-sm text-gray-600">Tỷ lệ giải quyết</div>
-                      <div className="text-xs text-green-600 mt-1">+5% so với tuần trước</div>
+                      <div className="text-3xl font-bold text-purple-600 mb-2">
+                        89%
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Tỷ lệ giải quyết
+                      </div>
+                      <div className="text-xs text-green-600 mt-1">
+                        +5% so với tuần trước
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -852,5 +938,5 @@ export default function DashboardPage() {
         </main>
       </div>
     </div>
-  )
+  );
 }

@@ -1,5 +1,6 @@
-"use client"
+"use client";
 
+<<<<<<< HEAD:app/performance-management/page.tsx
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,6 +9,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
+=======
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+>>>>>>> taihv:app/(marketing)/performance-management/PerformanceDashboard.tsx
 import {
   Brain,
   BarChart3,
@@ -28,16 +50,22 @@ import {
   CheckCircle,
   XCircle,
   Plus,
+<<<<<<< HEAD:app/performance-management/page.tsx
   ArrowLeft,
   Home,
 } from "lucide-react"
 import Link from "next/link"
+=======
+} from "lucide-react";
+import Link from "next/link";
+>>>>>>> taihv:app/(marketing)/performance-management/PerformanceDashboard.tsx
 
-export default function PerformanceManagementPage() {
-  const [activeTab, setActiveTab] = useState("overview")
-  const [timeRange, setTimeRange] = useState("7d")
+export default function PerformanceDashboard() {
+  const [activeTab, setActiveTab] = useState("overview");
+  const [timeRange, setTimeRange] = useState("7d");
 
   return (
+<<<<<<< HEAD:app/performance-management/page.tsx
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50">
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
@@ -121,6 +149,9 @@ export default function PerformanceManagementPage() {
       </section>
 
       {/* Performance Dashboard */}
+=======
+    <>
+>>>>>>> taihv:app/(marketing)/performance-management/PerformanceDashboard.tsx
       <section className="py-16 px-4 bg-white">
         <div className="container mx-auto">
           <div className="max-w-7xl mx-auto">
@@ -128,7 +159,9 @@ export default function PerformanceManagementPage() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 space-y-4 md:space-y-0">
               <div>
                 <h2 className="text-2xl font-bold mb-2">Dashboard hiệu suất</h2>
-                <p className="text-gray-600">Tổng quan về hiệu quả nội dung và chiến dịch marketing</p>
+                <p className="text-gray-600">
+                  Tổng quan về hiệu quả nội dung và chiến dịch marketing
+                </p>
               </div>
               <div className="flex items-center space-x-4">
                 <Select value={timeRange} onValueChange={setTimeRange}>
@@ -154,7 +187,11 @@ export default function PerformanceManagementPage() {
               </div>
             </div>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="space-y-8"
+            >
               <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="overview">Tổng quan</TabsTrigger>
                 <TabsTrigger value="content">Nội dung</TabsTrigger>
@@ -170,7 +207,9 @@ export default function PerformanceManagementPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Tổng lượt xem</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          Tổng lượt xem
+                        </CardTitle>
                         <Eye className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
@@ -187,7 +226,9 @@ export default function PerformanceManagementPage() {
 
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          Engagement Rate
+                        </CardTitle>
                         <Heart className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
@@ -204,7 +245,9 @@ export default function PerformanceManagementPage() {
 
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Reach</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          Reach
+                        </CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
@@ -221,7 +264,9 @@ export default function PerformanceManagementPage() {
 
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          Conversion Rate
+                        </CardTitle>
                         <Target className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
@@ -241,15 +286,20 @@ export default function PerformanceManagementPage() {
                   <Card>
                     <CardHeader>
                       <CardTitle>Xu hướng hiệu suất</CardTitle>
-                      <CardDescription>Biểu đồ theo dõi các chỉ số chính theo thời gian</CardDescription>
+                      <CardDescription>
+                        Biểu đồ theo dõi các chỉ số chính theo thời gian
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="h-80 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg flex items-center justify-center">
                         <div className="text-center">
                           <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                          <p className="text-gray-600">Biểu đồ hiệu suất sẽ hiển thị ở đây</p>
+                          <p className="text-gray-600">
+                            Biểu đồ hiệu suất sẽ hiển thị ở đây
+                          </p>
                           <p className="text-sm text-gray-500 mt-2">
-                            Tích hợp với Chart.js hoặc Recharts để hiển thị dữ liệu thực tế
+                            Tích hợp với Chart.js hoặc Recharts để hiển thị dữ
+                            liệu thực tế
                           </p>
                         </div>
                       </div>
@@ -264,55 +314,87 @@ export default function PerformanceManagementPage() {
                           <TrendingUp className="w-5 h-5 mr-2 text-green-600" />
                           Top bài viết hiệu suất cao
                         </CardTitle>
-                        <CardDescription>Những bài viết có engagement rate cao nhất</CardDescription>
+                        <CardDescription>
+                          Những bài viết có engagement rate cao nhất
+                        </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
                           <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                             <div className="flex items-center space-x-3">
                               <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-                                <span className="text-white text-sm font-bold">1</span>
+                                <span className="text-white text-sm font-bold">
+                                  1
+                                </span>
                               </div>
                               <div>
-                                <h4 className="font-medium text-sm">5 Tips Marketing hiệu quả</h4>
-                                <p className="text-xs text-gray-600">Facebook • 2 ngày trước</p>
+                                <h4 className="font-medium text-sm">
+                                  5 Tips Marketing hiệu quả
+                                </h4>
+                                <p className="text-xs text-gray-600">
+                                  Facebook • 2 ngày trước
+                                </p>
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-lg font-bold text-green-600">12.4%</div>
-                              <div className="text-xs text-gray-600">Engagement</div>
+                              <div className="text-lg font-bold text-green-600">
+                                12.4%
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                Engagement
+                              </div>
                             </div>
                           </div>
 
                           <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                             <div className="flex items-center space-x-3">
                               <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                                <span className="text-white text-sm font-bold">2</span>
+                                <span className="text-white text-sm font-bold">
+                                  2
+                                </span>
                               </div>
                               <div>
-                                <h4 className="font-medium text-sm">Behind the scenes video</h4>
-                                <p className="text-xs text-gray-600">Instagram • 1 ngày trước</p>
+                                <h4 className="font-medium text-sm">
+                                  Behind the scenes video
+                                </h4>
+                                <p className="text-xs text-gray-600">
+                                  Instagram • 1 ngày trước
+                                </p>
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-lg font-bold text-blue-600">11.8%</div>
-                              <div className="text-xs text-gray-600">Engagement</div>
+                              <div className="text-lg font-bold text-blue-600">
+                                11.8%
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                Engagement
+                              </div>
                             </div>
                           </div>
 
                           <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
                             <div className="flex items-center space-x-3">
                               <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-                                <span className="text-white text-sm font-bold">3</span>
+                                <span className="text-white text-sm font-bold">
+                                  3
+                                </span>
                               </div>
                               <div>
-                                <h4 className="font-medium text-sm">Xu hướng Digital 2024</h4>
-                                <p className="text-xs text-gray-600">LinkedIn • 3 ngày trước</p>
+                                <h4 className="font-medium text-sm">
+                                  Xu hướng Digital 2024
+                                </h4>
+                                <p className="text-xs text-gray-600">
+                                  LinkedIn • 3 ngày trước
+                                </p>
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-lg font-bold text-purple-600">10.2%</div>
-                              <div className="text-xs text-gray-600">Engagement</div>
+                              <div className="text-lg font-bold text-purple-600">
+                                10.2%
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                Engagement
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -325,7 +407,9 @@ export default function PerformanceManagementPage() {
                           <AlertTriangle className="w-5 h-5 mr-2 text-orange-600" />
                           Cần cải thiện
                         </CardTitle>
-                        <CardDescription>Những bài viết có hiệu suất thấp cần tối ưu</CardDescription>
+                        <CardDescription>
+                          Những bài viết có hiệu suất thấp cần tối ưu
+                        </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
@@ -335,13 +419,21 @@ export default function PerformanceManagementPage() {
                                 <XCircle className="w-5 h-5 text-white" />
                               </div>
                               <div>
-                                <h4 className="font-medium text-sm">Product announcement</h4>
-                                <p className="text-xs text-gray-600">Twitter • 5 ngày trước</p>
+                                <h4 className="font-medium text-sm">
+                                  Product announcement
+                                </h4>
+                                <p className="text-xs text-gray-600">
+                                  Twitter • 5 ngày trước
+                                </p>
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-lg font-bold text-red-600">1.2%</div>
-                              <div className="text-xs text-gray-600">Engagement</div>
+                              <div className="text-lg font-bold text-red-600">
+                                1.2%
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                Engagement
+                              </div>
                             </div>
                           </div>
 
@@ -351,13 +443,21 @@ export default function PerformanceManagementPage() {
                                 <AlertTriangle className="w-5 h-5 text-white" />
                               </div>
                               <div>
-                                <h4 className="font-medium text-sm">Weekly newsletter</h4>
-                                <p className="text-xs text-gray-600">Email • 1 tuần trước</p>
+                                <h4 className="font-medium text-sm">
+                                  Weekly newsletter
+                                </h4>
+                                <p className="text-xs text-gray-600">
+                                  Email • 1 tuần trước
+                                </p>
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-lg font-bold text-orange-600">2.8%</div>
-                              <div className="text-xs text-gray-600">Open rate</div>
+                              <div className="text-lg font-bold text-orange-600">
+                                2.8%
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                Open rate
+                              </div>
                             </div>
                           </div>
 
@@ -384,7 +484,9 @@ export default function PerformanceManagementPage() {
               <TabsContent value="content">
                 <div className="space-y-8">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-semibold">Hiệu suất theo nội dung</h3>
+                    <h3 className="text-xl font-semibold">
+                      Hiệu suất theo nội dung
+                    </h3>
                     <div className="flex space-x-2">
                       <Select>
                         <SelectTrigger className="w-40">
@@ -409,7 +511,9 @@ export default function PerformanceManagementPage() {
                   <Card>
                     <CardHeader>
                       <CardTitle>Chi tiết hiệu suất nội dung</CardTitle>
-                      <CardDescription>Thống kê đầy đủ cho từng bài viết</CardDescription>
+                      <CardDescription>
+                        Thống kê đầy đủ cho từng bài viết
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
@@ -426,54 +530,84 @@ export default function PerformanceManagementPage() {
                         {/* Table Rows */}
                         <div className="space-y-2">
                           <div className="grid grid-cols-6 gap-4 p-3 border rounded-lg text-sm">
-                            <div className="font-medium">5 Tips Marketing hiệu quả cho SME</div>
+                            <div className="font-medium">
+                              5 Tips Marketing hiệu quả cho SME
+                            </div>
                             <div>
-                              <Badge className="bg-blue-100 text-blue-700">Facebook</Badge>
+                              <Badge className="bg-blue-100 text-blue-700">
+                                Facebook
+                              </Badge>
                             </div>
                             <div className="text-gray-600">13/01/2024</div>
                             <div className="font-medium">12.4K</div>
-                            <div className="text-green-600 font-medium">12.4%</div>
+                            <div className="text-green-600 font-medium">
+                              12.4%
+                            </div>
                             <div>
-                              <Badge className="bg-green-100 text-green-700">Xuất sắc</Badge>
+                              <Badge className="bg-green-100 text-green-700">
+                                Xuất sắc
+                              </Badge>
                             </div>
                           </div>
 
                           <div className="grid grid-cols-6 gap-4 p-3 border rounded-lg text-sm">
-                            <div className="font-medium">Behind the scenes - Quy trình sản xuất</div>
+                            <div className="font-medium">
+                              Behind the scenes - Quy trình sản xuất
+                            </div>
                             <div>
-                              <Badge className="bg-pink-100 text-pink-700">Instagram</Badge>
+                              <Badge className="bg-pink-100 text-pink-700">
+                                Instagram
+                              </Badge>
                             </div>
                             <div className="text-gray-600">14/01/2024</div>
                             <div className="font-medium">8.7K</div>
-                            <div className="text-green-600 font-medium">11.8%</div>
+                            <div className="text-green-600 font-medium">
+                              11.8%
+                            </div>
                             <div>
-                              <Badge className="bg-green-100 text-green-700">Tốt</Badge>
+                              <Badge className="bg-green-100 text-green-700">
+                                Tốt
+                              </Badge>
                             </div>
                           </div>
 
                           <div className="grid grid-cols-6 gap-4 p-3 border rounded-lg text-sm">
-                            <div className="font-medium">Xu hướng công nghệ 2024</div>
+                            <div className="font-medium">
+                              Xu hướng công nghệ 2024
+                            </div>
                             <div>
-                              <Badge className="bg-blue-100 text-blue-700">LinkedIn</Badge>
+                              <Badge className="bg-blue-100 text-blue-700">
+                                LinkedIn
+                              </Badge>
                             </div>
                             <div className="text-gray-600">12/01/2024</div>
                             <div className="font-medium">5.2K</div>
-                            <div className="text-green-600 font-medium">10.2%</div>
+                            <div className="text-green-600 font-medium">
+                              10.2%
+                            </div>
                             <div>
-                              <Badge className="bg-green-100 text-green-700">Tốt</Badge>
+                              <Badge className="bg-green-100 text-green-700">
+                                Tốt
+                              </Badge>
                             </div>
                           </div>
 
                           <div className="grid grid-cols-6 gap-4 p-3 border rounded-lg text-sm">
-                            <div className="font-medium">Product announcement</div>
+                            <div className="font-medium">
+                              Product announcement
+                            </div>
                             <div>
-                              <Badge className="bg-gray-100 text-gray-700">Twitter</Badge>
+                              <Badge className="bg-gray-100 text-gray-700">
+                                Twitter
+                              </Badge>
                             </div>
                             <div className="text-gray-600">10/01/2024</div>
                             <div className="font-medium">1.8K</div>
                             <div className="text-red-600 font-medium">1.2%</div>
                             <div>
-                              <Badge className="bg-red-100 text-red-700">Cần cải thiện</Badge>
+                              <Badge className="bg-red-100 text-red-700">
+                                Cần cải thiện
+                              </Badge>
                             </div>
                           </div>
                         </div>
@@ -486,7 +620,9 @@ export default function PerformanceManagementPage() {
                     <Card>
                       <CardHeader>
                         <CardTitle>Hiệu suất theo loại nội dung</CardTitle>
-                        <CardDescription>So sánh engagement rate giữa các loại nội dung</CardDescription>
+                        <CardDescription>
+                          So sánh engagement rate giữa các loại nội dung
+                        </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
@@ -525,7 +661,9 @@ export default function PerformanceManagementPage() {
                     <Card>
                       <CardHeader>
                         <CardTitle>Thời gian đăng bài tối ưu</CardTitle>
-                        <CardDescription>Engagement rate theo giờ trong ngày</CardDescription>
+                        <CardDescription>
+                          Engagement rate theo giờ trong ngày
+                        </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
@@ -533,28 +671,38 @@ export default function PerformanceManagementPage() {
                             <span className="font-medium">9:00 - 11:00 AM</span>
                             <div className="flex items-center space-x-3">
                               <Progress value={94} className="w-24" />
-                              <span className="text-sm font-medium text-green-600">Cao nhất</span>
+                              <span className="text-sm font-medium text-green-600">
+                                Cao nhất
+                              </span>
                             </div>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="font-medium">2:00 - 4:00 PM</span>
                             <div className="flex items-center space-x-3">
                               <Progress value={88} className="w-24" />
-                              <span className="text-sm font-medium text-green-600">Tốt</span>
+                              <span className="text-sm font-medium text-green-600">
+                                Tốt
+                              </span>
                             </div>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="font-medium">7:00 - 9:00 PM</span>
                             <div className="flex items-center space-x-3">
                               <Progress value={82} className="w-24" />
-                              <span className="text-sm font-medium text-blue-600">Trung bình</span>
+                              <span className="text-sm font-medium text-blue-600">
+                                Trung bình
+                              </span>
                             </div>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="font-medium">11:00 PM - 6:00 AM</span>
+                            <span className="font-medium">
+                              11:00 PM - 6:00 AM
+                            </span>
                             <div className="flex items-center space-x-3">
                               <Progress value={45} className="w-24" />
-                              <span className="text-sm font-medium text-red-600">Thấp</span>
+                              <span className="text-sm font-medium text-red-600">
+                                Thấp
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -567,20 +715,28 @@ export default function PerformanceManagementPage() {
               {/* Platform Performance Tab */}
               <TabsContent value="platforms">
                 <div className="space-y-8">
-                  <h3 className="text-xl font-semibold">Hiệu suất theo nền tảng</h3>
+                  <h3 className="text-xl font-semibold">
+                    Hiệu suất theo nền tảng
+                  </h3>
 
                   {/* Platform Overview */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Facebook</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          Facebook
+                        </CardTitle>
                         <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">f</span>
+                          <span className="text-white text-xs font-bold">
+                            f
+                          </span>
                         </div>
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">8.5%</div>
-                        <p className="text-xs text-muted-foreground">Engagement rate</p>
+                        <p className="text-xs text-muted-foreground">
+                          Engagement rate
+                        </p>
                         <div className="mt-2">
                           <Progress value={85} className="h-2" />
                         </div>
@@ -589,14 +745,20 @@ export default function PerformanceManagementPage() {
 
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Instagram</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          Instagram
+                        </CardTitle>
                         <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-orange-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">IG</span>
+                          <span className="text-white text-xs font-bold">
+                            IG
+                          </span>
                         </div>
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">9.2%</div>
-                        <p className="text-xs text-muted-foreground">Engagement rate</p>
+                        <p className="text-xs text-muted-foreground">
+                          Engagement rate
+                        </p>
                         <div className="mt-2">
                           <Progress value={92} className="h-2" />
                         </div>
@@ -605,14 +767,20 @@ export default function PerformanceManagementPage() {
 
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">LinkedIn</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          LinkedIn
+                        </CardTitle>
                         <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">in</span>
+                          <span className="text-white text-xs font-bold">
+                            in
+                          </span>
                         </div>
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">7.6%</div>
-                        <p className="text-xs text-muted-foreground">Engagement rate</p>
+                        <p className="text-xs text-muted-foreground">
+                          Engagement rate
+                        </p>
                         <div className="mt-2">
                           <Progress value={76} className="h-2" />
                         </div>
@@ -621,14 +789,20 @@ export default function PerformanceManagementPage() {
 
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">TikTok</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          TikTok
+                        </CardTitle>
                         <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">TT</span>
+                          <span className="text-white text-xs font-bold">
+                            TT
+                          </span>
                         </div>
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">12.4%</div>
-                        <p className="text-xs text-muted-foreground">Engagement rate</p>
+                        <p className="text-xs text-muted-foreground">
+                          Engagement rate
+                        </p>
                         <div className="mt-2">
                           <Progress value={94} className="h-2" />
                         </div>
@@ -641,7 +815,9 @@ export default function PerformanceManagementPage() {
                     <Card>
                       <CardHeader>
                         <CardTitle>Chi tiết hiệu suất nền tảng</CardTitle>
-                        <CardDescription>Thống kê đầy đủ cho từng nền tảng</CardDescription>
+                        <CardDescription>
+                          Thống kê đầy đủ cho từng nền tảng
+                        </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-6">
@@ -649,11 +825,15 @@ export default function PerformanceManagementPage() {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                                  <span className="text-white text-xs font-bold">f</span>
+                                  <span className="text-white text-xs font-bold">
+                                    f
+                                  </span>
                                 </div>
                                 <span className="font-medium">Facebook</span>
                               </div>
-                              <Badge className="bg-green-100 text-green-700">Tốt</Badge>
+                              <Badge className="bg-green-100 text-green-700">
+                                Tốt
+                              </Badge>
                             </div>
                             <div className="ml-11 grid grid-cols-3 gap-4 text-sm">
                               <div>
@@ -675,11 +855,15 @@ export default function PerformanceManagementPage() {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-orange-500 rounded-full flex items-center justify-center">
-                                  <span className="text-white text-xs font-bold">IG</span>
+                                  <span className="text-white text-xs font-bold">
+                                    IG
+                                  </span>
                                 </div>
                                 <span className="font-medium">Instagram</span>
                               </div>
-                              <Badge className="bg-green-100 text-green-700">Xuất sắc</Badge>
+                              <Badge className="bg-green-100 text-green-700">
+                                Xuất sắc
+                              </Badge>
                             </div>
                             <div className="ml-11 grid grid-cols-3 gap-4 text-sm">
                               <div>
@@ -701,11 +885,15 @@ export default function PerformanceManagementPage() {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                                  <span className="text-white text-xs font-bold">in</span>
+                                  <span className="text-white text-xs font-bold">
+                                    in
+                                  </span>
                                 </div>
                                 <span className="font-medium">LinkedIn</span>
                               </div>
-                              <Badge className="bg-blue-100 text-blue-700">Trung bình</Badge>
+                              <Badge className="bg-blue-100 text-blue-700">
+                                Trung bình
+                              </Badge>
                             </div>
                             <div className="ml-11 grid grid-cols-3 gap-4 text-sm">
                               <div>
@@ -729,18 +917,24 @@ export default function PerformanceManagementPage() {
                     <Card>
                       <CardHeader>
                         <CardTitle>Xu hướng theo nền tảng</CardTitle>
-                        <CardDescription>Sự thay đổi hiệu suất 30 ngày qua</CardDescription>
+                        <CardDescription>
+                          Sự thay đổi hiệu suất 30 ngày qua
+                        </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
                           <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-                                <span className="text-white text-xs font-bold">TT</span>
+                                <span className="text-white text-xs font-bold">
+                                  TT
+                                </span>
                               </div>
                               <div>
                                 <div className="font-medium">TikTok</div>
-                                <div className="text-sm text-gray-600">Tăng trưởng mạnh</div>
+                                <div className="text-sm text-gray-600">
+                                  Tăng trưởng mạnh
+                                </div>
                               </div>
                             </div>
                             <div className="text-right">
@@ -748,18 +942,24 @@ export default function PerformanceManagementPage() {
                                 <TrendingUp className="w-4 h-4 mr-1" />
                                 +45%
                               </div>
-                              <div className="text-sm text-gray-600">Engagement</div>
+                              <div className="text-sm text-gray-600">
+                                Engagement
+                              </div>
                             </div>
                           </div>
 
                           <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-orange-500 rounded-full flex items-center justify-center">
-                                <span className="text-white text-xs font-bold">IG</span>
+                                <span className="text-white text-xs font-bold">
+                                  IG
+                                </span>
                               </div>
                               <div>
                                 <div className="font-medium">Instagram</div>
-                                <div className="text-sm text-gray-600">Tăng trưởng ổn định</div>
+                                <div className="text-sm text-gray-600">
+                                  Tăng trưởng ổn định
+                                </div>
                               </div>
                             </div>
                             <div className="text-right">
@@ -767,18 +967,24 @@ export default function PerformanceManagementPage() {
                                 <TrendingUp className="w-4 h-4 mr-1" />
                                 +18%
                               </div>
-                              <div className="text-sm text-gray-600">Engagement</div>
+                              <div className="text-sm text-gray-600">
+                                Engagement
+                              </div>
                             </div>
                           </div>
 
                           <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
-                                <span className="text-white text-xs font-bold">X</span>
+                                <span className="text-white text-xs font-bold">
+                                  X
+                                </span>
                               </div>
                               <div>
                                 <div className="font-medium">Twitter</div>
-                                <div className="text-sm text-gray-600">Giảm nhẹ</div>
+                                <div className="text-sm text-gray-600">
+                                  Giảm nhẹ
+                                </div>
                               </div>
                             </div>
                             <div className="text-right">
@@ -786,7 +992,9 @@ export default function PerformanceManagementPage() {
                                 <TrendingDown className="w-4 h-4 mr-1" />
                                 -8%
                               </div>
-                              <div className="text-sm text-gray-600">Engagement</div>
+                              <div className="text-sm text-gray-600">
+                                Engagement
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -903,7 +1111,9 @@ export default function PerformanceManagementPage() {
                   <Card>
                     <CardHeader>
                       <CardTitle>Insights về audience</CardTitle>
-                      <CardDescription>Phân tích sâu về hành vi và sở thích của audience</CardDescription>
+                      <CardDescription>
+                        Phân tích sâu về hành vi và sở thích của audience
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -911,26 +1121,44 @@ export default function PerformanceManagementPage() {
                           <h4 className="font-semibold mb-4">Sở thích chính</h4>
                           <div className="space-y-3">
                             <div className="flex items-center space-x-3">
-                              <Badge className="bg-blue-100 text-blue-700">Công nghệ</Badge>
-                              <span className="text-sm">68% audience quan tâm</span>
+                              <Badge className="bg-blue-100 text-blue-700">
+                                Công nghệ
+                              </Badge>
+                              <span className="text-sm">
+                                68% audience quan tâm
+                              </span>
                             </div>
                             <div className="flex items-center space-x-3">
-                              <Badge className="bg-green-100 text-green-700">Marketing</Badge>
-                              <span className="text-sm">54% audience quan tâm</span>
+                              <Badge className="bg-green-100 text-green-700">
+                                Marketing
+                              </Badge>
+                              <span className="text-sm">
+                                54% audience quan tâm
+                              </span>
                             </div>
                             <div className="flex items-center space-x-3">
-                              <Badge className="bg-purple-100 text-purple-700">Khởi nghiệp</Badge>
-                              <span className="text-sm">42% audience quan tâm</span>
+                              <Badge className="bg-purple-100 text-purple-700">
+                                Khởi nghiệp
+                              </Badge>
+                              <span className="text-sm">
+                                42% audience quan tâm
+                              </span>
                             </div>
                             <div className="flex items-center space-x-3">
-                              <Badge className="bg-orange-100 text-orange-700">Đầu tư</Badge>
-                              <span className="text-sm">38% audience quan tâm</span>
+                              <Badge className="bg-orange-100 text-orange-700">
+                                Đầu tư
+                              </Badge>
+                              <span className="text-sm">
+                                38% audience quan tâm
+                              </span>
                             </div>
                           </div>
                         </div>
 
                         <div>
-                          <h4 className="font-semibold mb-4">Hành vi tương tác</h4>
+                          <h4 className="font-semibold mb-4">
+                            Hành vi tương tác
+                          </h4>
                           <div className="space-y-3">
                             <div className="flex justify-between items-center">
                               <span className="text-sm">Thích comment</span>
@@ -945,7 +1173,9 @@ export default function PerformanceManagementPage() {
                               <span className="text-sm font-medium">38%</span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-sm">Xem video đến cuối</span>
+                              <span className="text-sm">
+                                Xem video đến cuối
+                              </span>
                               <span className="text-sm font-medium">62%</span>
                             </div>
                           </div>
@@ -972,11 +1202,15 @@ export default function PerformanceManagementPage() {
                     <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                       <CardHeader>
                         <div className="flex items-center justify-between">
-                          <Badge className="bg-blue-100 text-blue-700">Hàng tuần</Badge>
+                          <Badge className="bg-blue-100 text-blue-700">
+                            Hàng tuần
+                          </Badge>
                           <BarChart3 className="w-5 h-5 text-blue-600" />
                         </div>
                         <CardTitle className="text-lg">Báo cáo tuần</CardTitle>
-                        <CardDescription>Tổng quan hiệu suất 7 ngày qua</CardDescription>
+                        <CardDescription>
+                          Tổng quan hiệu suất 7 ngày qua
+                        </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-2 text-sm">
@@ -990,10 +1224,15 @@ export default function PerformanceManagementPage() {
                           </div>
                           <div className="flex justify-between">
                             <span>Engagement:</span>
-                            <span className="font-medium text-green-600">+15%</span>
+                            <span className="font-medium text-green-600">
+                              +15%
+                            </span>
                           </div>
                         </div>
-                        <Button className="w-full mt-4 bg-transparent" variant="outline">
+                        <Button
+                          className="w-full mt-4 bg-transparent"
+                          variant="outline"
+                        >
                           <Download className="w-4 h-4 mr-2" />
                           Tải báo cáo
                         </Button>
@@ -1003,11 +1242,15 @@ export default function PerformanceManagementPage() {
                     <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                       <CardHeader>
                         <div className="flex items-center justify-between">
-                          <Badge className="bg-green-100 text-green-700">Hàng tháng</Badge>
+                          <Badge className="bg-green-100 text-green-700">
+                            Hàng tháng
+                          </Badge>
                           <TrendingUp className="w-5 h-5 text-green-600" />
                         </div>
                         <CardTitle className="text-lg">Báo cáo tháng</CardTitle>
-                        <CardDescription>Phân tích chi tiết 30 ngày qua</CardDescription>
+                        <CardDescription>
+                          Phân tích chi tiết 30 ngày qua
+                        </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-2 text-sm">
@@ -1021,10 +1264,15 @@ export default function PerformanceManagementPage() {
                           </div>
                           <div className="flex justify-between">
                             <span>Engagement:</span>
-                            <span className="font-medium text-green-600">+22%</span>
+                            <span className="font-medium text-green-600">
+                              +22%
+                            </span>
                           </div>
                         </div>
-                        <Button className="w-full mt-4 bg-transparent" variant="outline">
+                        <Button
+                          className="w-full mt-4 bg-transparent"
+                          variant="outline"
+                        >
                           <Download className="w-4 h-4 mr-2" />
                           Tải báo cáo
                         </Button>
@@ -1034,11 +1282,17 @@ export default function PerformanceManagementPage() {
                     <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                       <CardHeader>
                         <div className="flex items-center justify-between">
-                          <Badge className="bg-purple-100 text-purple-700">Tùy chỉnh</Badge>
+                          <Badge className="bg-purple-100 text-purple-700">
+                            Tùy chỉnh
+                          </Badge>
                           <Target className="w-5 h-5 text-purple-600" />
                         </div>
-                        <CardTitle className="text-lg">Báo cáo tùy chỉnh</CardTitle>
-                        <CardDescription>Tạo báo cáo theo yêu cầu riêng</CardDescription>
+                        <CardTitle className="text-lg">
+                          Báo cáo tùy chỉnh
+                        </CardTitle>
+                        <CardDescription>
+                          Tạo báo cáo theo yêu cầu riêng
+                        </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-2 text-sm text-gray-600">
@@ -1059,7 +1313,9 @@ export default function PerformanceManagementPage() {
                   <Card>
                     <CardHeader>
                       <CardTitle>Báo cáo gần đây</CardTitle>
-                      <CardDescription>Các báo cáo đã tạo trong thời gian qua</CardDescription>
+                      <CardDescription>
+                        Các báo cáo đã tạo trong thời gian qua
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
@@ -1069,12 +1325,18 @@ export default function PerformanceManagementPage() {
                               <BarChart3 className="w-5 h-5 text-blue-600" />
                             </div>
                             <div>
-                              <h4 className="font-medium">Báo cáo hiệu suất tháng 1/2024</h4>
-                              <p className="text-sm text-gray-600">Tạo ngày 01/02/2024 • PDF, 15 trang</p>
+                              <h4 className="font-medium">
+                                Báo cáo hiệu suất tháng 1/2024
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                Tạo ngày 01/02/2024 • PDF, 15 trang
+                              </p>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Badge className="bg-green-100 text-green-700">Hoàn thành</Badge>
+                            <Badge className="bg-green-100 text-green-700">
+                              Hoàn thành
+                            </Badge>
                             <Button size="sm" variant="outline">
                               <Download className="w-4 h-4" />
                             </Button>
@@ -1087,12 +1349,18 @@ export default function PerformanceManagementPage() {
                               <TrendingUp className="w-5 h-5 text-green-600" />
                             </div>
                             <div>
-                              <h4 className="font-medium">Phân tích competitor Q4/2023</h4>
-                              <p className="text-sm text-gray-600">Tạo ngày 28/01/2024 • Excel, 8 sheets</p>
+                              <h4 className="font-medium">
+                                Phân tích competitor Q4/2023
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                Tạo ngày 28/01/2024 • Excel, 8 sheets
+                              </p>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Badge className="bg-green-100 text-green-700">Hoàn thành</Badge>
+                            <Badge className="bg-green-100 text-green-700">
+                              Hoàn thành
+                            </Badge>
                             <Button size="sm" variant="outline">
                               <Download className="w-4 h-4" />
                             </Button>
@@ -1105,12 +1373,18 @@ export default function PerformanceManagementPage() {
                               <Clock className="w-5 h-5 text-orange-600" />
                             </div>
                             <div>
-                              <h4 className="font-medium">Báo cáo ROI campaign</h4>
-                              <p className="text-sm text-gray-600">Đang tạo • Ước tính 5 phút nữa</p>
+                              <h4 className="font-medium">
+                                Báo cáo ROI campaign
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                Đang tạo • Ước tính 5 phút nữa
+                              </p>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Badge className="bg-orange-100 text-orange-700">Đang xử lý</Badge>
+                            <Badge className="bg-orange-100 text-orange-700">
+                              Đang xử lý
+                            </Badge>
                             <Button size="sm" variant="outline" disabled>
                               <RefreshCw className="w-4 h-4 animate-spin" />
                             </Button>
@@ -1136,7 +1410,9 @@ export default function PerformanceManagementPage() {
                   <Brain className="w-5 h-5 mr-2 text-purple-600" />
                   AI Insights & Recommendations
                 </CardTitle>
-                <CardDescription>AI phân tích dữ liệu và đưa ra gợi ý cải thiện hiệu suất</CardDescription>
+                <CardDescription>
+                  AI phân tích dữ liệu và đưa ra gợi ý cải thiện hiệu suất
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1148,7 +1424,9 @@ export default function PerformanceManagementPage() {
                     <ul className="space-y-2 text-sm">
                       <li className="flex items-start space-x-2">
                         <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2"></div>
-                        <span>Video content có engagement rate cao nhất (9.2%)</span>
+                        <span>
+                          Video content có engagement rate cao nhất (9.2%)
+                        </span>
                       </li>
                       <li className="flex items-start space-x-2">
                         <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2"></div>
@@ -1169,7 +1447,9 @@ export default function PerformanceManagementPage() {
                     <ul className="space-y-2 text-sm">
                       <li className="flex items-start space-x-2">
                         <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2"></div>
-                        <span>Twitter engagement giảm 8% so với tháng trước</span>
+                        <span>
+                          Twitter engagement giảm 8% so với tháng trước
+                        </span>
                       </li>
                       <li className="flex items-start space-x-2">
                         <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2"></div>
@@ -1191,19 +1471,29 @@ export default function PerformanceManagementPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
                       <div className="font-medium mb-1">Tăng video content</div>
-                      <div className="text-gray-600">Tạo thêm 2-3 video/tuần để tận dụng engagement cao</div>
+                      <div className="text-gray-600">
+                        Tạo thêm 2-3 video/tuần để tận dụng engagement cao
+                      </div>
                     </div>
                     <div>
-                      <div className="font-medium mb-1">Tối ưu Twitter strategy</div>
-                      <div className="text-gray-600">Thay đổi content format và thời gian đăng</div>
+                      <div className="font-medium mb-1">
+                        Tối ưu Twitter strategy
+                      </div>
+                      <div className="text-gray-600">
+                        Thay đổi content format và thời gian đăng
+                      </div>
                     </div>
                     <div>
                       <div className="font-medium mb-1">A/B test CTA</div>
-                      <div className="text-gray-600">Thử nghiệm các CTA khác nhau để tăng conversion</div>
+                      <div className="text-gray-600">
+                        Thử nghiệm các CTA khác nhau để tăng conversion
+                      </div>
                     </div>
                     <div>
                       <div className="font-medium mb-1">Lên lịch cuối tuần</div>
-                      <div className="text-gray-600">Thêm nội dung cho thứ 7, chủ nhật</div>
+                      <div className="text-gray-600">
+                        Thêm nội dung cho thứ 7, chủ nhật
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1212,30 +1502,6 @@ export default function PerformanceManagementPage() {
           </div>
         </div>
       </section>
-
-      {/* CTA Section */}
-      <section className="py-16 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
-        <div className="container mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Tối ưu hiệu suất với AI Analytics</h2>
-          <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
-            Theo dõi, phân tích và cải thiện hiệu quả marketing với insights từ AI thông minh.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100">
-              <BarChart3 className="w-5 h-5 mr-2" />
-              Xem dashboard ngay
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-white text-white hover:bg-white hover:text-purple-600 bg-transparent"
-            >
-              Tải báo cáo mẫu
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-          </div>
-        </div>
-      </section>
-    </div>
-  )
+    </>
+  );
 }
