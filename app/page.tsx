@@ -19,6 +19,8 @@ import {
   Video,
   CheckCircle,
   ArrowRight,
+  X,
+  Menu,
 } from "lucide-react";
 import Link from "next/link";
 import Footer from "../components/Footer";
