@@ -1,3 +1,5 @@
+"use client";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -775,8 +777,5 @@ export default function HomePage() {
       <Footer />
     </div>
   );
-}
-function useState(arg0: boolean): [any, any] {
-  throw new Error("Function not implemented.");
 }
 

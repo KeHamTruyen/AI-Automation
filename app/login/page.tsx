@@ -49,9 +49,8 @@ export default function LoginPage() {
 
         // Lưu trạng thái đăng nhập
         document.cookie = "isLoggedIn=true; path=/;";
-        // tại sao là vào dashboard trước
-        // router.push("/dashboard");
-        router.push("/formImportAPI"); //Chuyển sang trang quản lý mạng xã hội sau khi đăng nhập thành công
+  // Sau khi đăng nhập, chuyển thẳng vào dashboard (tạm thời bỏ qua formImportAPI)
+  router.push("/dashboard");
         router.refresh();
       } else {
         setError(data.error || "Đăng nhập thất bại");
