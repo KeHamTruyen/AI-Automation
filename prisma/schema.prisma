@@ -18,6 +18,10 @@ model User {
   role      Role     @default(USER)
   createdAt DateTime @default(now())
   lastLogin DateTime?
+  // Per-user master workflow (new architecture: one workflow per user, nodes added per social account)
+  n8nWorkflowId   String? @db.VarChar(191)
+  n8nWorkflowName String? @db.VarChar(191)
+  n8nWebhookUrl   String? @db.VarChar(512)
   
   // Relations
   socialAccounts SocialAccount[]

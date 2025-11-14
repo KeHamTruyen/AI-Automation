@@ -259,3 +259,82 @@ export async function cloneWorkflowFromTemplate(opts: {
   const webhookUrl = webhookPath ? buildWebhookUrl(webhookPath) : undefined
   return { workflow: activated, webhookPath, webhookUrl }
 }
+
+// New: add a posting node for a newly connected social account into an existing per-user workflow.
+// This is a simplified helper; it appends a new HTTP Request node (or leaves type override) and connects
+// it directly to a downstream normalization node if found, otherwise no connections are wired.
+// IMPORTANT: n8n connections structure expects: connections: { [nodeName]: { main: [ [ { node, type, index } ] ] } }
+// We attempt minimal mutation; for advanced merging (multiple accounts per platform) you may need to
+// implement chained Merge nodes. This helper is intentionally conservative.
+export async function addPlatformAccountNode(opts: {
+  workflowId: string
+  platform: string
+  accountDisplayName: string
+  credentialId: string
+  credentialName: string
+  credentialType: string
+  nodeTypeOverride?: string // e.g. native node type, else httpRequest
+}): Promise<Workflow> {
+  const wf = await getWorkflow(opts.workflowId)
+  const nodes = Array.isArray(wf.nodes) ? JSON.parse(JSON.stringify(wf.nodes)) : []
+
+  // Heuristic: find route node and normalize node by name hint
+  const routeNode = nodes.find((n: any) => String(n.name || '').toLowerCase().includes('route'))
+  const normalizeNode = nodes.find((n: any) => String(n.name || '').toLowerCase().includes('normalize'))
+
+  const baseX = routeNode?.position?.x || 600
+  const baseY = routeNode?.position?.y || 300
+  // Offset Y per platform to spread nodes vertically
+  const platformIndexOffset = nodes.filter((n: any) => String(n.name || '').includes(`[${opts.platform}]`)).length
+  const newNodeName = `[${opts.platform}] Post ${opts.accountDisplayName}`
+
+  // Choose node type
+  const nodeType = opts.nodeTypeOverride || 'n8n-nodes-base.httpRequest'
+  const newNode: any = {
+    name: newNodeName,
+    type: nodeType,
+    parameters: {},
+    position: { x: baseX + 300, y: baseY + platformIndexOffset * 120 },
+    credentials: {},
+  }
+
+  // Attach credential appropriately
+  if (opts.credentialType === 'httpHeaderAuth') {
+    newNode.parameters = {
+      url: 'https://graph.facebook.com/v19.0/<page-id>/feed', // Placeholder; replace dynamically
+      method: 'POST',
+      sendBody: true,
+      jsonParameters: true,
+      options: { },
+      bodyParametersJson: '{"message":"{{$json[\"content\"] || \"Hello\"}}"}'
+    }
+    newNode.credentials.httpHeaderAuth = { id: opts.credentialId, name: opts.credentialName }
+  } else if (opts.credentialType === 'facebookGraphApi') {
+    // Native facebook node type expected; adapt if nodeTypeOverride provided
+    newNode.credentials.facebookGraphApi = { id: opts.credentialId, name: opts.credentialName }
+  } else if (opts.credentialType === 'twitterOAuth2Api') {
+    newNode.credentials.twitterOAuth2Api = { id: opts.credentialId, name: opts.credentialName }
+  } else {
+    // Fallback generic
+    newNode.credentials[opts.credentialType] = { id: opts.credentialId, name: opts.credentialName }
+  }
+
+  nodes.push(newNode)
+
+  // Mutate connections: connect routeNode -> new node; then new node -> normalizeNode (if exists)
+  const connections = wf.connections ? JSON.parse(JSON.stringify(wf.connections)) : {}
+  if (routeNode) {
+    const routeName = routeNode.name
+    connections[routeName] = connections[routeName] || {}
+    connections[routeName].main = connections[routeName].main || [[]]
+    connections[routeName].main.push([{ node: newNodeName, type: 'main', index: 0 }])
+  }
+  if (normalizeNode) {
+    connections[newNodeName] = connections[newNodeName] || {}
+    connections[newNodeName].main = [ [ { node: normalizeNode.name, type: 'main', index: 0 } ] ]
+  }
+
+  const patched: Partial<Workflow> = { nodes, connections }
+  const updated = await updateWorkflow(opts.workflowId, patched)
+  return updated
+}

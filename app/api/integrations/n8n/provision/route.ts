@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { jwtVerify } from "jose"
 import { prisma } from "@/lib/prisma"
-import { createHttpHeaderBearerCredential, createBasicAuthCredential, createTwitterOAuth2Credential, createFacebookGraphApiCredential, cloneWorkflowFromTemplate } from "@/lib/n8n"
+import { createHttpHeaderBearerCredential, createBasicAuthCredential, createTwitterOAuth2Credential, createFacebookGraphApiCredential, cloneWorkflowFromTemplate, addPlatformAccountNode } from "@/lib/n8n"
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key")
 
@@ -69,8 +69,29 @@ export async function POST(request: NextRequest) {
         data: { userId, platform, name, username, accessToken: accessToken ?? null },
       })
     }
+    // 2) Lấy hoặc tạo workflow cấp user (nếu chưa có)
+    let user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) return jsonError("User không tồn tại", 404)
+    let userWorkflowId = user.n8nWorkflowId
+    let userWorkflowName = user.n8nWorkflowName
+    let userWebhookUrl = user.n8nWebhookUrl
+    let newlyCreatedUserWorkflow = false
 
-    // 2) Tạo n8n Credential theo mode
+    if (!userWorkflowId) {
+      // Clone 1 workflow master cho user (platform generic 'base')
+      const baseClone = await cloneWorkflowFromTemplate({
+        templateId,
+        userId,
+        platform: 'base',
+      })
+      userWorkflowId = baseClone.workflow.id
+      userWorkflowName = baseClone.workflow.name
+      userWebhookUrl = baseClone.webhookUrl || null
+      newlyCreatedUserWorkflow = true
+      await prisma.user.update({ where: { id: userId }, data: { n8nWorkflowId: userWorkflowId, n8nWorkflowName: userWorkflowName, n8nWebhookUrl: userWebhookUrl } })
+    }
+
+    // 3) Tạo n8n Credential theo mode
     let credential
     let credentialType: 'httpBasicAuth' | 'httpHeaderAuth' | 'twitterOAuth2Api' | 'facebookGraphApi'
     if (useByo) {
@@ -91,31 +112,37 @@ export async function POST(request: NextRequest) {
       credential = await createHttpHeaderBearerCredential(credName, accessToken!)
       credentialType = 'httpHeaderAuth'
     }
+    // 4) Thêm node vào workflow hiện có của user (thay vì clone mới mỗi account)
+    let updatedWorkflowId = userWorkflowId!
+    let updatedWorkflowName = userWorkflowName!
+    let updatedWebhookUrl = userWebhookUrl || null
+    try {
+      await addPlatformAccountNode({
+        workflowId: updatedWorkflowId,
+        platform,
+        accountDisplayName: name,
+        credentialId: credential.id,
+        credentialName: credential.name,
+        credentialType,
+        // Optionally override node type for native nodes later
+      })
+    } catch (e: any) {
+      console.warn('Không thể thêm node account vào workflow:', e?.message)
+    }
 
-    // 3) Clone workflow template và activate, bind theo credential name
-    const cloned = await cloneWorkflowFromTemplate({
-      templateId,
-      userId,
-      platform,
-      credentialName: credential.name,
-      credentialId: credential.id,
-      credentialType,
-    })
-
-    // 4) Lưu metadata vào SocialAccount
+    // 5) Lưu metadata vào SocialAccount (chỉ credential, workflow tham chiếu user-level)
     const updated = await prisma.socialAccount.update({
       where: { id: social.id },
       data: {
         n8nCredentialId: credential.id,
         n8nCredentialName: credential.name,
-        n8nWorkflowId: cloned.workflow.id,
-        n8nWorkflowName: cloned.workflow.name,
-        n8nWebhookUrl: cloned.webhookUrl,
+        n8nWorkflowId: updatedWorkflowId,
+        n8nWorkflowName: updatedWorkflowName,
+        n8nWebhookUrl: updatedWebhookUrl,
       } as any,
     })
-
-  const connectUrl = process.env.N8N_BASE_URL ? `${process.env.N8N_BASE_URL.replace(/\/$/, '')}/credentials/${updated.n8nCredentialId}` : undefined
-  return NextResponse.json({ success: true, data: { socialAccount: updated, mode: useByo ? 'byo' : 'token', connectUrl, oauthNeeded: useByo } })
+    const connectUrl = process.env.N8N_BASE_URL ? `${process.env.N8N_BASE_URL.replace(/\/$/, '')}/credentials/${updated.n8nCredentialId}` : undefined
+    return NextResponse.json({ success: true, data: { socialAccount: updated, mode: useByo ? 'byo' : 'token', connectUrl, oauthNeeded: useByo, userWorkflowCreated: newlyCreatedUserWorkflow } })
   } catch (error: any) {
     console.error("[n8n provision] error:", error)
     const message = process.env.NODE_ENV !== 'production' && error?.message
