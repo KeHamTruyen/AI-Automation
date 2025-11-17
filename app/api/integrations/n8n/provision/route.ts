@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { jwtVerify } from "jose"
 import { prisma } from "@/lib/prisma"
-import { createHttpHeaderBearerCredential, createBasicAuthCredential, createTwitterOAuth2Credential, createFacebookGraphApiCredential, cloneWorkflowFromTemplate, addPlatformAccountNode } from "@/lib/n8n"
+import { createHttpHeaderBearerCredential, createBasicAuthCredential, createTwitterOAuth2Credential, createFacebookGraphApiCredential, cloneWorkflowFromTemplate, addPlatformAccountNode, updateExistingNodeCredential, createFacebookTokenCredential, createWorkflowFromTemplateWithAccounts, deleteWorkflow } from "@/lib/n8n"
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key")
 
@@ -108,26 +108,80 @@ export async function POST(request: NextRequest) {
         credentialType = 'httpBasicAuth'
       }
     } else {
-      const credName = `bearer-${platform}-${userId}-${Date.now()}`
-      credential = await createHttpHeaderBearerCredential(credName, accessToken!)
-      credentialType = 'httpHeaderAuth'
+      // Token mode: nếu là Facebook, tạo credential native facebookGraphApi từ access token; ngược lại dùng httpHeaderAuth
+      if (platform === 'facebook') {
+        const credName = `fb-token-${userId}-${Date.now()}`
+        credential = await createFacebookTokenCredential(credName, accessToken!)
+        credentialType = 'facebookGraphApi'
+      } else {
+        const credName = `bearer-${platform}-${userId}-${Date.now()}`
+        credential = await createHttpHeaderBearerCredential(credName, accessToken!)
+        credentialType = 'httpHeaderAuth'
+      }
     }
-    // 4) Thêm node vào workflow hiện có của user (thay vì clone mới mỗi account)
+    // 4) Gắn credential vào node sẵn có nếu là facebook và đã có node trống, ngược lại thêm node mới
     let updatedWorkflowId = userWorkflowId!
     let updatedWorkflowName = userWorkflowName!
     let updatedWebhookUrl = userWebhookUrl || null
-    try {
-      await addPlatformAccountNode({
-        workflowId: updatedWorkflowId,
-        platform,
-        accountDisplayName: name,
-        credentialId: credential.id,
-        credentialName: credential.name,
-        credentialType,
-        // Optionally override node type for native nodes later
-      })
-    } catch (e: any) {
-      console.warn('Không thể thêm node account vào workflow:', e?.message)
+    let nodeUpdated = false
+    if (platform === 'facebook') {
+      try {
+        const res = await updateExistingNodeCredential({
+          workflowId: updatedWorkflowId,
+          platform,
+          credentialId: credential.id,
+          credentialName: credential.name,
+          credentialType,
+          nodeNameHint: 'facebook',
+        })
+        nodeUpdated = res.updated
+      } catch (e: any) {
+        console.warn('Không thể cập nhật node facebook:', e?.message)
+      }
+    }
+    if (!nodeUpdated) {
+      // Thử thêm node mới; nếu PATCH bị chặn, fallback: tái tạo workflow từ template và bind credential trực tiếp
+      try {
+        await addPlatformAccountNode({
+          workflowId: updatedWorkflowId,
+          platform,
+          accountDisplayName: name,
+          credentialId: credential.id,
+          credentialName: credential.name,
+          credentialType,
+        })
+      } catch (e: any) {
+        const msg = String(e?.message || '')
+        console.warn('Không thể thêm node account vào workflow (không tạo workflow mới):', msg)
+        if (/PATCH to update workflow is blocked/i.test(msg)) {
+          // Recreate full workflow from template with accounts bound, then adopt
+          try {
+            const { workflow, webhookUrl } = await createWorkflowFromTemplateWithAccounts({
+              templateId,
+              userId,
+              accounts: [
+                {
+                  platform,
+                  accountDisplayName: name,
+                  credentialId: credential.id,
+                  credentialName: credential.name,
+                  credentialType,
+                },
+              ],
+            })
+            const oldId = updatedWorkflowId
+            updatedWorkflowId = workflow.id
+            updatedWorkflowName = workflow.name
+            updatedWebhookUrl = webhookUrl || null
+            await prisma.user.update({ where: { id: userId }, data: { n8nWorkflowId: updatedWorkflowId, n8nWorkflowName: updatedWorkflowName, n8nWebhookUrl: updatedWebhookUrl } })
+            if (oldId && oldId !== updatedWorkflowId) {
+              try { await deleteWorkflow(oldId) } catch {}
+            }
+          } catch (err) {
+            console.warn('Fallback recreate workflow failed:', (err as any)?.message)
+          }
+        }
+      }
     }
 
     // 5) Lưu metadata vào SocialAccount (chỉ credential, workflow tham chiếu user-level)
@@ -142,7 +196,7 @@ export async function POST(request: NextRequest) {
       } as any,
     })
     const connectUrl = process.env.N8N_BASE_URL ? `${process.env.N8N_BASE_URL.replace(/\/$/, '')}/credentials/${updated.n8nCredentialId}` : undefined
-    return NextResponse.json({ success: true, data: { socialAccount: updated, mode: useByo ? 'byo' : 'token', connectUrl, oauthNeeded: useByo, userWorkflowCreated: newlyCreatedUserWorkflow } })
+    return NextResponse.json({ success: true, data: { socialAccount: updated, mode: useByo ? 'byo' : 'token', connectUrl, oauthNeeded: useByo, userWorkflowCreated: newlyCreatedUserWorkflow, nodeUpdated, workflowId: updatedWorkflowId, webhookUrl: updatedWebhookUrl } })
   } catch (error: any) {
     console.error("[n8n provision] error:", error)
     const message = process.env.NODE_ENV !== 'production' && error?.message
@@ -164,14 +218,41 @@ export async function DELETE(request: NextRequest) {
   const social = await prisma.socialAccount.findUnique({ where: { id: socialId } })
     if (!social || social.userId !== userId) return jsonError("Không tìm thấy social account", 404)
 
-    // Best-effort xóa trong n8n (không fail cứng nếu lỗi)
+    // Không xóa user master workflow. Chỉ xóa workflow nếu đó là workflow legacy (per-account)
+    // và không còn social account nào khác tham chiếu tới nó.
     try {
-      if ((social as any).n8nWorkflowId) {
-        const { deleteWorkflow } = await import("@/lib/n8n")
-        await deleteWorkflow((social as any).n8nWorkflowId)
+      const user = await prisma.user.findUnique({ where: { id: userId } })
+      const masterId = user?.n8nWorkflowId || null
+      const wfId = (social as any).n8nWorkflowId as string | null
+      if (wfId) {
+        if (masterId && wfId === masterId) {
+          // Remove the node for this account from the master workflow instead of deleting it
+          try {
+            const { removePlatformAccountNode } = await import("@/lib/n8n")
+            await removePlatformAccountNode({
+              workflowId: wfId,
+              credentialId: (social as any).n8nCredentialId || undefined,
+              platformHint: social.platform,
+              accountDisplayNameHint: social.name,
+            })
+          } catch (err) {
+            console.warn('Remove node failed:', (err as any)?.message)
+          }
+        } else {
+          // Possibly legacy per-account workflow. Delete only if no one else references it.
+          const cnt = await prisma.socialAccount.count({ where: { n8nWorkflowId: wfId, NOT: { id: social.id } } })
+          if (cnt === 0) {
+            try {
+              const { deleteWorkflow } = await import("@/lib/n8n")
+              await deleteWorkflow(wfId)
+            } catch (err) {
+              console.warn("Delete legacy workflow failed:", err)
+            }
+          }
+        }
       }
     } catch (e) {
-      console.warn("Delete workflow failed:", e)
+      console.warn("Workflow cleanup step warning:", e)
     }
     try {
       if ((social as any).n8nCredentialId) {
@@ -187,6 +268,7 @@ export async function DELETE(request: NextRequest) {
       data: {
         n8nCredentialId: null,
         n8nCredentialName: null,
+        // Keep workflow reference intact for master; clear only if it was per-account legacy
         n8nWorkflowId: null,
         n8nWorkflowName: null,
         n8nWebhookUrl: null,

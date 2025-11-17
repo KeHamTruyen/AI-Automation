@@ -1,0 +1,326 @@
+{
+  "name": "[USER cmhey82p40001zasn6baulnfj] User Social Post Workflow Template (1 accounts) 1763334143252",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "user-cmhey82p40001zasn6baulnfj-1763334143252",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Inbound Post (Webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        432
+      ],
+      "id": "fd2b9836-90bb-4545-bf4c-14a348ea41c0",
+      "webhookId": "4f26a6d4-fa78-4d0e-bbec-40c97bc44e08"
+    },
+    {
+      "parameters": {
+        "text": "={{$json.content_text || $json.content?.text}}",
+        "additionalFields": {}
+      },
+      "name": "Post Tweet",
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        320
+      ],
+      "id": "75baa370-9dcf-4014-ab60-ef10e40a18b3",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "me",
+        "edge": "feed",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "message",
+                "value": "={{ $json.content_text }}"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Post Facebook Page",
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        528
+      ],
+      "id": "034db5ee-d51c-4bc1-ae5f-738c850b4c05",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "ruNEPme5PtpPwvij",
+          "name": "Facebook Graph account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "me",
+        "edge": "media",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "caption",
+                "value": "={{ $json.content_text }}"
+              },
+              {
+                "name": "image_url",
+                "value": "={{ $json.media && $json.media[0] ? $json.media[0] : '' }}"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Post Instagram",
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        736
+      ],
+      "id": "8a3c5f12-9b4d-4e5a-a7c2-1d9e8f6b3c2a"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Validate and normalize input\nconst req = items[0].json || {};\nconst body = req.body ?? req;   // <-- nếu đến từ Webhook sẽ nằm ở body, còn test tay thì ở root\n\nconst content = body.content_text || body.content || '';\nconst platform = String(body.platform || '').toLowerCase();\n\nif (!content || !platform) {\n  return [{ json: { success: false, error: 'Missing content_text or platform' } }];\n}\n\n// Optional: media URLs\nconst media = Array.isArray(body.media) ? body.media : (body.media ? [body.media] : []);\n\n// Optional: hashtags\nlet hashtags = [];\nif (Array.isArray(body.hashtags)) {\n  hashtags = body.hashtags.filter(h => typeof h === 'string');\n} else if (typeof body.hashtags === 'string') {\n  hashtags = body.hashtags.split(/\\s+/).filter(s => s.startsWith('#'));\n}\n\nreturn [{ json: { content_text: content, platform, media, hashtags, raw: body } }];"
+      },
+      "name": "Validate / Normalize1",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        432
+      ],
+      "id": "c5962df5-b206-42c9-8d5a-1873d735976b"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Normalize result\nconst res = items[0].json || {};\n// Check if upstream node returned error\nif (res.error || (res.success === false)) {\n  return [{ json: { success: false, error: res.error || res.message || 'Unknown error', raw: res } }];\n}\n// Try common id fields\nconst id = res.id || res.externalPostId || res.data?.id || null;\nreturn [{ json: { success: true, externalPostId: id, raw: res } }];"
+      },
+      "name": "Normalize Result1",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        192,
+        432
+      ],
+      "id": "29a9295f-6e93-4049-8289-6362cf0dabd9"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Respond1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        448,
+        432
+      ],
+      "id": "c7489e5f-9e3c-4f23-94ca-1666787d03fb"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.platform}}",
+                    "rightValue": "twitter",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "71010c08-5571-4475-b572-915cf2721ca6"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "89487d8a-f2c1-4f15-ac4e-3d32d63c6368",
+                    "leftValue": "={{$json.platform}}",
+                    "rightValue": "facebook",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+                    "leftValue": "={{$json.platform}}",
+                    "rightValue": "instagram",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -352,
+        432
+      ],
+      "id": "ef16c878-c09f-4a2b-a716-e2058d681a3c",
+      "name": "Switch"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Inbound Post (Webhook)": {
+      "main": [
+        [
+          {
+            "node": "Validate / Normalize1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Tweet": {
+      "main": [
+        [
+          {
+            "node": "Normalize Result1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Facebook Page": {
+      "main": [
+        [
+          {
+            "node": "Normalize Result1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Instagram": {
+      "main": [
+        [
+          {
+            "node": "Normalize Result1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate / Normalize1": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Result1": {
+      "main": [
+        [
+          {
+            "node": "Respond1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Post Tweet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Post Facebook Page",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Post Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8d3724b3-7b8d-45d5-a860-558782be10fa",
+  "meta": {
+    "instanceId": "7435dce5e82963b5917f5dd085e640d9e48f3eee1559038e5ee2e732f7bb4630"
+  },
+  "id": "lhONXVwi3wBeWtIw",
+  "tags": []
+}

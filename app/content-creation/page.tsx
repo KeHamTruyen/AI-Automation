@@ -48,6 +48,8 @@ export default function ContentCreationPage() {
   // Publishing state
   const [isPublishing, setIsPublishing] = useState(false)
   const [publishResults, setPublishResults] = useState<{ platform: string; ok: boolean; error?: string; externalPostId?: string }[]>([])
+  const [lastExecId, setLastExecId] = useState<string | null>(null)
+  const [lastTargetUrl, setLastTargetUrl] = useState<string | null>(null)
 
   // Controlled inputs to send to n8n
   const [topic, setTopic] = useState("")
@@ -171,71 +173,117 @@ export default function ContentCreationPage() {
       toast({ title: "Chưa chọn nền tảng", description: "Chọn ít nhất một nền tảng để đăng.", variant: "destructive" })
       return
     }
+    // Attempt to get per-user webhook URL first to avoid server-side 400
+    let resolvedWebhook: string | null = null
+    try {
+      // Re-use logic of resolveUserWebhookUrl (defined below). If not yet defined at runtime, duplicate minimal fetch.
+      const accountsRes = await fetch('/api/social-accounts')
+      const accountsData = await accountsRes.json().catch(() => null)
+      if (accountsRes.ok && Array.isArray(accountsData?.data)) {
+        const firstWithUrl = accountsData.data.find((a: any) => a?.n8nWebhookUrl)
+        resolvedWebhook = firstWithUrl?.n8nWebhookUrl || null
+      }
+    } catch {}
+    if (!resolvedWebhook && lastTargetUrl) {
+      resolvedWebhook = lastTargetUrl
+    }
+
+    if (!resolvedWebhook) {
+      toast({ title: 'Thiếu webhook', description: 'Không tìm thấy webhook user. Hãy provision tài khoản xã hội trước.', variant: 'destructive' })
+      // We still allow sending; backend may locate from user record if available
+    }
     setIsPublishing(true)
     setPublishResults([])
+    setLastExecId(null)
+    setLastTargetUrl(null)
     try {
-      // Lấy danh sách tài khoản đã provision (có webhook riêng)
-      const accountsRes = await fetch(`/api/social-accounts`, { cache: "no-store" })
-      const accountsJson = await accountsRes.json().catch(() => ({}))
-      const accountList: Array<{ platform: string; n8nWebhookUrl?: string | null }> = accountsJson?.data || []
-
-      // Map platform -> webhook URL (chỉ lấy những cái đã có)
-      const platformWebhookMap: Record<string, string> = {}
-      for (const acc of accountList) {
-        const p = (acc.platform || '').toLowerCase()
-        if (acc.n8nWebhookUrl && !platformWebhookMap[p]) {
-          platformWebhookMap[p] = acc.n8nWebhookUrl
-        }
+      // Gửi một lần tới API proxy /api/posts -> server quyết định webhook user
+      const res = await fetch('/api/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content_text: generatedContent,
+          hashtags,
+          platforms,
+          webhookUrl: resolvedWebhook || undefined,
+        })
+      })
+      const body = await res.json().catch(() => ({}))
+      const execId = res.headers.get('x-n8n-exec-id') || body.execId || null
+      const targetUrl = body.targetUrl || null
+      setLastExecId(execId)
+      setLastTargetUrl(targetUrl)
+      if (!res.ok || !body.success) {
+        toast({ title: 'Đăng thất bại', description: body?.error || `HTTP ${res.status}`, variant: 'destructive' })
+        setPublishResults(platforms.map(p => ({ platform: p, ok: false, error: body?.error || 'Fail' })))
+        return
       }
-
-      // Chuẩn bị payload cơ bản
-      const basePayload = {
-        content_text: generatedContent,
-        hashtags,
-        // Giữ field platform riêng từng lần gửi; gửi thêm mảng đầy đủ để workflow có thể mở rộng đa nền tảng sau này
-        platforms,
-        media: [], // TODO: gắn URLs nếu có
-      }
-
-      // Thực hiện gửi song song tới từng nền tảng được chọn
-      const results: { platform: string; ok: boolean; error?: string; externalPostId?: string }[] = []
-      await Promise.all(platforms.map(async (pfRaw) => {
-        const pf = pfRaw.toLowerCase()
-        const webhook = platformWebhookMap[pf]
-        if (!webhook) {
-          results.push({ platform: pfRaw, ok: false, error: 'Chưa provision hoặc thiếu webhook.' })
-          return
-        }
-        try {
-          const res = await fetch(webhook, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...basePayload, platform: pf })
-          })
-          let data: any = null
-          try { data = await res.json() } catch { /* ignore */ }
-          if (!res.ok) {
-            results.push({ platform: pfRaw, ok: false, error: data?.error || `HTTP ${res.status}` })
-            return
-          }
-          const externalId = data?.externalPostId || data?.data?.externalPostId || data?.id || null
-          results.push({ platform: pfRaw, ok: true, externalPostId: externalId || undefined })
-        } catch (e: any) {
-          results.push({ platform: pfRaw, ok: false, error: e?.message || 'Fetch error' })
-        }
-      }))
-      setPublishResults(results)
-      const successCount = results.filter(r => r.ok).length
-      const failCount = results.length - successCount
-      if (successCount) {
-        toast({ title: 'Đăng thành công', description: `${successCount} nền tảng ok${failCount ? `, ${failCount} lỗi` : ''}` })
-      } else {
-        toast({ title: 'Đăng thất bại', description: 'Không đăng được lên nền tảng nào.', variant: 'destructive' })
-      }
+      // Mark all selected platforms as success (actual fan-out happens inside workflow via Switch / routing)
+      setPublishResults(platforms.map(p => ({ platform: p, ok: true })))
+      toast({ title: 'Đã gửi đăng', description: execId ? `Execution ID: ${execId}` : 'Đã gửi tới workflow' })
     } catch (e: any) {
       toast({ title: 'Lỗi đăng bài', description: e?.message || 'Không rõ nguyên nhân', variant: 'destructive' })
     } finally {
       setIsPublishing(false)
+    }
+  }
+
+  // Helpers to resolve saved webhook URL and transform to webhook-test
+  function toTestWebhookUrl(url: string | null | undefined) {
+    if (!url) return null
+    // n8n test webhook simply swaps path segment
+    return url.replace('/webhook/', '/webhook-test/')
+  }
+
+  async function resolveUserWebhookUrl(): Promise<string | null> {
+    // Prefer the URL we just used when publishing
+    if (lastTargetUrl) return lastTargetUrl
+    try {
+      const res = await fetch('/api/social-accounts', { method: 'GET' })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) return null
+      const accounts: any[] = Array.isArray(data?.data) ? data.data : []
+      // Pick the first account that has a webhook (per-user workflows typically store it here)
+      const firstWithUrl = accounts.find((a) => a?.n8nWebhookUrl)
+      return firstWithUrl?.n8nWebhookUrl || null
+    } catch {
+      return null
+    }
+  }
+
+  // Test per-user workflow (ping) by posting directly to webhook-test
+  const handleTestWorkflow = async () => {
+    try {
+      const pf = platforms[0] || 'facebook'
+      const saved = await resolveUserWebhookUrl()
+      const testUrl = toTestWebhookUrl(saved)
+      if (!testUrl) {
+        toast({ title: 'Thiếu webhook', description: 'Không tìm thấy webhook của bạn. Hãy provision tài khoản trước.', variant: 'destructive' })
+        return
+      }
+      const res = await fetch(testUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // Mirror the exact publish payload shape
+        body: JSON.stringify({
+          content_text: generatedContent || `TEST_PING ${new Date().toISOString()}`,
+          hashtags,
+          platforms,
+          platform: pf,
+        })
+      })
+      const execId = res.headers.get('x-n8n-execution-id') || null
+      const ok = res.ok
+      setLastExecId(execId)
+      setLastTargetUrl(saved)
+      if (!ok) {
+        const text = await res.text().catch(() => '')
+        toast({ title: 'Ping thất bại', description: text || `HTTP ${res.status}`, variant: 'destructive' })
+        return
+      }
+      toast({ title: 'Ping thành công', description: execId ? `Execution ID: ${execId}` : 'Đã gửi tới webhook-test' })
+    } catch (e: any) {
+      toast({ title: 'Lỗi ping', description: e?.message || 'Không test được workflow', variant: 'destructive' })
     }
   }
 
@@ -572,12 +620,25 @@ export default function ContentCreationPage() {
                             <Button
                               variant="outline"
                               className="flex-1 bg-transparent"
+                              onClick={handleTestWorkflow}
+                            >
+                              Ping workflow
+                            </Button>
+                            <Button
+                              variant="outline"
+                              className="flex-1 bg-transparent"
                               onClick={() => setShowScheduleModal(true)}
                             >
                               <Calendar className="w-4 h-4 mr-2" />
                               Chọn lịch đăng
                             </Button>
                           </div>
+                          {(lastExecId || lastTargetUrl) && (
+                            <div className="mt-3 text-xs text-gray-600 space-y-1">
+                              {lastExecId && <div><span className="font-semibold">Execution ID:</span> {lastExecId}</div>}
+                              {lastTargetUrl && <div className="break-all"><span className="font-semibold">Webhook URL:</span> {lastTargetUrl}</div>}
+                            </div>
+                          )}
 
                           {publishResults.length > 0 && (
                             <div className="bg-white border rounded-lg p-3 space-y-2">

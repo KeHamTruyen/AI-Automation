@@ -1,11 +1,19 @@
-const RAW_N8N_API_BASE_URL = process.env.N8N_API_BASE_URL || ''
-// Normalize base URL: prefer Public API (/api/v1). If user provided /rest, fallback-rewrite to /api/v1.
-const _base = RAW_N8N_API_BASE_URL.replace(/\/$/, '')
-const N8N_API_BASE_URL = _base.endsWith('/rest') ? _base.replace(/\/rest$/, '/api/v1') : _base
-const N8N_API_KEY = process.env.N8N_API_KEY || ''
-const N8N_BASE_URL = (process.env.N8N_BASE_URL || '').replace(/\/$/, '')
+function getEnv() {
+  const RAW_N8N_API_BASE_URL = process.env.N8N_API_BASE_URL || ''
+  const _base = RAW_N8N_API_BASE_URL.replace(/\/$/, '')
+  const N8N_API_BASE_URL = _base.endsWith('/rest') ? _base.replace(/\/rest$/, '/api/v1') : _base
+  const N8N_API_KEY = process.env.N8N_API_KEY || ''
+  const N8N_BASE_URL = (process.env.N8N_BASE_URL || '').replace(/\/$/, '')
+  return { N8N_API_BASE_URL, N8N_API_KEY, N8N_BASE_URL }
+}
+
+function clampString(s: string, max: number): string {
+  if (!s) return s
+  return s.length > max ? s.slice(0, max) : s
+}
 
 function assertEnv() {
+  const { N8N_API_BASE_URL, N8N_API_KEY } = getEnv()
   if (!N8N_API_BASE_URL || !N8N_API_KEY) {
     throw new Error('N8N_API_BASE_URL or N8N_API_KEY is not configured')
   }
@@ -13,6 +21,7 @@ function assertEnv() {
 
 async function n8nRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   assertEnv()
+  const { N8N_API_BASE_URL, N8N_API_KEY } = getEnv()
   const url = `${N8N_API_BASE_URL}${path.startsWith('/') ? path : '/' + path}`
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -118,8 +127,25 @@ export async function createFacebookGraphApiCredential(
     data: {
       appId,
       appSecret,
-      sendAdditionalBodyProperties: false,
-      additionalBodyProperties: {},
+    },
+  }
+  const created = await n8nRequest<N8NCredential>('/credentials', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+  return created
+}
+
+// Create Facebook Graph API credential using a direct access token (no OAuth flow inside n8n)
+export async function createFacebookTokenCredential(
+  name: string,
+  accessToken: string
+): Promise<N8NCredential> {
+  const body = {
+    name,
+    type: 'facebookGraphApi',
+    data: {
+      accessToken,
     },
   }
   const created = await n8nRequest<N8NCredential>('/credentials', {
@@ -165,6 +191,7 @@ export async function deleteWorkflow(id: string): Promise<void> {
 }
 
 export function buildWebhookUrl(path: string): string {
+  const { N8N_BASE_URL } = getEnv()
   if (!N8N_BASE_URL) return ''
   const clean = path.replace(/^\//, '')
   return `${N8N_BASE_URL}/webhook/${clean}`
@@ -180,7 +207,8 @@ export async function cloneWorkflowFromTemplate(opts: {
 }): Promise<{ workflow: Workflow; webhookPath?: string; webhookUrl?: string }> {
   const template = await getWorkflow(opts.templateId)
   const stamp = Date.now()
-  const name = `[USER ${opts.userId}] ${template.name || 'Posting'} (${opts.platform}) ${stamp}`
+  const rawName = `[USER ${opts.userId}] ${template.name || 'Posting'} (${opts.platform}) ${stamp}`
+  const name = clampString(rawName, 120)
 
   // Attempt to customize webhook path in nodes if a Webhook node exists
   let webhookPath: string | undefined
@@ -214,7 +242,7 @@ export async function cloneWorkflowFromTemplate(opts: {
         }
       }
       // Attach native credentials (twitter/facebook) to their nodes when present in template
-      const nativeTypes = ['twitterOAuth2Api', 'facebookGraphApi']
+      const nativeTypes = ['twitterOAuth2Api', 'facebookGraphApi', 'instagram']
       const credIsNative = nativeTypes.includes(String(opts.credentialType))
       if (credIsNative) {
         const platformHint = String(opts.platform || '').toLowerCase()
@@ -260,6 +288,155 @@ export async function cloneWorkflowFromTemplate(opts: {
   return { workflow: activated, webhookPath, webhookUrl }
 }
 
+// Create a workflow from a template and append multiple account-specific posting nodes before creating it.
+// This avoids using PATCH by constructing the full workflow graph up front.
+export async function createWorkflowFromTemplateWithAccounts(opts: {
+  templateId: string
+  userId: string
+  accounts: Array<{
+    platform: string
+    accountDisplayName: string
+    credentialId: string
+    credentialName: string
+    credentialType: string
+    nodeTypeOverride?: string
+    nodeId?: string
+  }>
+}): Promise<{ workflow: Workflow; webhookPath?: string; webhookUrl?: string }> {
+  const template = await getWorkflow(opts.templateId)
+  const stamp = Date.now()
+  const rawName = `[USER ${opts.userId}] ${template.name || 'Posting'} (${opts.accounts.length} accounts) ${stamp}`
+  const name = clampString(rawName, 120)
+
+  // Deep clone nodes & connections
+  const nodes = Array.isArray(template.nodes) ? JSON.parse(JSON.stringify(template.nodes)) : []
+  const connections: Record<string, any> = template.connections ? JSON.parse(JSON.stringify(template.connections)) : {}
+
+  // Customize webhook path if a Webhook node exists
+  let webhookPath: string | undefined
+  for (const node of nodes) {
+    if (node.type?.includes('webhook')) {
+      webhookPath = `user-${opts.userId}-${stamp}`
+      node.parameters = node.parameters || {}
+      node.parameters.path = webhookPath
+      break
+    }
+  }
+
+  // Heuristics to place/connect account nodes
+  const routeNode = nodes.find((n: any) => String(n.name || '').toLowerCase().includes('route'))
+  const normalizeNode = nodes.find((n: any) => String(n.name || '').toLowerCase().includes('normalize'))
+
+  function readXY(p: any): { x: number; y: number } {
+    if (!p) return { x: 600, y: 300 }
+    if (Array.isArray(p) && p.length >= 2) return { x: Number(p[0]) || 600, y: Number(p[1]) || 300 }
+    if (typeof p === 'object' && p !== null && 'x' in p && 'y' in p) {
+      return { x: Number((p as any).x) || 600, y: Number((p as any).y) || 300 }
+    }
+    return { x: 600, y: 300 }
+  }
+
+  const { x: baseX, y: baseY } = readXY(routeNode?.position)
+
+  for (const acc of opts.accounts) {
+    const platform = String(acc.platform || '').toLowerCase()
+
+    // Try bind native node(s) first based on type + name hints
+    let bound = false
+    if (acc.credentialType === 'facebookGraphApi') {
+      // Collect all facebookGraphApi nodes
+      const fbNodes = nodes.filter((n: any) => String(n.type || '').toLowerCase().includes('facebookgraphapi'))
+      // Attempt match by platform keyword in node name
+      const keyword = platform === 'instagram' ? 'instagram' : 'facebook'
+      let target = fbNodes.find((n: any) => String(n.name || '').toLowerCase().includes(keyword)) || fbNodes[0]
+      if (target) {
+        target.credentials = target.credentials || {}
+        target.credentials.facebookGraphApi = { id: acc.credentialId, name: acc.credentialName }
+        // Enable node if previously disabled (e.g. Instagram placeholder)
+        if (target.disabled) delete target.disabled
+        // If we have a specific resource/node id (e.g., igUserId or pageId), set it on the node parameter
+        target.parameters = target.parameters || {}
+        if (acc.nodeId) {
+          target.parameters.node = acc.nodeId
+        }
+        bound = true
+      }
+    } else if (acc.credentialType === 'twitterOAuth2Api') {
+      const twNode = nodes.find((n: any) => String(n.type || '').toLowerCase().includes('twitter'))
+      if (twNode) {
+        twNode.credentials = twNode.credentials || {}
+        twNode.credentials.twitterOAuth2Api = { id: acc.credentialId, name: acc.credentialName }
+        if (twNode.disabled) delete twNode.disabled
+        bound = true
+      }
+    }
+
+    if (bound) continue
+
+    // Fallback: add an HTTP Request node if no native node exists in template
+    const existingPerPlatformCount: Record<string, number> = {}
+    existingPerPlatformCount[platform] = existingPerPlatformCount[platform] || 0
+    const indexOffset = existingPerPlatformCount[platform]++
+
+    const newNodeName = `[${platform}] Post ${acc.accountDisplayName}`
+    const safeNodeName = clampString(newNodeName, 64)
+
+    const nodeType = acc.nodeTypeOverride || 'n8n-nodes-base.httpRequest'
+    const newNode: any = {
+      name: safeNodeName,
+      type: nodeType,
+      parameters: {},
+      position: [ baseX + 300, baseY + indexOffset * 120 ],
+      credentials: {},
+    }
+
+    if (acc.credentialType === 'httpHeaderAuth') {
+      newNode.parameters = {
+        url: 'https://graph.facebook.com/v19.0/<page-id>/feed',
+        method: 'POST',
+        sendBody: true,
+        jsonParameters: true,
+        options: { },
+        bodyParametersJson: '{"message":"{{$json[\"content\"] || \"Hello\"}}"}'
+      }
+      newNode.credentials.httpHeaderAuth = { id: acc.credentialId, name: acc.credentialName }
+    } else if (acc.credentialType === 'facebookGraphApi') {
+      newNode.credentials.facebookGraphApi = { id: acc.credentialId, name: acc.credentialName }
+    } else if (acc.credentialType === 'twitterOAuth2Api') {
+      newNode.credentials.twitterOAuth2Api = { id: acc.credentialId, name: acc.credentialName }
+    } else {
+      newNode.credentials[acc.credentialType] = { id: acc.credentialId, name: acc.credentialName }
+    }
+
+    nodes.push(newNode)
+
+    if (routeNode) {
+      const routeName = routeNode.name
+      connections[routeName] = connections[routeName] || {}
+      connections[routeName].main = connections[routeName].main || [[]]
+      connections[routeName].main.push([{ node: safeNodeName, type: 'main', index: 0 }])
+    }
+    if (normalizeNode) {
+      connections[safeNodeName] = connections[safeNodeName] || {}
+      connections[safeNodeName].main = [ [ { node: normalizeNode.name, type: 'main', index: 0 } ] ]
+    }
+  }
+
+  const newWf: Partial<Workflow> = {
+    name,
+    nodes,
+    connections,
+    settings: (template as any).settings || {},
+  }
+
+  const created = await createWorkflow(newWf)
+  await setWorkflowActive(created.id, true)
+  const activated = await getWorkflow(created.id)
+
+  const webhookUrl = webhookPath ? buildWebhookUrl(webhookPath) : undefined
+  return { workflow: activated, webhookPath, webhookUrl }
+}
+
 // New: add a posting node for a newly connected social account into an existing per-user workflow.
 // This is a simplified helper; it appends a new HTTP Request node (or leaves type override) and connects
 // it directly to a downstream normalization node if found, otherwise no connections are wired.
@@ -274,7 +451,7 @@ export async function addPlatformAccountNode(opts: {
   credentialName: string
   credentialType: string
   nodeTypeOverride?: string // e.g. native node type, else httpRequest
-}): Promise<Workflow> {
+}): Promise<{ workflow: Workflow; replaced?: boolean; oldWorkflowId?: string }> {
   const wf = await getWorkflow(opts.workflowId)
   const nodes = Array.isArray(wf.nodes) ? JSON.parse(JSON.stringify(wf.nodes)) : []
 
@@ -282,19 +459,28 @@ export async function addPlatformAccountNode(opts: {
   const routeNode = nodes.find((n: any) => String(n.name || '').toLowerCase().includes('route'))
   const normalizeNode = nodes.find((n: any) => String(n.name || '').toLowerCase().includes('normalize'))
 
-  const baseX = routeNode?.position?.x || 600
-  const baseY = routeNode?.position?.y || 300
+  function readXY(p: any): { x: number; y: number } {
+    if (!p) return { x: 600, y: 300 }
+    if (Array.isArray(p) && p.length >= 2) return { x: Number(p[0]) || 600, y: Number(p[1]) || 300 }
+    if (typeof p === 'object' && p !== null && 'x' in p && 'y' in p) {
+      return { x: Number((p as any).x) || 600, y: Number((p as any).y) || 300 }
+    }
+    return { x: 600, y: 300 }
+  }
+
+  const { x: baseX, y: baseY } = readXY(routeNode?.position)
   // Offset Y per platform to spread nodes vertically
   const platformIndexOffset = nodes.filter((n: any) => String(n.name || '').includes(`[${opts.platform}]`)).length
   const newNodeName = `[${opts.platform}] Post ${opts.accountDisplayName}`
+  const safeNodeName = clampString(newNodeName, 64)
 
   // Choose node type
   const nodeType = opts.nodeTypeOverride || 'n8n-nodes-base.httpRequest'
   const newNode: any = {
-    name: newNodeName,
+    name: safeNodeName,
     type: nodeType,
     parameters: {},
-    position: { x: baseX + 300, y: baseY + platformIndexOffset * 120 },
+    position: [ baseX + 300, baseY + platformIndexOffset * 120 ],
     credentials: {},
   }
 
@@ -335,6 +521,132 @@ export async function addPlatformAccountNode(opts: {
   }
 
   const patched: Partial<Workflow> = { nodes, connections }
-  const updated = await updateWorkflow(opts.workflowId, patched)
-  return updated
+  try {
+    const updated = await updateWorkflow(opts.workflowId, patched)
+    return { workflow: updated }
+  } catch (e: any) {
+    const msg = String(e?.message || '')
+    const patchBlocked = msg.includes('405') || /method not allowed/i.test(msg)
+    if (patchBlocked) {
+      throw new Error('PATCH to update workflow is blocked by server/proxy; cannot add node without creating extra workflows. Please allow PATCH or edit manually in n8n.')
+    }
+    throw e
+  }
+}
+
+// Update credential on an existing node (identified by name/type hints) without creating a new node.
+// Falls back to workflow recreation if PATCH blocked.
+export async function updateExistingNodeCredential(opts: {
+  workflowId: string
+  platform: string
+  credentialId: string
+  credentialName: string
+  credentialType: string
+  nodeNameHint?: string // e.g. 'facebook'
+}): Promise<{ workflow: Workflow; updated: boolean; replaced?: boolean; oldWorkflowId?: string }> {
+  const wf = await getWorkflow(opts.workflowId)
+  const nodes = Array.isArray(wf.nodes) ? JSON.parse(JSON.stringify(wf.nodes)) : []
+  const connections = wf.connections ? JSON.parse(JSON.stringify(wf.connections)) : {}
+
+  const hint = (opts.nodeNameHint || opts.platform).toLowerCase()
+  const target = nodes.find((n: any) => String(n.name || '').toLowerCase().includes(hint))
+  if (!target) {
+    return { workflow: wf, updated: false }
+  }
+  target.credentials = target.credentials || {}
+  // Map credentialType to key
+  if (opts.credentialType === 'httpHeaderAuth') {
+    target.credentials.httpHeaderAuth = { id: opts.credentialId, name: opts.credentialName }
+  } else if (opts.credentialType === 'facebookGraphApi') {
+    target.credentials.facebookGraphApi = { id: opts.credentialId, name: opts.credentialName }
+  } else if (opts.credentialType === 'twitterOAuth2Api') {
+    target.credentials.twitterOAuth2Api = { id: opts.credentialId, name: opts.credentialName }
+  } else {
+    // Generic assignment
+    target.credentials[opts.credentialType] = { id: opts.credentialId, name: opts.credentialName }
+  }
+
+  const patch: Partial<Workflow> = { nodes }
+  try {
+    const updated = await updateWorkflow(opts.workflowId, patch)
+    return { workflow: updated, updated: true }
+  } catch (e: any) {
+    const msg = String(e?.message || '')
+    const patchBlocked = msg.includes('405') || /method not allowed/i.test(msg)
+    if (patchBlocked) {
+      throw new Error('PATCH to update workflow is blocked; cannot update existing node credential without manual change.')
+    }
+    throw e
+  }
+}
+
+// Remove a platform/account node from a per-user workflow. It prefers matching by credentialId
+// and falls back to name heuristics. Updates connections accordingly. If PATCH is blocked, falls
+// back to create+activate like in addPlatformAccountNode.
+export async function removePlatformAccountNode(opts: {
+  workflowId: string
+  credentialId?: string
+  platformHint?: string
+  accountDisplayNameHint?: string
+}): Promise<{ workflow: Workflow }> {
+  const wf = await getWorkflow(opts.workflowId)
+  const nodes = Array.isArray(wf.nodes) ? JSON.parse(JSON.stringify(wf.nodes)) : []
+  const connections = wf.connections ? JSON.parse(JSON.stringify(wf.connections)) : {}
+
+  // Find target node
+  let targetIndex = -1
+  let targetName: string | undefined
+  for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i]
+    const creds = n?.credentials || {}
+    let hasCred = false
+    if (opts.credentialId) {
+      for (const k of Object.keys(creds)) {
+        if (creds[k]?.id === opts.credentialId) { hasCred = true; break }
+      }
+    }
+    const lowerName = String(n.name || '').toLowerCase()
+    const nameMatch = (opts.platformHint && lowerName.includes(String(opts.platformHint).toLowerCase()))
+      || (opts.accountDisplayNameHint && lowerName.includes(String(opts.accountDisplayNameHint).toLowerCase()))
+    if (hasCred || nameMatch) {
+      targetIndex = i
+      targetName = n.name
+      break
+    }
+  }
+
+  if (targetIndex === -1 || !targetName) {
+    // Nothing to remove; return as-is
+    return { workflow: wf }
+  }
+
+  // Remove node
+  nodes.splice(targetIndex, 1)
+  // Remove connections pointing to this node
+  for (const from of Object.keys(connections)) {
+    const main = connections[from]?.main
+    if (Array.isArray(main)) {
+      for (let i = 0; i < main.length; i++) {
+        const branch = main[i]
+        if (Array.isArray(branch)) {
+          connections[from].main[i] = branch.filter((l: any) => l?.node !== targetName)
+        }
+      }
+    }
+  }
+  // Remove the node's own connection entry
+  if (connections[targetName]) delete connections[targetName]
+
+  const patch: Partial<Workflow> = { nodes, connections }
+  try {
+    const updated = await updateWorkflow(opts.workflowId, patch)
+    return { workflow: updated }
+  } catch (e: any) {
+    const msg = String(e?.message || '')
+    const patchBlocked = msg.includes('405') || /method not allowed/i.test(msg)
+    if (patchBlocked) {
+      throw new Error('PATCH blocked; cannot remove node without manual change in n8n.')
+    }
+    throw e
+  }
 }
