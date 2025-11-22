@@ -23,7 +23,13 @@ async function ensureFreshWorkflow(userId: string, templateId: string) {
 async function removeAccountsAndCredentials(userId: string) {
   // Collect credentials to optionally delete from n8n
   const accounts = await prisma.socialAccount.findMany({ where: { userId } })
-  const credIds = Array.from(new Set(accounts.map(a => a.n8nCredentialId).filter(Boolean) as string[]))
+  const credIds: string[] = Array.from<string>(
+    new Set<string>(
+      accounts
+        .map((a: { n8nCredentialId: string | null }) => a.n8nCredentialId)
+        .filter((v: string | null): v is string => Boolean(v))
+    )
+  )
 
   // Delete DB rows
   await prisma.socialAccount.deleteMany({ where: { userId } })

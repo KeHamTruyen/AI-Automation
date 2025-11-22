@@ -218,7 +218,7 @@ Xem [`AI-Prompt-Usage-Guide.md`](./AI-Prompt-Usage-Guide.md) để học:
 
 ## 🔄 n8n Per-User Workflows
 
-This project can provision a dedicated n8n workflow and credential per connected social account. Ensure these environment variables are set in `.env.local` and restart the dev server:
+This project can provision a dedicated n8n workflow and credential per connected social account. Ensure these environment variables are set in `.env` (copy from `.env.example`) and restart the dev server:
 
 - `N8N_API_BASE_URL` e.g. `http://localhost:5678/api/v1` (Public API base; use `/api/v1` for API key auth)
 - `N8N_API_KEY` your n8n API key (Settings → API)
@@ -240,6 +240,90 @@ Notes:
 - If you see 401/500 errors when provisioning, verify env vars and that `N8N_API_BASE_URL` points to the Public API (`/api/v1`). Using `/rest` with API keys typically yields 401 unless session cookies are present.
 
 ### OAuth follow-up (next steps)
+## 📦 Cloudflare R2 Media Storage
+
+Ảnh/media dùng để đăng bài qua Facebook/Instagram cần URL HTTPS công khai (không phải localhost). Dự án hỗ trợ lưu trữ trên Cloudflare R2 (S3-compatible) thay cho thư mục `public/uploads` cục bộ.
+
+### Env vars bắt buộc
+
+```
+R2_ACCOUNT_ID=xxxxxxxxxxxxxxxxxxxx
+R2_ACCESS_KEY_ID=***
+R2_SECRET_ACCESS_KEY=***
+R2_BUCKET_NAME=media
+R2_PUBLIC_BASE_URL=https://media.example.com    # Custom domain đã gắn vào bucket (khuyến nghị cho production)
+R2_PUBLIC_DEV_URL=https://pub-xxxx.r2.dev       # Development public URL (rate-limited, optional)
+```
+
+Nếu không cấu hình `R2_PUBLIC_BASE_URL`, mã sẽ fallback về dạng URL mặc định: `https://<account_id>.r2.cloudflarestorage.com/<bucket>/<key>`.
+
+### Cách hoạt động
+
+- API `POST /api/uploads` nhận `formData(file)` và thực hiện `PutObject` lên R2.
+- Trả về JSON `{ success: true, url, key }` thay vì `{ path }` cũ.
+- Frontend tự động dùng `data.url` nếu có; fallback sang `data.path` cho tương thích ngược.
+
+### Ưu tiên URL
+
+1. Nếu có `R2_PUBLIC_BASE_URL` (custom domain) → dùng domain đó.
+2. Nếu không có custom domain nhưng có `R2_PUBLIC_DEV_URL` → dùng URL dev (`pub-...r2.dev`).
+3. Nếu cả hai không có → fallback endpoint mặc định `https://<account_id>.r2.cloudflarestorage.com/<bucket>/<key>`.
+
+### Quy ước object key
+
+`uploads/<YYYY-MM-DD>/<uuid>-<sanitized-filename>` giúp dễ tổ chức, thuận lợi cho việc dọn dẹp sau này.
+
+### Lưu ý cho Facebook/Instagram
+
+- Ảnh phải tải được trực tiếp (status 200, đúng `Content-Type`).
+- Nên kiểm soát loại file (`image/jpeg`, `image/png`) và dung lượng hợp lý (< 5MB).
+- Instagram Graph API có giới hạn tỷ lệ (aspect ratio) khuyến nghị; tránh ảnh quá ngang hoặc quá dọc.
+
+### Mở rộng tương lai
+
+- Thêm xác thực kích thước/tỷ lệ trước khi upload.
+- Chính sách dọn rác định kỳ (cron) cho media cũ không còn tham chiếu.
+- Tuỳ chọn tạo presigned URL thay vì public nếu cần giới hạn truy cập tạm thời (không cần thiết cho social posting).
+
+> Nếu thấy log cảnh báo `[r2] Missing R2 env vars`, nghĩa là server chưa được cấu hình R2 và upload sẽ lỗi.
+
+### Mô hình file môi trường
+-## ⏱ Scheduler (Lên lịch đăng bài)
+
+Hệ thống sử dụng một worker Node riêng để xử lý các bài viết đã lên lịch.
+
+### Cấu trúc DB (Prisma)
+
+- `ScheduledPost`: lưu nội dung, thời gian chạy (UTC), timezone gốc, danh sách nền tảng, trạng thái (`PENDING|PROCESSING|SUCCESS|ERROR|CANCELED`), số lần thử.
+- `ScheduledPostAttempt`: log mỗi lần thực thi (thành công hoặc lỗi) với executionId từ n8n.
+
+### Luồng chạy
+1. FE gọi `POST /api/schedule` tạo job (status=PENDING).
+2. Worker (`npm run scheduler`) cron mỗi phút chọn job đến hạn.
+3. Gửi payload tới endpoint publish (mặc định `/api/posts`).
+4. Cập nhật trạng thái thành `SUCCESS` hoặc retry với backoff (1m → 5m → 15m) cho tới 3 lần.
+5. Người dùng có thể hủy (`POST /api/schedule/:id/cancel`) hoặc chạy ngay (`POST /api/schedule/:id/run-now`).
+
+### Chạy worker
+
+```bash
+npm run scheduler
+```
+
+Giữ tiến trình này chạy song song với `npm run dev` hoặc deploy thành service riêng.
+
+### Biến môi trường tùy chọn
+- `SCHEDULER_PUBLISH_ENDPOINT` nếu muốn đổi URL publish mặc định.
+
+### Mở rộng
+- Recurrence qua trường `recurrenceRule` (RRULE) – chưa triển khai.
+- Thêm cảnh báo email / webhook khi job lỗi cuối cùng.
+
+
+- Commit: chỉ commit `.env.example` (template, không chứa secret).
+- Runtime: tạo file `.env` bằng cách copy từ `.env.example` rồi điền giá trị thật (file này bị ignore do rule `/.env*` trừ `.env.example`).
+- Không dùng `.env.local` trong repo này để giảm trùng lặp.
+
 
 - Add OAuth start/callback routes per platform to complete authorization.
 - Exchange client credentials for access/refresh tokens and store them securely (prefer n8n credentials with encryption).

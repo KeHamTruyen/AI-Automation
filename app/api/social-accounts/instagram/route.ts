@@ -77,15 +77,33 @@ export async function POST(request: NextRequest) {
 
     // Recreate workflow from template with Instagram + all other accounts bound
     const allAccounts = await prisma.socialAccount.findMany({ where: { userId } })
-    const accountsForWorkflow = allAccounts.map(a => ({
-      platform: a.platform,
-      credentialId: a.n8nCredentialId || '',
-      credentialName: a.n8nCredentialName || '',
-      credentialType: a.platform === 'twitter' ? 'twitterOAuth2Api' : 'facebookGraphApi',
-      displayName: a.name,
-      accountDisplayName: a.name,
-      nodeId: (a as any)?.metadata?.igUserId || undefined
-    })).filter(a => a.credentialId)
+    type WorkflowAccount = {
+      platform: string
+      credentialId: string
+      credentialName: string
+      credentialType: string
+      displayName: string
+      accountDisplayName: string
+      nodeId?: string
+    }
+    type DBSocialAccount = {
+      platform: string
+      name: string
+      n8nCredentialId: string | null
+      n8nCredentialName: string | null
+      metadata?: { igUserId?: string }
+    }
+    const accountsForWorkflow: WorkflowAccount[] = allAccounts
+      .map((account: DBSocialAccount) => ({
+        platform: account.platform,
+        credentialId: account.n8nCredentialId || '',
+        credentialName: account.n8nCredentialName || '',
+        credentialType: account.platform === 'twitter' ? 'twitterOAuth2Api' : 'facebookGraphApi',
+        displayName: account.name,
+        accountDisplayName: account.name,
+        nodeId: account.metadata?.igUserId || undefined
+      }))
+      .filter((w: WorkflowAccount) => Boolean(w.credentialId))
 
     const { workflow, webhookUrl } = await createWorkflowFromTemplateWithAccounts({
       templateId: "instagram",

@@ -50,6 +50,10 @@ export default function ContentCreationPage() {
   const [publishResults, setPublishResults] = useState<{ platform: string; ok: boolean; error?: string; externalPostId?: string }[]>([])
   const [lastExecId, setLastExecId] = useState<string | null>(null)
   const [lastTargetUrl, setLastTargetUrl] = useState<string | null>(null)
+  // Media upload states
+  const [mediaFiles, setMediaFiles] = useState<File[]>([])
+  const [mediaUrls, setMediaUrls] = useState<string[]>([])
+  const [isUploading, setIsUploading] = useState(false)
 
   // Controlled inputs to send to n8n
   const [topic, setTopic] = useState("")
@@ -135,6 +139,7 @@ export default function ContentCreationPage() {
           title,
           content_text: generatedContent,
           hashtags: hashtags,
+          media: mediaUrls,
           platforms,
         }),
       })
@@ -204,6 +209,7 @@ export default function ContentCreationPage() {
         body: JSON.stringify({
           content_text: generatedContent,
           hashtags,
+          media: mediaUrls,
           platforms,
           webhookUrl: resolvedWebhook || undefined,
         })
@@ -226,6 +232,39 @@ export default function ContentCreationPage() {
     } finally {
       setIsPublishing(false)
     }
+  }
+
+  // Upload helper: single or multiple files
+  const handleFilesSelected = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    const list = Array.from(files)
+    setMediaFiles((m) => [...m, ...list])
+    // Auto-upload each file
+    setIsUploading(true)
+    try {
+      for (const f of list) {
+        const fd = new FormData()
+        fd.append('file', f)
+        const res = await fetch('/api/uploads', { method: 'POST', body: fd })
+        const data = await res.json().catch(() => null)
+        if (res.ok && (data?.url || data?.path)) {
+          const url = data.url || ((window.location.origin || '') + data.path)
+          setMediaUrls((prev) => [...prev, url])
+        } else {
+          toast({ title: 'Upload thất bại', description: data?.error || 'Không upload được ảnh.', variant: 'destructive' })
+        }
+      }
+    } catch (e: any) {
+      console.error(e)
+      toast({ title: 'Lỗi upload', description: 'Không thể upload file.', variant: 'destructive' })
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const removeMediaAt = (index: number) => {
+    setMediaFiles((m) => m.filter((_, i) => i !== index))
+    setMediaUrls((m) => m.filter((_, i) => i !== index))
   }
 
   // Helpers to resolve saved webhook URL and transform to webhook-test
@@ -261,26 +300,31 @@ export default function ContentCreationPage() {
         toast({ title: 'Thiếu webhook', description: 'Không tìm thấy webhook của bạn. Hãy provision tài khoản trước.', variant: 'destructive' })
         return
       }
-      const res = await fetch(testUrl, {
+      const res = await fetch('/api/n8n/ping', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Mirror the exact publish payload shape
         body: JSON.stringify({
-          content_text: generatedContent || `TEST_PING ${new Date().toISOString()}`,
-          hashtags,
-          platforms,
-          platform: pf,
+          webhookUrl: testUrl,
+          payload: {
+            content_text: generatedContent || `TEST_PING ${new Date().toISOString()}`,
+            hashtags,
+            media: mediaUrls,
+            platforms,
+            platform: pf,
+          }
         })
       })
-      const execId = res.headers.get('x-n8n-execution-id') || null
-      const ok = res.ok
-      setLastExecId(execId)
+      const { success, data, execId, error } = await res.json().catch(() => ({ success: false, error: 'Invalid JSON' }))
+      setLastExecId(execId || null)
       setLastTargetUrl(saved)
-      if (!ok) {
-        const text = await res.text().catch(() => '')
-        toast({ title: 'Ping thất bại', description: text || `HTTP ${res.status}`, variant: 'destructive' })
+      if (!success) {
+        const errMsg = error || data?.error || 'Ping thất bại'
+        setPublishResults([{ platform: pf, ok: false, error: errMsg }])
+        toast({ title: 'Ping thất bại', description: errMsg, variant: 'destructive' })
         return
       }
+      const externalPostId = data?.externalPostId || data?.id || data?.results?.[0]?.externalPostId || undefined
+      setPublishResults([{ platform: pf, ok: true, externalPostId }])
       toast({ title: 'Ping thành công', description: execId ? `Execution ID: ${execId}` : 'Đã gửi tới webhook-test' })
     } catch (e: any) {
       toast({ title: 'Lỗi ping', description: e?.message || 'Không test được workflow', variant: 'destructive' })
@@ -602,6 +646,21 @@ export default function ContentCreationPage() {
                             >
                               Lưu nháp
                             </Button>
+                            <div className="flex-1">
+                              <label className="flex items-center justify-center w-full h-10 bg-gray-50 border rounded cursor-pointer">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  className="hidden"
+                                  onChange={(e) => handleFilesSelected(e.target.files)}
+                                />
+                                <div className="flex items-center space-x-2 px-3 text-sm text-gray-700">
+                                  <Plus className="w-4 h-4" />
+                                  <span>{isUploading ? 'Đang tải ảnh...' : 'Thêm ảnh (tùy chọn)'}</span>
+                                </div>
+                              </label>
+                            </div>
                             <Button
                               className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600"
                               disabled={isPublishing}
@@ -633,6 +692,22 @@ export default function ContentCreationPage() {
                               Chọn lịch đăng
                             </Button>
                           </div>
+                          {/* Media previews */}
+                          {mediaUrls.length > 0 && (
+                            <div className="mt-3 grid grid-cols-3 gap-3">
+                              {mediaUrls.map((u, i) => (
+                                <div key={u} className="relative">
+                                  <img src={u} alt={`media-${i}`} className="w-full h-28 object-cover rounded" />
+                                  <button
+                                    onClick={() => removeMediaAt(i)}
+                                    className="absolute top-1 right-1 bg-white bg-opacity-80 rounded-full p-1 text-xs"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           {(lastExecId || lastTargetUrl) && (
                             <div className="mt-3 text-xs text-gray-600 space-y-1">
                               {lastExecId && <div><span className="font-semibold">Execution ID:</span> {lastExecId}</div>}
