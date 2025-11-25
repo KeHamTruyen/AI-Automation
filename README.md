@@ -52,7 +52,7 @@ AI Marketing Engine là một nền tảng marketing tự động hoàn chỉnh,
 
 - **ORM**: Prisma
 - **Database**: PostgreSQL
-- **Models**: User, SocialAccount, Content, Analytics
+- **Models (cập nhật)**: User, SocialAccount, Content, Analytics, ScheduledPost, ScheduledPostAttempt, ContentPublication
 
 ### **AI Integration**
 
@@ -228,6 +228,47 @@ Xem [`AI-Prompt-Usage-Guide.md`](./AI-Prompt-Usage-Guide.md) để học:
 - Authentication endpoints: `/api/auth/*`
 - Content management: `/api/content/*`
 - Social accounts: `/api/social-accounts/*`
+
+## 🗃 Database Models (Hiện trạng)
+
+Tóm tắt các model & enum trong `prisma/schema.prisma`:
+
+### Models
+
+- **User**: Người dùng; lưu thông tin đăng nhập, role, tham chiếu workflow n8n cấp user.
+- **SocialAccount**: Tài khoản mạng xã hội + credential liên kết; chứa follower count, trạng thái.
+- **Content**: Nội dung (draft / scheduled / published); hỗ trợ đa nền tảng qua trường `platforms[]` và `hashtags[]`.
+- **Analytics**: Số liệu daily per SocialAccount (views, likes, shares, comments, reach) – unique (socialAccountId, date).
+- **ScheduledPost**: Job lên lịch fan-out đa nền tảng; trạng thái `ScheduleStatus`, retry meta, optional recurrence.
+- **ScheduledPostAttempt**: Log từng lần thực thi của ScheduledPost (success, errorMessage, executionId, platformResults).
+- **ContentPublication**: Bản ghi publish từng nội dung lên một SocialAccount (status, attemptCount, externalPostId, overrides).
+
+### Enums
+
+- **Role**: `USER | ADMIN`
+- **AccountStatus**: `ACTIVE | INACTIVE | EXPIRED`
+- **ContentType**: `POST | STORY | REEL | VIDEO | IMAGE`
+- **ContentStatus**: `DRAFT | SCHEDULED | PUBLISHED | ARCHIVED`
+- **ExecutionStatus**: `SUCCESS | FAIL` (log nội bộ)
+- **ScheduleStatus**: `PENDING | PROCESSING | SUCCESS | ERROR | CANCELLED`
+- **PublicationStatus**: `PENDING | PROCESSING | SUCCESS | ERROR | CANCELLED`
+
+### Quan hệ chính
+
+- User 1:N SocialAccount, Content, ScheduledPost
+- SocialAccount 1:N Analytics, ContentPublication
+- Content 1:N ContentPublication, 1:N ScheduledPost (thông qua `draftContentId`)
+- ScheduledPost 1:N ScheduledPostAttempt
+- ContentPublication nối Content ↔ SocialAccount (unique per cặp)
+
+### Thiết kế đáng chú ý
+
+- Trường `platforms[]` ở ScheduledPost cho phép một job đẩy nhiều nền tảng.
+- `externalResults` (ScheduledPost) & `platformResults` (Attempt) giữ JSON thô phục vụ debug.
+- Workflow n8n bị recreate (do chặn PATCH) vẫn bảo toàn credential bằng cách rebuild từ toàn bộ SocialAccounts.
+- Tách `ContentPublication` giúp quản lý nhiều lượt publish khác nhau cho cùng một Content.
+
+> Nếu thay đổi schema: chạy `npm run db:generate` rồi (dev) `npm run db:push` hoặc tạo migration `npm run db:migrate`.
 
 ## 🔄 n8n Per-User Workflows
 
