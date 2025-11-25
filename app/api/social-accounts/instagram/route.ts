@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { jwtVerify } from "jose"
 import { prisma } from "@/lib/prisma"
-import { createFacebookTokenCredential, createWorkflowFromTemplateWithAccounts } from "@/lib/n8n"
+import { createFacebookTokenCredential, createWorkflowFromTemplateWithAccounts, setPlatformNodesActive, deleteWorkflow } from "@/lib/n8n"
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key")
 
@@ -75,49 +75,84 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Recreate workflow from template with Instagram + all other accounts bound
-    const allAccounts = await prisma.socialAccount.findMany({ where: { userId } })
-    type WorkflowAccount = {
-      platform: string
-      credentialId: string
-      credentialName: string
-      credentialType: string
-      displayName: string
-      accountDisplayName: string
-      nodeId?: string
+    // Ưu tiên PATCH workflow hiện có; chỉ tạo mới nếu người dùng chưa có workflow
+    let workflowId = user.n8nWorkflowId || null
+    let webhookUrl = user.n8nWebhookUrl || null
+
+    if (!workflowId) {
+      // Chưa có workflow → tạo mới với Instagram credential
+      const templateId = process.env.N8N_TEMPLATE_WORKFLOW_ID
+      if (!templateId) return NextResponse.json({ success: false, error: 'Missing N8N_TEMPLATE_WORKFLOW_ID' }, { status: 500 })
+      
+      const { workflow, webhookUrl: url } = await createWorkflowFromTemplateWithAccounts({ 
+        templateId, 
+        userId, 
+        accounts: [{
+          platform: 'instagram',
+          accountDisplayName: displayName || 'Instagram Account',
+          credentialId: cred.id,
+          credentialName: cred.name,
+          credentialType: 'facebookGraphApi',
+          nodeId: igUserId
+        }]
+      })
+      workflowId = workflow.id
+      webhookUrl = url || null
+      await prisma.user.update({ where: { id: userId }, data: { n8nWorkflowId: workflowId, n8nWorkflowName: workflow.name, n8nWebhookUrl: webhookUrl } })
+    } else {
+      // Đã có workflow → thử PATCH
+      try {
+        const updated = await setPlatformNodesActive({ workflowId, platform: 'instagram', active: true, credentialId: cred.id, credentialName: cred.name })
+        console.log('[instagram provision] Successfully patched workflow')
+      } catch (patchError: any) {
+        console.error('[instagram provision] PATCH failed:', patchError.message)
+        // Fallback: recreate với tất cả platforms
+        console.log('[instagram provision] Recreating workflow with all platforms')
+        
+        const allAccounts = await prisma.socialAccount.findMany({ where: { userId } })
+        const accountsForWorkflow = allAccounts
+          .filter(acc => acc.n8nCredentialId && acc.n8nCredentialName)
+          .map(acc => ({
+            platform: acc.platform,
+            accountDisplayName: acc.name,
+            credentialId: acc.n8nCredentialId!,
+            credentialName: acc.n8nCredentialName!,
+            credentialType: acc.platform === 'twitter' ? 'twitterOAuth2Api' : 'facebookGraphApi',
+            nodeId: ((acc as any).metadata as any)?.igUserId
+          }))
+        
+        const templateId = process.env.N8N_TEMPLATE_WORKFLOW_ID
+        if (!templateId) return NextResponse.json({ success: false, error: 'Missing N8N_TEMPLATE_WORKFLOW_ID' }, { status: 500 })
+        
+        const { workflow, webhookUrl: url } = await createWorkflowFromTemplateWithAccounts({
+          templateId,
+          userId,
+          accounts: accountsForWorkflow,
+        })
+        
+        if (workflowId) {
+          try {
+            await deleteWorkflow(workflowId)
+          } catch (e) {
+            console.warn('[instagram provision] Failed to delete old workflow')
+          }
+        }
+        
+        workflowId = workflow.id
+        webhookUrl = url || null
+        await prisma.user.update({ where: { id: userId }, data: { n8nWorkflowId: workflowId, n8nWorkflowName: workflow.name, n8nWebhookUrl: webhookUrl } })
+        await prisma.socialAccount.updateMany({
+          where: { userId },
+          data: { n8nWorkflowId: workflowId, n8nWebhookUrl: webhookUrl } as any
+        })
+      }
     }
-    type DBSocialAccount = {
-      platform: string
-      name: string
-      n8nCredentialId: string | null
-      n8nCredentialName: string | null
-      metadata?: { igUserId?: string }
-    }
-    const accountsForWorkflow: WorkflowAccount[] = allAccounts
-      .map((account: DBSocialAccount) => ({
-        platform: account.platform,
-        credentialId: account.n8nCredentialId || '',
-        credentialName: account.n8nCredentialName || '',
-        credentialType: account.platform === 'twitter' ? 'twitterOAuth2Api' : 'facebookGraphApi',
-        displayName: account.name,
-        accountDisplayName: account.name,
-        nodeId: account.metadata?.igUserId || undefined
-      }))
-      .filter((w: WorkflowAccount) => Boolean(w.credentialId))
 
-    const { workflow, webhookUrl } = await createWorkflowFromTemplateWithAccounts({
-      templateId: "instagram",
-      userId,
-      accounts: accountsForWorkflow
-    })
+    await prisma.socialAccount.update({ where: { id: social.id }, data: { n8nWorkflowId: workflowId, n8nWebhookUrl: webhookUrl || null } as any })
 
-    // Adopt new workflow
-    await prisma.user.update({ where: { id: userId }, data: { n8nWorkflowId: workflow.id, n8nWorkflowName: workflow.name, n8nWebhookUrl: webhookUrl || null } })
-    await prisma.socialAccount.update({ where: { id: social.id }, data: { n8nWorkflowId: workflow.id, n8nWorkflowName: workflow.name, n8nWebhookUrl: webhookUrl || null } as any })
+    console.log(`[instagram provision] Created credential ${cred.id}, patched workflow ${workflowId} for user ${userId}`)
 
-    console.log(`[instagram provision] Created credential ${cred.id}, recreated workflow ${workflow.id}, adopted for user ${userId}`)
-
-    return NextResponse.json({ success: true, workflowId: workflow.id, webhookUrl })
+    return NextResponse.json({ success: true, workflowId, webhookUrl })
   } catch (error: any) {
     console.error("[instagram provision]", error)
     return NextResponse.json({ success: false, error: error?.message || "Failed to provision Instagram" }, { status: 500 })

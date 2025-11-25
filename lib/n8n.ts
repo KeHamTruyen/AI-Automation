@@ -30,10 +30,12 @@ async function n8nRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
     'Authorization': `Bearer ${N8N_API_KEY}`,
     ...(init.headers as any),
   }
+  console.log(`[n8nRequest] ${init.method || 'GET'} ${url}`)
   const res = await fetch(url, { ...init, headers })
   const rawText = await res.text().catch(() => '')
   if (!res.ok) {
     let bodySnippet = rawText.slice(0, 500)
+    console.error(`[n8nRequest] ERROR ${res.status} ${res.statusText}`, bodySnippet)
     throw new Error(`n8n ${init.method || 'GET'} ${path} failed: ${res.status} ${res.statusText} ${bodySnippet}`)
   }
   try {
@@ -346,19 +348,34 @@ export async function createWorkflowFromTemplateWithAccounts(opts: {
     if (acc.credentialType === 'facebookGraphApi') {
       // Collect all facebookGraphApi nodes
       const fbNodes = nodes.filter((n: any) => String(n.type || '').toLowerCase().includes('facebookgraphapi'))
-      // Attempt match by platform keyword in node name
+      // Determine platform keyword
       const keyword = platform === 'instagram' ? 'instagram' : 'facebook'
-      let target = fbNodes.find((n: any) => String(n.name || '').toLowerCase().includes(keyword)) || fbNodes[0]
-      if (target) {
-        target.credentials = target.credentials || {}
-        target.credentials.facebookGraphApi = { id: acc.credentialId, name: acc.credentialName }
-        // Enable node if previously disabled (e.g. Instagram placeholder)
-        if (target.disabled) delete target.disabled
-        // If we have a specific resource/node id (e.g., igUserId or pageId), set it on the node parameter
-        target.parameters = target.parameters || {}
-        if (acc.nodeId) {
-          target.parameters.node = acc.nodeId
+      
+      // Filter nodes matching this platform (facebook or instagram)
+      const platformNodes = fbNodes.filter((n: any) => {
+        const name = String(n.name || '').toLowerCase()
+        if (keyword === 'instagram') {
+          return name.includes('instagram')
+        } else {
+          // Facebook: match all facebookGraphApi nodes EXCEPT instagram
+          return !name.includes('instagram')
         }
+      })
+      
+      if (platformNodes.length > 0) {
+        // Bind credential to ALL matching platform nodes
+        for (const target of platformNodes) {
+          target.credentials = target.credentials || {}
+          target.credentials.facebookGraphApi = { id: acc.credentialId, name: acc.credentialName }
+          // Enable node if previously disabled
+          if (target.disabled) delete target.disabled
+          // If we have a specific resource/node id (e.g., igUserId or pageId), set it on the node parameter
+          target.parameters = target.parameters || {}
+          if (acc.nodeId) {
+            target.parameters.node = acc.nodeId
+          }
+        }
+        console.log(`[createWorkflowFromTemplateWithAccounts] Bound ${platformNodes.length} ${platform} nodes:`, platformNodes.map((n: any) => n.name))
         bound = true
       }
     } else if (acc.credentialType === 'twitterOAuth2Api') {
@@ -649,4 +666,76 @@ export async function removePlatformAccountNode(opts: {
     }
     throw e
   }
+}
+
+// Toggle các node theo nền tảng (facebook/instagram/twitter) trong 1 workflow hiện có.
+// - active=true: bật node và gán credential (nếu cung cấp)
+// - active=false: tắt node và gỡ credential của nền tảng đó
+export async function setPlatformNodesActive(opts: {
+  workflowId: string
+  platform: 'facebook' | 'instagram' | 'twitter'
+  active: boolean
+  credentialId?: string
+  credentialName?: string
+}): Promise<Workflow> {
+  const wf = await getWorkflow(opts.workflowId)
+  const nodes = Array.isArray(wf.nodes) ? JSON.parse(JSON.stringify(wf.nodes)) : []
+  const plat = String(opts.platform).toLowerCase()
+
+  function isFacebookNode(n: any): boolean {
+    const t = String(n?.type || '').toLowerCase()
+    if (!t.includes('facebookgraphapi')) return false
+    const name = String(n?.name || '').toLowerCase()
+    // Loại trừ node Instagram (cũng dùng facebookGraphApi) để tránh gán nhầm
+    if (name.includes('instagram')) return false
+    // Chấp nhận mọi node facebookGraphApi còn lại là node Facebook (feed/photo/...)
+    return true
+  }
+  function isInstagramNode(n: any): boolean {
+    const t = String(n?.type || '').toLowerCase()
+    const name = String(n?.name || '').toLowerCase()
+    // Instagram dùng facebookGraphApi node nhưng name thường chứa 'instagram'
+    return t.includes('facebookgraphapi') && name.includes('instagram')
+  }
+  function isTwitterNode(n: any): boolean {
+    const t = String(n?.type || '').toLowerCase()
+    return t.includes('twitter')
+  }
+
+  console.log(`[setPlatformNodesActive] Scanning ${nodes.length} nodes for platform=${plat}, active=${opts.active}`)
+  const touched: string[] = []
+  for (const n of nodes) {
+    const match = plat === 'facebook' ? isFacebookNode(n) : plat === 'instagram' ? isInstagramNode(n) : isTwitterNode(n)
+    console.log(`[setPlatformNodesActive] Node "${n.name}" type=${n.type} match=${match} disabled=${!!n.disabled}`)
+    if (!match) continue
+    touched.push(n.name || '(unnamed)')
+    if (opts.active) {
+      if (n.disabled) delete n.disabled
+      if (opts.credentialId && opts.credentialName) {
+        n.credentials = n.credentials || {}
+        if (plat === 'twitter') {
+          n.credentials.twitterOAuth2Api = { id: opts.credentialId, name: opts.credentialName }
+        } else {
+          n.credentials.facebookGraphApi = { id: opts.credentialId, name: opts.credentialName }
+        }
+      }
+      console.log(`[setPlatformNodesActive] ✓ Activated "${n.name}" with credential ${opts.credentialName}`)
+    } else {
+      n.disabled = true
+      if (n.credentials) {
+        if (plat === 'twitter') delete n.credentials.twitterOAuth2Api
+        else delete n.credentials.facebookGraphApi
+      }
+      console.log(`[setPlatformNodesActive] ✗ Deactivated "${n.name}"`)
+    }
+  }
+  if (touched.length) {
+    console.log(`[setPlatformNodesActive] ${plat} toggled ${touched.length} nodes:`, touched)
+  } else {
+    console.warn(`[setPlatformNodesActive] No nodes matched platform=${plat} in workflow ${opts.workflowId}`)
+  }
+
+  const patch: Partial<Workflow> = { nodes }
+  const updated = await updateWorkflow(opts.workflowId, patch)
+  return updated
 }

@@ -63,25 +63,25 @@ AI Marketing Engine là một nền tảng marketing tự động hoàn chỉnh,
 ## 🏗️ Project Structure
 
 \`\`\`
-├── app/                          # Next.js App Router
-│   ├── api/                      # API endpoints
-│   │   ├── auth/                 # Authentication routes
-│   │   ├── content/              # Content management
-│   │   └── social-accounts/      # Social media integration
-│   ├── login/                    # Login page
-│   ├── dashboard/                # Main dashboard
-│   ├── ai-representative/        # AI tools
-│   └── [other-pages]/            # Feature pages
-├── components/                   # Reusable UI components
-├── lib/                          # Utilities và configurations
-│   ├── prisma.ts                 # Database client
-│   ├── api.ts                    # API client
-│   └── utils.ts                  # Helper functions
-├── prisma/                       # Database schema và migrations
-│   ├── schema.prisma             # Database models
-│   └── seed.ts                   # Demo data seeding
-├── middleware.ts                 # Route protection
-└── public/                       # Static assets
+├── app/ # Next.js App Router
+│ ├── api/ # API endpoints
+│ │ ├── auth/ # Authentication routes
+│ │ ├── content/ # Content management
+│ │ └── social-accounts/ # Social media integration
+│ ├── login/ # Login page
+│ ├── dashboard/ # Main dashboard
+│ ├── ai-representative/ # AI tools
+│ └── [other-pages]/ # Feature pages
+├── components/ # Reusable UI components
+├── lib/ # Utilities và configurations
+│ ├── prisma.ts # Database client
+│ ├── api.ts # API client
+│ └── utils.ts # Helper functions
+├── prisma/ # Database schema và migrations
+│ ├── schema.prisma # Database models
+│ └── seed.ts # Demo data seeding
+├── middleware.ts # Route protection
+└── public/ # Static assets
 \`\`\`
 
 ## 🚀 Quick Start
@@ -104,23 +104,33 @@ npm install
 #### 🚀 Option A: Mock Data (RECOMMENDED FOR TESTING)
 
 \`\`\`bash
+
 # No database required! Set in .env:
+
 DATABASE_URL=""
 
 # System will automatically use mock data with demo accounts:
+
 # Admin: admin@company.com / admin123
+
 # User: user@company.com / user123
+
 \`\`\`
 
 #### 🐘 Option B: PostgreSQL (Production Ready)
 
 \`\`\`bash
+
 # 1. Install PostgreSQL
+
 # 2. Create database: ai_marketing_engine
+
 # 3. Update .env:
+
 DATABASE_URL="postgresql://username:password@localhost:5432/ai_marketing_engine"
 
 # 4. Setup database
+
 npm run db:generate
 npm run db:push
 npm run db:seed
@@ -129,10 +139,13 @@ npm run db:seed
 #### 🛠️ Option C: Auto Setup Script
 
 \`\`\`bash
+
 # Windows
+
 setup-db.bat
 
 # Linux/macOS
+
 chmod +x setup-db.sh && ./setup-db.sh
 \`\`\`
 
@@ -161,20 +174,20 @@ npm run dev
 ### **Development**
 
 \`\`\`bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm start           # Start production server
-npm run lint        # Run ESLint
+npm run dev # Start development server
+npm run build # Build for production
+npm start # Start production server
+npm run lint # Run ESLint
 \`\`\`
 
 ### **Database**
 
 \`\`\`bash
-npm run db:generate  # Generate Prisma client
-npm run db:push      # Push schema to database (dev)
-npm run db:migrate   # Run migrations (production)
-npm run db:seed      # Seed demo data
-npm run db:studio    # Open Prisma Studio
+npm run db:generate # Generate Prisma client
+npm run db:push # Push schema to database (dev)
+npm run db:migrate # Run migrations (production)
+npm run db:seed # Seed demo data
+npm run db:studio # Open Prisma Studio
 \`\`\`
 
 ## 🗄️ Database Setup
@@ -240,6 +253,7 @@ Notes:
 - If you see 401/500 errors when provisioning, verify env vars and that `N8N_API_BASE_URL` points to the Public API (`/api/v1`). Using `/rest` with API keys typically yields 401 unless session cookies are present.
 
 ### OAuth follow-up (next steps)
+
 ## 📦 Cloudflare R2 Media Storage
 
 Ảnh/media dùng để đăng bài qua Facebook/Instagram cần URL HTTPS công khai (không phải localhost). Dự án hỗ trợ lưu trữ trên Cloudflare R2 (S3-compatible) thay cho thư mục `public/uploads` cục bộ.
@@ -288,6 +302,7 @@ Nếu không cấu hình `R2_PUBLIC_BASE_URL`, mã sẽ fallback về dạng URL
 > Nếu thấy log cảnh báo `[r2] Missing R2 env vars`, nghĩa là server chưa được cấu hình R2 và upload sẽ lỗi.
 
 ### Mô hình file môi trường
+
 -## ⏱ Scheduler (Lên lịch đăng bài)
 
 Hệ thống sử dụng một worker Node riêng để xử lý các bài viết đã lên lịch.
@@ -298,6 +313,7 @@ Hệ thống sử dụng một worker Node riêng để xử lý các bài viế
 - `ScheduledPostAttempt`: log mỗi lần thực thi (thành công hoặc lỗi) với executionId từ n8n.
 
 ### Luồng chạy
+
 1. FE gọi `POST /api/schedule` tạo job (status=PENDING).
 2. Worker (`npm run scheduler`) cron mỗi phút chọn job đến hạn.
 3. Gửi payload tới endpoint publish (mặc định `/api/posts`).
@@ -313,17 +329,17 @@ npm run scheduler
 Giữ tiến trình này chạy song song với `npm run dev` hoặc deploy thành service riêng.
 
 ### Biến môi trường tùy chọn
+
 - `SCHEDULER_PUBLISH_ENDPOINT` nếu muốn đổi URL publish mặc định.
 
 ### Mở rộng
+
 - Recurrence qua trường `recurrenceRule` (RRULE) – chưa triển khai.
 - Thêm cảnh báo email / webhook khi job lỗi cuối cùng.
-
 
 - Commit: chỉ commit `.env.example` (template, không chứa secret).
 - Runtime: tạo file `.env` bằng cách copy từ `.env.example` rồi điền giá trị thật (file này bị ignore do rule `/.env*` trừ `.env.example`).
 - Không dùng `.env.local` trong repo này để giảm trùng lặp.
-
 
 - Add OAuth start/callback routes per platform to complete authorization.
 - Exchange client credentials for access/refresh tokens and store them securely (prefer n8n credentials with encryption).
