@@ -1,6 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
+// ==================== GENERATOR & DATASOURCE ====================
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,92 +8,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  password  String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  lastLogin DateTime?
-  // Per-user master workflow (new architecture: one workflow per user, nodes added per social account)
-  n8nWorkflowId   String? @db.VarChar(191)
-  n8nWorkflowName String? @db.VarChar(191)
-  n8nWebhookUrl   String? @db.VarChar(512)
-  
-  // Relations
-  socialAccounts SocialAccount[]
-  contents       Content[]
-  
-  @@map("users")
-}
-
-model SocialAccount {
-  id          String   @id @default(cuid())
-  platform    String   // facebook, instagram, twitter, etc.
-  name        String
-  username    String
-  accessToken String?
-  // n8n per-user provisioning metadata (Approach B)
-  n8nCredentialId   String?
-  n8nCredentialName String?
-  n8nWorkflowId     String?
-  n8nWorkflowName   String?
-  n8nWebhookUrl     String?
-  status      AccountStatus @default(ACTIVE)
-  followers   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Relations
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  contents    Content[]
-  analytics   Analytics[]
-  
-  @@map("social_accounts")
-}
-
-model Content {
-  id          String      @id @default(cuid())
-  title       String
-  content     String
-  hashtags    String[]   @default([])
-  platforms   String[]   @default([])
-  type        ContentType
-  status      ContentStatus @default(DRAFT)
-  scheduledAt DateTime?
-  publishedAt DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  
-  // Relations
-  userId          String
-  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  socialAccountId String?
-  socialAccount   SocialAccount?  @relation(fields: [socialAccountId], references: [id])
-  
-  @@map("contents")
-}
-
-model Analytics {
-  id        String   @id @default(cuid())
-  date      DateTime
-  views     Int      @default(0)
-  likes     Int      @default(0)
-  shares    Int      @default(0)
-  comments  Int      @default(0)
-  reach     Int      @default(0)
-  createdAt DateTime @default(now())
-  
-  // Relations
-  socialAccountId String
-  socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
-  
-  @@unique([socialAccountId, date])
-  @@map("analytics")
-}
-
+// ==================== ENUMS ====================
 enum Role {
   USER
   ADMIN
@@ -122,7 +35,129 @@ enum ContentStatus {
   ARCHIVED
 }
 
-enum ExecutionStatus {
+enum PublishStatus {
+  PENDING
   SUCCESS
-  FAIL
+  FAILED
+}
+
+// ==================== TABLES ====================
+
+// ---- USER ----
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String
+  password  String
+  role      Role      @default(USER)
+  createdAt DateTime  @default(now())
+  lastLogin DateTime?
+
+  // n8n workflow cho user (tùy chọn)
+  n8nWorkflowId   String? @db.VarChar(191)
+  n8nWorkflowName String? @db.VarChar(191)
+  n8nWebhookUrl   String? @db.VarChar(512)
+
+  // Relations
+  socialAccounts SocialAccount[]
+  contents       Content[]
+
+  @@map("users")
+}
+
+// ---- SOCIAL ACCOUNT ----
+model SocialAccount {
+  id          String        @id @default(cuid())
+  platform    String
+  name        String // hiển thị trên web
+  username    String // username / ID trên MXH
+  accessToken String?
+  status      AccountStatus @default(ACTIVE)
+  followers   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // n8n credential / workflow
+  n8nCredentialId   String? @db.VarChar(191)
+  n8nCredentialName String? @db.VarChar(191)
+  n8nWorkflowId     String? @db.VarChar(191)
+  n8nWorkflowName   String? @db.VarChar(191)
+  n8nWebhookUrl     String? @db.VarChar(512)
+
+  // Relations
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Quan hệ 1-N với Content (optional)
+  contents Content[] @relation("ContentSocialAccount")
+
+  analytics Analytics[]
+  targets   ContentPublishTarget[] // Many-to-Many với Content
+
+  @@map("social_accounts")
+}
+
+// ---- CONTENT ----
+model Content {
+  id          String        @id @default(cuid())
+  title       String
+  content     String
+  hashtags    String[]      @default([])
+  platforms   String[]      @default([]) // các nền tảng dự kiến đăng
+  type        ContentType
+  status      ContentStatus @default(DRAFT)
+  scheduledAt DateTime?
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Quan hệ 1-N với SocialAccount (optional)
+  socialAccountId String?
+  socialAccount   SocialAccount? @relation("ContentSocialAccount", fields: [socialAccountId], references: [id])
+
+  targets ContentPublishTarget[] // Many-to-Many với SocialAccount
+
+  @@map("contents")
+}
+
+// ---- CONTENT PUBLISH TARGET (bảng trung gian Many-to-Many) ----
+model ContentPublishTarget {
+  id              String        @id @default(cuid())
+  contentId       String
+  socialAccountId String
+  status          PublishStatus @default(PENDING)
+  scheduledAt     DateTime?
+  publishedAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  content       Content       @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  socialAccount SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([contentId, socialAccountId])
+  @@map("content_publish_targets")
+}
+
+// ---- ANALYTICS ----
+model Analytics {
+  id        String   @id @default(cuid())
+  date      DateTime
+  views     Int      @default(0)
+  likes     Int      @default(0)
+  shares    Int      @default(0)
+  comments  Int      @default(0)
+  reach     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  // Relations
+  socialAccountId String
+  socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([socialAccountId, date])
+  @@map("analytics")
 }
