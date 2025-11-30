@@ -7,7 +7,83 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ==================== ENUMS ====================
+model User {
+  id              String          @id @default(cuid())
+  email           String          @unique
+  name            String
+  password        String
+  role            Role            @default(USER)
+  createdAt       DateTime        @default(now())
+  lastLogin       DateTime?
+  n8nWebhookUrl   String?         @db.VarChar(512)
+  n8nWorkflowId   String?         @db.VarChar(191)
+  n8nWorkflowName String?         @db.VarChar(191)
+  contents        Content[]
+  socialAccounts  SocialAccount[]
+  scheduledPosts  ScheduledPost[]
+
+  @@map("users")
+}
+
+model SocialAccount {
+  id                String        @id @default(cuid())
+  platform          String
+  name              String
+  username          String
+  accessToken       String?
+  status            AccountStatus @default(ACTIVE)
+  followers         Int           @default(0)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  userId            String
+  n8nCredentialId   String?
+  n8nCredentialName String?
+  n8nWebhookUrl     String?
+  n8nWorkflowId     String?
+  n8nWorkflowName   String?
+  analytics         Analytics[]
+  publications      ContentPublication[]
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("social_accounts")
+}
+
+model Content {
+  id              String         @id @default(cuid())
+  title           String
+  content         String
+  hashtags        String[]       @default([])
+  platforms       String[]       @default([])
+  type            ContentType
+  status          ContentStatus  @default(DRAFT)
+  scheduledAt     DateTime?
+  publishedAt     DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduledPosts  ScheduledPost[] @relation("ContentScheduledPosts")
+  publications    ContentPublication[]
+
+  @@map("contents")
+}
+
+model Analytics {
+  id              String        @id @default(cuid())
+  date            DateTime
+  views           Int           @default(0)
+  likes           Int           @default(0)
+  shares          Int           @default(0)
+  comments        Int           @default(0)
+  reach           Int           @default(0)
+  createdAt       DateTime      @default(now())
+  socialAccountId String
+  socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([socialAccountId, date])
+  @@map("analytics")
+}
+
 enum Role {
   USER
   ADMIN
@@ -34,111 +110,6 @@ enum ContentStatus {
   ARCHIVED
 }
 
-enum PublishStatus {
-  PENDING
-  SUCCESS
-  FAILED
-}
-
-// ==================== TABLES ====================
-
-// ---- USER ----
-model User {
-  id              String          @id @default(cuid())
-  email           String          @unique
-  name            String
-  password        String
-  role            Role            @default(USER)
-  createdAt       DateTime        @default(now())
-  lastLogin       DateTime?
-  n8nWebhookUrl   String?         @db.VarChar(512)
-  n8nWorkflowId   String?         @db.VarChar(191)
-  n8nWorkflowName String?         @db.VarChar(191)
-  contents        Content[]
-  socialAccounts  SocialAccount[]
-  scheduledPosts  ScheduledPost[]
-
-  @@map("users")
-}
-
-// ---- SOCIAL ACCOUNT ----
-model SocialAccount {
-  id                String               @id @default(cuid())
-  platform          String
-  name              String
-  username          String
-  accessToken       String?
-  status            AccountStatus        @default(ACTIVE)
-  followers         Int                  @default(0)
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
-  userId            String
-  n8nCredentialId   String?
-  n8nCredentialName String?
-  n8nWebhookUrl     String?
-  n8nWorkflowId     String?
-  n8nWorkflowName   String?
-  analytics         Analytics[]
-  publications      ContentPublication[]
-  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("social_accounts")
-}
-
-// ---- CONTENT ----
-model Content {
-  id             String               @id @default(cuid())
-  title          String
-  content        String
-  hashtags       String[]             @default([])
-  platforms      String[]             @default([])
-  type           ContentType
-  status         ContentStatus        @default(DRAFT)
-  scheduledAt    DateTime?
-  publishedAt    DateTime?
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  userId         String
-  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  scheduledPosts ScheduledPost[]      @relation("ContentScheduledPosts")
-  publications   ContentPublication[]
-
-  @@map("contents")
-}
-
-// ---- CONTENT PUBLISH TARGET (bảng trung gian Many-to-Many) ----
-model ContentPublishTarget {
-  id              String        @id @default(cuid())
-  contentId       String
-  socialAccountId String
-  status          PublishStatus @default(PENDING)
-  scheduledAt     DateTime?
-  publishedAt     DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  @@unique([contentId, socialAccountId])
-  @@map("content_publish_targets")
-}
-
-// ---- ANALYTICS ----
-model Analytics {
-  id              String        @id @default(cuid())
-  date            DateTime
-  views           Int           @default(0)
-  likes           Int           @default(0)
-  shares          Int           @default(0)
-  comments        Int           @default(0)
-  reach           Int           @default(0)
-  createdAt       DateTime      @default(now())
-  socialAccountId String
-  socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
-
-  @@unique([socialAccountId, date])
-  @@map("analytics")
-}
-
-// ---- SCHEDULED POST ----
 enum ExecutionStatus {
   SUCCESS
   FAIL
@@ -161,26 +132,26 @@ enum PublicationStatus {
 }
 
 model ScheduledPost {
-  id              String                 @id @default(cuid())
-  userId          String
-  contentText     String
-  platform        String                 @default("facebook")
-  platforms       String[]               @default([])
-  hashtags        String[]               @default([])
-  media           String[]               @default([])
-  scheduledAt     DateTime
-  timezone        String                 @default("UTC")
-  status          ScheduleStatus         @default(PENDING)
-  attemptCount    Int                    @default(0)
-  lastAttemptAt   DateTime?
+  id             String          @id @default(cuid())
+  userId         String
+  contentText    String
+  platform       String          @default("facebook")
+  platforms      String[]        @default([])
+  hashtags       String[]        @default([])
+  media          String[]        @default([])
+  scheduledAt    DateTime
+  timezone       String          @default("UTC")
+  status         ScheduleStatus  @default(PENDING)
+  attemptCount   Int             @default(0)
+  lastAttemptAt  DateTime?
   externalResults Json?
-  recurrenceRule  String?
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
-  user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  attempts        ScheduledPostAttempt[]
-  draftContentId  String?
-  draftContent    Content?               @relation("ContentScheduledPosts", fields: [draftContentId], references: [id])
+  recurrenceRule String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attempts       ScheduledPostAttempt[]
+  draftContentId String?
+  draftContent   Content?        @relation("ContentScheduledPosts", fields: [draftContentId], references: [id])
 }
 
 model ScheduledPostAttempt {
@@ -214,7 +185,7 @@ model ContentPublication {
   content         Content           @relation(fields: [contentId], references: [id], onDelete: Cascade)
   socialAccount   SocialAccount     @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
 
-  @@unique([contentId, socialAccountId])
   @@index([contentId])
   @@index([socialAccountId])
+  @@unique([contentId, socialAccountId])
 }
