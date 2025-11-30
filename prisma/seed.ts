@@ -66,12 +66,29 @@ async function main() {
       type: 'POST',
       status: 'PUBLISHED',
       userId: adminUser.id,
-      socialAccountId: socialAccount1.id,
       publishedAt: new Date(),
     },
   })
 
-  console.log('✅ Demo content created:', content1.title)
+  // Create publications for both demo social accounts
+  await prisma.contentPublication.createMany({
+    data: [
+      {
+        contentId: content1.id,
+        socialAccountId: socialAccount1.id,
+        status: 'SUCCESS',
+        publishedAt: new Date(),
+      },
+      {
+        contentId: content1.id,
+        socialAccountId: socialAccount2.id,
+        status: 'SUCCESS',
+        publishedAt: new Date(),
+      },
+    ],
+  })
+
+  console.log('✅ Demo content created with multi-account publications:', content1.title)
 
   console.log('🎉 Database seeded successfully!')
 }

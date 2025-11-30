@@ -154,28 +154,72 @@ export async function POST(request: NextRequest) {
         const msg = String(e?.message || '')
         console.warn('Không thể thêm node account vào workflow (không tạo workflow mới):', msg)
         if (/PATCH to update workflow is blocked/i.test(msg)) {
-          // Recreate full workflow from template with accounts bound, then adopt
+          // Recreate full workflow from template with ALL accounts to preserve other platforms
           try {
+            console.log('[n8n provision] PATCH blocked, recreating with all accounts')
+            
+            // Lấy tất cả social accounts của user
+            const allAccounts = await prisma.socialAccount.findMany({ where: { userId } })
+            const accountsForWorkflow = allAccounts
+              .filter(acc => acc.n8nCredentialId && acc.n8nCredentialName)
+              .map(acc => ({
+                platform: acc.platform,
+                accountDisplayName: acc.name,
+                credentialId: acc.n8nCredentialId!,
+                credentialName: acc.n8nCredentialName!,
+                credentialType: acc.platform === 'twitter' ? 'twitterOAuth2Api' : 'facebookGraphApi',
+                nodeId: ((acc as any).metadata as any)?.igUserId
+              }))
+            
+            // Thêm account hiện tại nếu chưa có trong list
+            const hasCurrentAccount = accountsForWorkflow.some(a => 
+              a.platform === platform && a.credentialId === credential.id
+            )
+            if (!hasCurrentAccount) {
+              accountsForWorkflow.push({
+                platform,
+                accountDisplayName: name,
+                credentialId: credential.id,
+                credentialName: credential.name,
+                credentialType,
+                nodeId: undefined
+              })
+            }
+            
+            console.log(`[n8n provision] Recreating with ${accountsForWorkflow.length} platforms:`, accountsForWorkflow.map(a => a.platform))
+            
             const { workflow, webhookUrl } = await createWorkflowFromTemplateWithAccounts({
               templateId,
               userId,
-              accounts: [
-                {
-                  platform,
-                  accountDisplayName: name,
-                  credentialId: credential.id,
-                  credentialName: credential.name,
-                  credentialType,
-                },
-              ],
+              accounts: accountsForWorkflow,
             })
+            
             const oldId = updatedWorkflowId
             updatedWorkflowId = workflow.id
             updatedWorkflowName = workflow.name
             updatedWebhookUrl = webhookUrl || null
-            await prisma.user.update({ where: { id: userId }, data: { n8nWorkflowId: updatedWorkflowId, n8nWorkflowName: updatedWorkflowName, n8nWebhookUrl: updatedWebhookUrl } })
+            
+            await prisma.user.update({ 
+              where: { id: userId }, 
+              data: { 
+                n8nWorkflowId: updatedWorkflowId, 
+                n8nWorkflowName: updatedWorkflowName, 
+                n8nWebhookUrl: updatedWebhookUrl 
+              } 
+            })
+            
+            // Update all social accounts với workflow mới
+            await prisma.socialAccount.updateMany({
+              where: { userId },
+              data: { n8nWorkflowId: updatedWorkflowId, n8nWebhookUrl: updatedWebhookUrl } as any
+            })
+            
+            // Xóa workflow cũ
             if (oldId && oldId !== updatedWorkflowId) {
-              try { await deleteWorkflow(oldId) } catch {}
+              try { 
+                await deleteWorkflow(oldId)
+                console.log(`[n8n provision] Deleted old workflow ${oldId}`)
+              } catch {}
             }
           } catch (err) {
             console.warn('Fallback recreate workflow failed:', (err as any)?.message)
@@ -226,17 +270,82 @@ export async function DELETE(request: NextRequest) {
       const wfId = (social as any).n8nWorkflowId as string | null
       if (wfId) {
         if (masterId && wfId === masterId) {
-          // Remove the node for this account from the master workflow instead of deleting it
+          // Disable nodes của platform này thay vì xóa node
           try {
-            const { removePlatformAccountNode } = await import("@/lib/n8n")
-            await removePlatformAccountNode({
+            console.log(`[n8n deprovision] Disabling ${social.platform} nodes in workflow ${wfId}`)
+            const { setPlatformNodesActive } = await import("@/lib/n8n")
+            
+            // Map platform to correct platform type
+            const platformMap: Record<string, 'facebook' | 'instagram' | 'twitter'> = {
+              'facebook': 'facebook',
+              'instagram': 'instagram',
+              'twitter': 'twitter',
+              'x': 'twitter'
+            }
+            const platformKey = platformMap[social.platform.toLowerCase()] || 'facebook'
+            
+            await setPlatformNodesActive({
               workflowId: wfId,
-              credentialId: (social as any).n8nCredentialId || undefined,
-              platformHint: social.platform,
-              accountDisplayNameHint: social.name,
+              platform: platformKey,
+              active: false, // Disable nodes
             })
-          } catch (err) {
-            console.warn('Remove node failed:', (err as any)?.message)
+            
+            console.log(`[n8n deprovision] Disabled ${social.platform} nodes successfully`)
+          } catch (err: any) {
+            console.warn('Disable nodes failed:', (err as any)?.message)
+            
+            // Fallback: Nếu PATCH bị chặn, recreate workflow với platform này bị disabled
+            if (/PATCH to update workflow is blocked/i.test(err?.message) || /405/i.test(err?.message)) {
+              console.log('[n8n deprovision] PATCH blocked, recreating workflow with platform disabled')
+              try {
+                const allAccounts = await prisma.socialAccount.findMany({ where: { userId } })
+                const accountsForWorkflow = allAccounts
+                  .filter(acc => acc.id !== social.id && acc.n8nCredentialId && acc.n8nCredentialName)
+                  .map(acc => ({
+                    platform: acc.platform,
+                    accountDisplayName: acc.name,
+                    credentialId: acc.n8nCredentialId!,
+                    credentialName: acc.n8nCredentialName!,
+                    credentialType: acc.platform === 'twitter' ? 'twitterOAuth2Api' : 'facebookGraphApi',
+                    nodeId: ((acc as any).metadata as any)?.igUserId
+                  }))
+                
+                const templateId = process.env.N8N_TEMPLATE_WORKFLOW_ID
+                if (templateId) {
+                  const { createWorkflowFromTemplateWithAccounts, deleteWorkflow } = await import("@/lib/n8n")
+                  const { workflow, webhookUrl } = await createWorkflowFromTemplateWithAccounts({
+                    templateId,
+                    userId,
+                    accounts: accountsForWorkflow,
+                  })
+                  
+                  const oldId = wfId
+                  await prisma.user.update({
+                    where: { id: userId },
+                    data: {
+                      n8nWorkflowId: workflow.id,
+                      n8nWorkflowName: workflow.name,
+                      n8nWebhookUrl: webhookUrl || null
+                    }
+                  })
+                  
+                  await prisma.socialAccount.updateMany({
+                    where: { userId },
+                    data: { n8nWorkflowId: workflow.id, n8nWebhookUrl: webhookUrl || null } as any
+                  })
+                  
+                  if (oldId && oldId !== workflow.id) {
+                    try {
+                      await deleteWorkflow(oldId)
+                    } catch {}
+                  }
+                  
+                  console.log(`[n8n deprovision] Recreated workflow without ${social.platform}`)
+                }
+              } catch (recreateErr) {
+                console.warn('Recreate workflow failed:', (recreateErr as any)?.message)
+              }
+            }
           }
         } else {
           // Possibly legacy per-account workflow. Delete only if no one else references it.

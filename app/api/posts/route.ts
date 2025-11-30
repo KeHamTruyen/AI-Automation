@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { jwtVerify } from "jose"
 
+// Simple GET for health/debug (helps verify route not 404)
+export async function GET() {
+  return NextResponse.json({ success: true, message: 'posts route alive' })
+}
+
 export async function POST(req: NextRequest) {
   try {
+    console.log('[api/posts] incoming POST')
     const N8N_BASE_URL = process.env.N8N_BASE_URL
     const N8N_WEBHOOK_SECRET = process.env.N8N_WEBHOOK_SECRET
     const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key")
@@ -57,6 +63,7 @@ export async function POST(req: NextRequest) {
 
     // Helper to call webhook with a specific platform value
     const callOnce = async (platform: string) => {
+      console.log('[api/posts] calling webhook', { platform, targetUrl })
       const body = { ...payload, platform }
       const res = await fetch(targetUrl, {
         method: "POST",
@@ -68,6 +75,9 @@ export async function POST(req: NextRequest) {
       // Treat n8n logical failure as error even if HTTP 200
       const logicalOk = data && data.success !== false && !data.error
       const ok = res.ok && logicalOk
+      if (!ok) {
+        console.warn('[api/posts] webhook call failed', { platform, status: res.status, data })
+      }
       return { ok, status: res.status, data, execId }
     }
 
@@ -106,6 +116,7 @@ export async function POST(req: NextRequest) {
       )
     }
   } catch (err) {
+    console.error('[api/posts] unhandled error', err)
     return NextResponse.json({ success: false, error: "Failed to create post" }, { status: 500 })
   }
 }

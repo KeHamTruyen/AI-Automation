@@ -1,138 +1,48 @@
 {
-  "name": "[USER cmhey82p40001zasn6baulnfj] User Social Post Workflow Template (1 accounts) 1763334143252",
+  "name": "template",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "user-cmhey82p40001zasn6baulnfj-1763334143252",
+        "path": "user-cmi9xc7ti000183bqo11mgc6s-1763801700847",
         "responseMode": "responseNode",
         "options": {}
       },
-      "name": "Inbound Post (Webhook)",
+      "name": "Inbound Post (Webhook)1",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -880,
-        432
+        -320,
+        -128
       ],
-      "id": "fd2b9836-90bb-4545-bf4c-14a348ea41c0",
+      "id": "c507c83f-1ae4-49f2-8d27-b10c82b88cfe",
       "webhookId": "4f26a6d4-fa78-4d0e-bbec-40c97bc44e08"
     },
     {
       "parameters": {
-        "text": "={{$json.content_text || $json.content?.text}}",
-        "additionalFields": {}
-      },
-      "name": "Post Tweet",
-      "type": "n8n-nodes-base.twitter",
-      "typeVersion": 2,
-      "position": [
-        -80,
-        320
-      ],
-      "id": "75baa370-9dcf-4014-ab60-ef10e40a18b3",
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "httpRequestMethod": "POST",
-        "graphApiVersion": "v23.0",
-        "node": "me",
-        "edge": "feed",
-        "options": {
-          "queryParameters": {
-            "parameter": [
-              {
-                "name": "message",
-                "value": "={{ $json.content_text }}"
-              }
-            ]
-          }
-        }
-      },
-      "name": "Post Facebook Page",
-      "type": "n8n-nodes-base.facebookGraphApi",
-      "typeVersion": 1,
-      "position": [
-        -80,
-        528
-      ],
-      "id": "034db5ee-d51c-4bc1-ae5f-738c850b4c05",
-      "credentials": {
-        "facebookGraphApi": {
-          "id": "ruNEPme5PtpPwvij",
-          "name": "Facebook Graph account 2"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "httpRequestMethod": "POST",
-        "graphApiVersion": "v23.0",
-        "node": "me",
-        "edge": "media",
-        "options": {
-          "queryParameters": {
-            "parameter": [
-              {
-                "name": "caption",
-                "value": "={{ $json.content_text }}"
-              },
-              {
-                "name": "image_url",
-                "value": "={{ $json.media && $json.media[0] ? $json.media[0] : '' }}"
-              }
-            ]
-          }
-        }
-      },
-      "name": "Post Instagram",
-      "type": "n8n-nodes-base.facebookGraphApi",
-      "typeVersion": 1,
-      "position": [
-        -80,
-        736
-      ],
-      "id": "8a3c5f12-9b4d-4e5a-a7c2-1d9e8f6b3c2a"
-    },
-    {
-      "parameters": {
-        "functionCode": "// Validate and normalize input\nconst req = items[0].json || {};\nconst body = req.body ?? req;   // <-- nếu đến từ Webhook sẽ nằm ở body, còn test tay thì ở root\n\nconst content = body.content_text || body.content || '';\nconst platform = String(body.platform || '').toLowerCase();\n\nif (!content || !platform) {\n  return [{ json: { success: false, error: 'Missing content_text or platform' } }];\n}\n\n// Optional: media URLs\nconst media = Array.isArray(body.media) ? body.media : (body.media ? [body.media] : []);\n\n// Optional: hashtags\nlet hashtags = [];\nif (Array.isArray(body.hashtags)) {\n  hashtags = body.hashtags.filter(h => typeof h === 'string');\n} else if (typeof body.hashtags === 'string') {\n  hashtags = body.hashtags.split(/\\s+/).filter(s => s.startsWith('#'));\n}\n\nreturn [{ json: { content_text: content, platform, media, hashtags, raw: body } }];"
-      },
-      "name": "Validate / Normalize1",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        -592,
-        432
-      ],
-      "id": "c5962df5-b206-42c9-8d5a-1873d735976b"
-    },
-    {
-      "parameters": {
-        "functionCode": "// Normalize result\nconst res = items[0].json || {};\n// Check if upstream node returned error\nif (res.error || (res.success === false)) {\n  return [{ json: { success: false, error: res.error || res.message || 'Unknown error', raw: res } }];\n}\n// Try common id fields\nconst id = res.id || res.externalPostId || res.data?.id || null;\nreturn [{ json: { success: true, externalPostId: id, raw: res } }];"
-      },
-      "name": "Normalize Result1",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        192,
-        432
-      ],
-      "id": "29a9295f-6e93-4049-8289-6362cf0dabd9"
-    },
-    {
-      "parameters": {
         "options": {}
       },
-      "name": "Respond1",
+      "name": "Respond",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        448,
-        432
+        1712,
+        -160
       ],
-      "id": "c7489e5f-9e3c-4f23-94ca-1666787d03fb"
+      "id": "aa538d66-3c38-4d5e-8928-a15166425056"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Fan-out platforms: emit one item per requested platform\nconst raw = (items[0].json.body) ? items[0].json.body : items[0].json;\nconst content = raw.content_text || raw.content || '';\nlet platforms = Array.isArray(raw.platforms) ? raw.platforms.filter(p=>p) : (raw.platform ? [raw.platform] : []);\nplatforms = platforms.map(p=>String(p).toLowerCase());\nif (!platforms.length) platforms = ['facebook'];\nlet media = [];\nif (Array.isArray(raw.media)) media = raw.media.filter(u=> typeof u === 'string' && /^https?:/.test(u));\nelse if (typeof raw.media === 'string' && /^https?:/.test(raw.media)) media = [raw.media];\nconst hashtags = Array.isArray(raw.hashtags) ? raw.hashtags.filter(h=> typeof h === 'string') : (typeof raw.hashtags === 'string' ? raw.hashtags.split(/\\s+/).filter(s=>s.startsWith('#')) : []);\nreturn platforms.map(p=>({ json: { content_text: content, platform: p, media, hasImage: !!media[0], hashtags } }));"
+      },
+      "name": "Fanout Platforms",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -128
+      ],
+      "id": "68b9fa3c-73d8-43f7-898a-360a55eec70b"
     },
     {
       "parameters": {
@@ -149,12 +59,12 @@
                 "conditions": [
                   {
                     "leftValue": "={{$json.platform}}",
-                    "rightValue": "twitter",
+                    "rightValue": "facebook",
                     "operator": {
                       "type": "string",
                       "operation": "equals"
                     },
-                    "id": "71010c08-5571-4475-b572-915cf2721ca6"
+                    "id": "fb"
                   }
                 ],
                 "combinator": "and"
@@ -170,36 +80,35 @@
                 },
                 "conditions": [
                   {
-                    "id": "89487d8a-f2c1-4f15-ac4e-3d32d63c6368",
-                    "leftValue": "={{$json.platform}}",
-                    "rightValue": "facebook",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              }
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
                     "leftValue": "={{$json.platform}}",
                     "rightValue": "instagram",
                     "operator": {
                       "type": "string",
                       "operation": "equals"
-                    }
+                    },
+                    "id": "ig"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.platform}}",
+                    "rightValue": "twitter",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "tw"
                   }
                 ],
                 "combinator": "and"
@@ -209,23 +118,384 @@
         },
         "options": {}
       },
+      "name": "Switch Platform",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.3,
       "position": [
-        -352,
-        432
+        224,
+        -144
       ],
-      "id": "ef16c878-c09f-4a2b-a716-e2058d681a3c",
-      "name": "Switch"
+      "id": "521244a9-524f-49bd-946f-0b3d3ba1aa63"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.hasImage}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "IF FB Has Image",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        432,
+        -352
+      ],
+      "id": "d9562187-093f-4859-9fb7-752b026f711d"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "me",
+        "edge": "feed",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "message",
+                "value": "={{$json.content_text}}"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Post Facebook Feed",
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        656,
+        -256
+      ],
+      "id": "897f132f-bd8b-4007-a6c6-55db45eccf84",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "Wd2AJrsjyrf1eXsb",
+          "name": "Facebook Graph account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "17841449301482656",
+        "edge": "media",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "caption",
+                "value": "={{ $json.content_text }}"
+              },
+              {
+                "name": "image_url",
+                "value": "={{ $json.media[0] }}"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Create Instagram Media",
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        512,
+        -48
+      ],
+      "id": "83a0ccfe-07c5-4403-aaf7-a252b5cad2c5",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "EfUlGSmnRRJ1xPnt",
+          "name": "insta"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "17841449301482656",
+        "edge": "media_publish",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "creation_id",
+                "value": "={{$json.id}}"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Publish Instagram Media",
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        736,
+        -48
+      ],
+      "id": "b5d35acf-a85d-486a-adb0-e2ac516a42f6",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "EfUlGSmnRRJ1xPnt",
+          "name": "insta"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "text": "={{$json.content_text}}",
+        "additionalFields": {}
+      },
+      "name": "Post Tweet",
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
+      "position": [
+        512,
+        256
+      ],
+      "id": "1123472c-cb97-4464-96f8-1320b72b57b8",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "functionCode": "// Standardize platform result\nconst inJson = items[0].json;\nconst raw = inJson || {};\nconst id = raw.id || raw.postId || raw.externalPostId || raw.creation_id || null;\nreturn [{ json: { platform: raw.platform || $json.platform || 'unknown', success: !raw.error, externalPostId: id, error: raw.error || null, raw } }];"
+      },
+      "name": "Normalize Result FB Photo",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        912,
+        -464
+      ],
+      "id": "6c72b3f3-0b39-469e-8938-3ad52b1ff888"
+    },
+    {
+      "parameters": {
+        "functionCode": "const r = items[0].json; const id = r.id || r.postId || r.externalPostId || null; return [{ json: { platform: 'facebook', success: !r.error, externalPostId: id, error: r.error || null, raw: r } }];"
+      },
+      "name": "Normalize Result FB Feed",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        928,
+        -256
+      ],
+      "id": "cca35c3b-dd07-44fd-a0d7-d40792eb492a"
+    },
+    {
+      "parameters": {
+        "functionCode": "const r = items[0].json; const id = r.id || r.externalPostId || null; return [{ json: { platform: 'instagram', success: !r.error, externalPostId: id, error: r.error || null, raw: r } }];"
+      },
+      "name": "Result IG Publish",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        960,
+        -48
+      ],
+      "id": "9d3e2921-febc-4d30-b80b-d3de55ea539b"
+    },
+    {
+      "parameters": {
+        "functionCode": "const r = items[0].json; return [{ json: { platform: 'twitter', success: !r.error, externalPostId: r.id || null, error: r.error || null, raw: r } }];"
+      },
+      "name": "Result Twitter",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        752,
+        256
+      ],
+      "id": "f6af5e18-96a0-45e1-87e4-6365ae2b3dd0",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "functionCode": "// Aggregate accepts variable number of platform result items.\n// Each incoming item already normalized.\nif (!items || !items.length) {\n  return [{ json: { success: true, results: [], warning: 'No platform results' } }];\n}\nreturn [{ json: { success: true, results: items.map(i => i.json) } }];"
+      },
+      "name": "Aggregate",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        -160
+      ],
+      "id": "3da863ca-e1a9-4cb7-a132-337c9151f122"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "me",
+        "edge": "photos",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "url",
+                "value": "={{$json.media[0]}}"
+              },
+              {
+                "name": "caption",
+                "value": "={{$json.content_text}}"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Post Facebook Photo1",
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        656,
+        -464
+      ],
+      "id": "e07acb3c-e32d-4ecd-940c-32ece400b9a9",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "Wd2AJrsjyrf1eXsb",
+          "name": "Facebook Graph account"
+        }
+      },
+      "disabled": true
     }
   ],
   "pinData": {},
   "connections": {
-    "Inbound Post (Webhook)": {
+    "Inbound Post (Webhook)1": {
       "main": [
         [
           {
-            "node": "Validate / Normalize1",
+            "node": "Fanout Platforms",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fanout Platforms": {
+      "main": [
+        [
+          {
+            "node": "Switch Platform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Platform": {
+      "main": [
+        [
+          {
+            "node": "IF FB Has Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Instagram Media",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Post Tweet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF FB Has Image": {
+      "main": [
+        [
+          {
+            "node": "Post Facebook Photo1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Post Facebook Feed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Facebook Feed": {
+      "main": [
+        [
+          {
+            "node": "Normalize Result FB Feed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Instagram Media": {
+      "main": [
+        [
+          {
+            "node": "Publish Instagram Media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish Instagram Media": {
+      "main": [
+        [
+          {
+            "node": "Result IG Publish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Result IG Publish": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Result FB Photo": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Result FB Feed": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
             "type": "main",
             "index": 0
           }
@@ -236,76 +506,40 @@
       "main": [
         [
           {
-            "node": "Normalize Result1",
+            "node": "Result Twitter",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Post Facebook Page": {
+    "Result Twitter": {
       "main": [
         [
           {
-            "node": "Normalize Result1",
+            "node": "Aggregate",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Post Instagram": {
+    "Aggregate": {
       "main": [
         [
           {
-            "node": "Normalize Result1",
+            "node": "Respond",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Validate / Normalize1": {
+    "Post Facebook Photo1": {
       "main": [
         [
           {
-            "node": "Switch",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Normalize Result1": {
-      "main": [
-        [
-          {
-            "node": "Respond1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Switch": {
-      "main": [
-        [
-          {
-            "node": "Post Tweet",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Post Facebook Page",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Post Instagram",
+            "node": "Normalize Result FB Photo",
             "type": "main",
             "index": 0
           }
@@ -313,14 +547,15 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "8d3724b3-7b8d-45d5-a860-558782be10fa",
+  "versionId": "41fc506d-8b8e-4cff-a125-7b9d1bf7211f",
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "7435dce5e82963b5917f5dd085e640d9e48f3eee1559038e5ee2e732f7bb4630"
   },
-  "id": "lhONXVwi3wBeWtIw",
+  "id": "5jeFX00Kl8Q7YfXy",
   "tags": []
 }
