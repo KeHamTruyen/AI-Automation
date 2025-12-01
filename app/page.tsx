@@ -51,7 +51,7 @@ export default function HomePage() {
               Bảng giá
             </Link>
             <Link
-              href="#contact"
+              href="/lien-he"
               className="text-gray-600 hover:text-blue-600 transition-colors"
             >
               Liên hệ
