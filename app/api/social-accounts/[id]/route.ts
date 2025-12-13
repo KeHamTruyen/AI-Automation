@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { jwtVerify } from "jose"
 import { prisma } from "@/lib/prisma"
+import { deleteCredential, removePlatformAccountNode } from "@/lib/n8n"
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key")
 async function getUserId(request: NextRequest): Promise<string | null> {
@@ -87,13 +88,45 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     }
     const userId = await getUserId(request)
     if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
+    
     const existing = await prisma.socialAccount.findUnique({ where: { id: params.id } })
     if (!existing || existing.userId !== userId) {
       return NextResponse.json({ success: false, error: "Không tìm thấy tài khoản" }, { status: 404 })
     }
-    // Prefer FE to call /api/integrations/n8n/provision?socialAccountId=... DELETE for n8n cleanup.
+
+    // Get user's workflow ID
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    
+    // Clean up n8n resources
+    try {
+      // 1. Delete credential from n8n (if exists)
+      if (existing.n8nCredentialId) {
+        await deleteCredential(existing.n8nCredentialId)
+        console.log(`✅ Deleted n8n credential: ${existing.n8nCredentialId}`)
+      }
+
+      // 2. Remove node from workflow (if workflow exists)
+      if (user?.n8nWorkflowId && existing.n8nCredentialId) {
+        await removePlatformAccountNode({
+          workflowId: user.n8nWorkflowId,
+          credentialId: existing.n8nCredentialId,
+          platformHint: existing.platform.toLowerCase(),
+          accountDisplayNameHint: existing.name
+        })
+        console.log(`✅ Removed ${existing.platform} node from workflow`)
+      }
+    } catch (n8nError: any) {
+      // Log but don't block deletion if n8n cleanup fails
+      console.error('⚠️ n8n cleanup error:', n8nError?.message || n8nError)
+    }
+
+    // 3. Delete from database
     await prisma.socialAccount.delete({ where: { id: params.id } })
-    return NextResponse.json({ success: true, message: "Account deleted" })
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: `${existing.platform} account deleted successfully` 
+    })
   } catch (error: any) {
     console.error("[social-accounts/:id DELETE]", error?.message || error)
     return NextResponse.json({ success: false, error: "Failed to delete account" }, { status: 500 })

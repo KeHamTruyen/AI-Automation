@@ -180,7 +180,29 @@ export async function createWorkflow(workflow: Partial<Workflow>): Promise<Workf
 }
 
 export async function updateWorkflow(id: string, patch: Partial<Workflow>): Promise<Workflow> {
-  return await n8nRequest<Workflow>(`/workflows/${id}`, { method: 'PATCH', body: JSON.stringify(patch) })
+  // Try PUT first (full replace), as some n8n proxies/configs block PATCH
+  try {
+    // GET current workflow to merge patch
+    const current = await getWorkflow(id)
+    const merged = { ...current, ...patch }
+    
+    // Clean object - remove read-only fields
+    const cleanWorkflow: any = {
+      name: merged.name,
+      nodes: merged.nodes,
+      connections: merged.connections,
+      settings: merged.settings || {}
+    }
+    
+    return await n8nRequest<Workflow>(`/workflows/${id}`, { method: 'PUT', body: JSON.stringify(cleanWorkflow) })
+  } catch (e: any) {
+    // Fallback to PATCH if PUT fails
+    const msg = String(e?.message || '')
+    if (msg.includes('405') || /method not allowed/i.test(msg)) {
+      throw new Error('PUT/PATCH to update workflow is blocked by server/proxy; cannot update workflow without creating extra workflows. Please allow PUT/PATCH or edit manually in n8n.')
+    }
+    throw e
+  }
 }
 
 export async function setWorkflowActive(id: string, active: boolean): Promise<void> {
@@ -468,6 +490,7 @@ export async function addPlatformAccountNode(opts: {
   credentialName: string
   credentialType: string
   nodeTypeOverride?: string // e.g. native node type, else httpRequest
+  linkedinUrn?: string // LinkedIn author URN for ugcPosts
 }): Promise<{ workflow: Workflow; replaced?: boolean; oldWorkflowId?: string }> {
   const wf = await getWorkflow(opts.workflowId)
   const nodes = Array.isArray(wf.nodes) ? JSON.parse(JSON.stringify(wf.nodes)) : []
@@ -503,13 +526,28 @@ export async function addPlatformAccountNode(opts: {
 
   // Attach credential appropriately
   if (opts.credentialType === 'httpHeaderAuth') {
-    newNode.parameters = {
-      url: 'https://graph.facebook.com/v19.0/<page-id>/feed', // Placeholder; replace dynamically
-      method: 'POST',
-      sendBody: true,
-      jsonParameters: true,
-      options: { },
-      bodyParametersJson: '{"message":"{{$json[\"content\"] || \"Hello\"}}"}'
+    // LinkedIn or generic HTTP with Bearer token
+    if (opts.platform.toLowerCase() === 'linkedin') {
+      const authorUrn = opts.linkedinUrn ? `urn:li:person:${opts.linkedinUrn}` : 'urn:li:person:REPLACE_WITH_AUTHOR_ID'
+      newNode.parameters = {
+        url: 'https://api.linkedin.com/v2/ugcPosts',
+        method: 'POST',
+        authentication: 'predefinedCredentialType',
+        nodeCredentialType: 'httpHeaderAuth',
+        sendBody: true,
+        specifyBody: 'json',
+        jsonBody: `={{ JSON.stringify({\n  author: "${authorUrn}",\n  lifecycleState: "PUBLISHED",\n  specificContent: {\n    "com.linkedin.ugc.ShareContent": {\n      shareCommentary: {\n        text: $json.content_text || "Hello LinkedIn"\n      },\n      shareMediaCategory: "NONE"\n    }\n  },\n  visibility: {\n    "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"\n  }\n}) }}`,
+        options: {}
+      }
+    } else {
+      newNode.parameters = {
+        url: 'https://graph.facebook.com/v19.0/<page-id>/feed', // Placeholder; replace dynamically
+        method: 'POST',
+        sendBody: true,
+        jsonParameters: true,
+        options: {},
+        bodyParametersJson: '{"message":"{{$json[\"content\"] || \"Hello\"}}"}'
+      }
     }
     newNode.credentials.httpHeaderAuth = { id: opts.credentialId, name: opts.credentialName }
   } else if (opts.credentialType === 'facebookGraphApi') {
@@ -560,6 +598,7 @@ export async function updateExistingNodeCredential(opts: {
   credentialName: string
   credentialType: string
   nodeNameHint?: string // e.g. 'facebook'
+  linkedinUrn?: string // LinkedIn author URN to update jsonBody
 }): Promise<{ workflow: Workflow; updated: boolean; replaced?: boolean; oldWorkflowId?: string }> {
   const wf = await getWorkflow(opts.workflowId)
   const nodes = Array.isArray(wf.nodes) ? JSON.parse(JSON.stringify(wf.nodes)) : []
@@ -574,6 +613,15 @@ export async function updateExistingNodeCredential(opts: {
   // Map credentialType to key
   if (opts.credentialType === 'httpHeaderAuth') {
     target.credentials.httpHeaderAuth = { id: opts.credentialId, name: opts.credentialName }
+    
+    // For LinkedIn, also update jsonBody with actual URN and authentication
+    if (opts.platform.toLowerCase() === 'linkedin' && opts.linkedinUrn) {
+      const authorUrn = `urn:li:person:${opts.linkedinUrn}`
+      target.parameters = target.parameters || {}
+      target.parameters.authentication = 'predefinedCredentialType'
+      target.parameters.nodeCredentialType = 'httpHeaderAuth'
+      target.parameters.jsonBody = `={{ JSON.stringify({\n  author: "${authorUrn}",\n  lifecycleState: "PUBLISHED",\n  specificContent: {\n    "com.linkedin.ugc.ShareContent": {\n      shareCommentary: {\n        text: $json.content_text || "Hello LinkedIn"\n      },\n      shareMediaCategory: "NONE"\n    }\n  },\n  visibility: {\n    "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"\n  }\n}) }}`
+    }
   } else if (opts.credentialType === 'facebookGraphApi') {
     target.credentials.facebookGraphApi = { id: opts.credentialId, name: opts.credentialName }
   } else if (opts.credentialType === 'twitterOAuth2Api') {
@@ -673,7 +721,7 @@ export async function removePlatformAccountNode(opts: {
 // - active=false: tắt node và gỡ credential của nền tảng đó
 export async function setPlatformNodesActive(opts: {
   workflowId: string
-  platform: 'facebook' | 'instagram' | 'twitter'
+  platform: 'facebook' | 'instagram' | 'twitter' | 'linkedin'
   active: boolean
   credentialId?: string
   credentialName?: string
@@ -701,11 +749,17 @@ export async function setPlatformNodesActive(opts: {
     const t = String(n?.type || '').toLowerCase()
     return t.includes('twitter')
   }
+  function isLinkedInNode(n: any): boolean {
+    const t = String(n?.type || '').toLowerCase()
+    const name = String(n?.name || '').toLowerCase()
+    // LinkedIn uses httpRequest node with name containing 'linkedin'
+    return t.includes('httprequest') && name.includes('linkedin')
+  }
 
   console.log(`[setPlatformNodesActive] Scanning ${nodes.length} nodes for platform=${plat}, active=${opts.active}`)
   const touched: string[] = []
   for (const n of nodes) {
-    const match = plat === 'facebook' ? isFacebookNode(n) : plat === 'instagram' ? isInstagramNode(n) : isTwitterNode(n)
+    const match = plat === 'facebook' ? isFacebookNode(n) : plat === 'instagram' ? isInstagramNode(n) : plat === 'twitter' ? isTwitterNode(n) : plat === 'linkedin' ? isLinkedInNode(n) : false
     console.log(`[setPlatformNodesActive] Node "${n.name}" type=${n.type} match=${match} disabled=${!!n.disabled}`)
     if (!match) continue
     touched.push(n.name || '(unnamed)')
@@ -715,6 +769,8 @@ export async function setPlatformNodesActive(opts: {
         n.credentials = n.credentials || {}
         if (plat === 'twitter') {
           n.credentials.twitterOAuth2Api = { id: opts.credentialId, name: opts.credentialName }
+        } else if (plat === 'linkedin') {
+          n.credentials.httpHeaderAuth = { id: opts.credentialId, name: opts.credentialName }
         } else {
           n.credentials.facebookGraphApi = { id: opts.credentialId, name: opts.credentialName }
         }
@@ -724,6 +780,7 @@ export async function setPlatformNodesActive(opts: {
       n.disabled = true
       if (n.credentials) {
         if (plat === 'twitter') delete n.credentials.twitterOAuth2Api
+        else if (plat === 'linkedin') delete n.credentials.httpHeaderAuth
         else delete n.credentials.facebookGraphApi
       }
       console.log(`[setPlatformNodesActive] ✗ Deactivated "${n.name}"`)

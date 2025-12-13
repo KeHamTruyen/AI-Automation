@@ -1,0 +1,478 @@
+{
+  "name": "Scheduler Worker (Cron + DB)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "* * * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Every Minute",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT * FROM \"ScheduledPost\"\nWHERE status = 'PENDING'\n  AND \"scheduledAt\" <= NOW()\nORDER BY \"scheduledAt\" ASC\nLIMIT 20;",
+        "options": {}
+      },
+      "id": "fetch-due-jobs",
+      "name": "Fetch Due Jobs",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        460,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL - AI Automation"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $input.all().length }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "check-has-jobs",
+      "name": "Has Jobs?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lock job by updating to PROCESSING\nconst jobs = $input.all();\nconst locked = [];\n\nfor (const job of jobs) {\n  const jobData = job.json;\n  \n  // Return job data with metadata for next nodes\n  locked.push({\n    json: {\n      id: jobData.id,\n      userId: jobData.userId,\n      contentText: jobData.contentText,\n      hashtags: jobData.hashtags || [],\n      media: jobData.media || [],\n      platforms: jobData.platforms || [jobData.platform],\n      platform: jobData.platforms?.[0] || jobData.platform || 'facebook',\n      scheduledAt: jobData.scheduledAt,\n      attemptCount: jobData.attemptCount || 0,\n      timezone: jobData.timezone || 'UTC'\n    }\n  });\n}\n\nreturn locked;"
+      },
+      "id": "prepare-jobs",
+      "name": "Prepare Jobs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE \"ScheduledPost\"\nSET status = 'PROCESSING',\n    \"lastAttemptAt\" = NOW(),\n    \"updatedAt\" = NOW()\nWHERE id = '{{ $json.id }}'\n  AND status = 'PENDING'\nRETURNING *;",
+        "options": {}
+      },
+      "id": "lock-job",
+      "name": "Lock Job",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1120,
+        200
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL - AI Automation"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $input.all().length }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "check-lock-success",
+      "name": "Lock Success?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO \"ScheduledPostAttempt\" (\n  id,\n  \"scheduledPostId\",\n  \"attemptNo\",\n  \"startedAt\"\n)\nVALUES (\n  gen_random_uuid()::text,\n  '{{ $node[\"Prepare Jobs\"].json.id }}',\n  {{ $node[\"Prepare Jobs\"].json.attemptCount + 1 }},\n  NOW()\n)\nRETURNING *;",
+        "options": {}
+      },
+      "id": "create-attempt",
+      "name": "Create Attempt Log",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1560,
+        100
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL - AI Automation"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://localhost:3000/api/posts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Scheduled-Id",
+              "value": "={{ $node[\"Prepare Jobs\"].json.id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content_text",
+              "value": "={{ $node[\"Prepare Jobs\"].json.contentText }}"
+            },
+            {
+              "name": "hashtags",
+              "value": "={{ $node[\"Prepare Jobs\"].json.hashtags }}"
+            },
+            {
+              "name": "media",
+              "value": "={{ $node[\"Prepare Jobs\"].json.media }}"
+            },
+            {
+              "name": "platforms",
+              "value": "={{ $node[\"Prepare Jobs\"].json.platforms }}"
+            },
+            {
+              "name": "platform",
+              "value": "={{ $node[\"Prepare Jobs\"].json.platform }}"
+            },
+            {
+              "name": "userId",
+              "value": "={{ $node[\"Prepare Jobs\"].json.userId }}"
+            },
+            {
+              "name": "scheduled_id",
+              "value": "={{ $node[\"Prepare Jobs\"].json.id }}"
+            },
+            {
+              "name": "run_type",
+              "value": "scheduled"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "publish-post",
+      "name": "Publish Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1780,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "2",
+          "name": "Internal API Key"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Determine success and extract data\nconst response = $input.first();\nconst prepareNode = $node[\"Prepare Jobs\"].json;\nconst attemptNode = $node[\"Create Attempt Log\"].json;\n\nconst statusCode = response.json?.code || 200;\nconst success = statusCode >= 200 && statusCode < 300 && response.json?.success !== false;\nconst body = response.json || {};\nconst error = body.error || (success ? null : `HTTP ${statusCode}`);\n\nconst attemptNo = prepareNode.attemptCount + 1;\nconst maxAttempts = 3;\nconst backoffMinutes = [1, 5, 15];\n\nlet newStatus = 'SUCCESS';\nlet nextScheduledAt = null;\nlet newAttemptCount = attemptNo;\n\nif (!success) {\n  if (attemptNo < maxAttempts) {\n    newStatus = 'PENDING';\n    const delayMin = backoffMinutes[attemptNo - 1] || backoffMinutes[backoffMinutes.length - 1];\n    nextScheduledAt = new Date(Date.now() + delayMin * 60_000).toISOString();\n  } else {\n    newStatus = 'ERROR';\n  }\n}\n\nreturn [{\n  json: {\n    jobId: prepareNode.id,\n    attemptId: attemptNode?.[0]?.id,\n    attemptNo,\n    success,\n    newStatus,\n    nextScheduledAt,\n    newAttemptCount,\n    errorMessage: error,\n    externalPostId: body.externalPostId || body.results?.[0]?.externalPostId || null,\n    executionId: body.execId || null\n  }\n}];"
+      },
+      "id": "process-result",
+      "name": "Process Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE \"ScheduledPostAttempt\"\nSET \n  success = {{ $json.success }},\n  \"finishedAt\" = NOW(),\n  \"errorMessage\" = {{ $json.errorMessage ? `'${$json.errorMessage.replace(/'/g, \"''\")}'` : 'NULL' }},\n  \"executionId\" = {{ $json.executionId ? `'${$json.executionId}'` : 'NULL' }}\nWHERE id = '{{ $json.attemptId }}';",
+        "options": {}
+      },
+      "id": "update-attempt",
+      "name": "Update Attempt",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2220,
+        100
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL - AI Automation"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={% if $json.newStatus == 'SUCCESS' %}\nUPDATE \"ScheduledPost\"\nSET \n  status = 'SUCCESS',\n  \"externalResults\" = {{ $json.externalPostId ? `'[{\"platform\":\"${$node[\"Prepare Jobs\"].json.platform}\",\"success\":true,\"externalPostId\":\"${$json.externalPostId}\"}]'::jsonb` : 'NULL' }},\n  \"updatedAt\" = NOW()\nWHERE id = '{{ $json.jobId }}';\n{% elif $json.newStatus == 'PENDING' %}\nUPDATE \"ScheduledPost\"\nSET \n  status = 'PENDING',\n  \"attemptCount\" = {{ $json.newAttemptCount }},\n  \"scheduledAt\" = '{{ $json.nextScheduledAt }}',\n  \"updatedAt\" = NOW()\nWHERE id = '{{ $json.jobId }}';\n{% else %}\nUPDATE \"ScheduledPost\"\nSET \n  status = 'ERROR',\n  \"attemptCount\" = {{ $json.newAttemptCount }},\n  \"updatedAt\" = NOW()\nWHERE id = '{{ $json.jobId }}';\n{% endif %}",
+        "options": {}
+      },
+      "id": "update-job-status",
+      "name": "Update Job Status",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2440,
+        100
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL - AI Automation"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Summary log\nconst result = $input.first().json;\nconst job = $node[\"Prepare Jobs\"].json;\n\nconsole.log(`[Scheduler] Job ${job.id}: ${result.newStatus} (attempt ${result.attemptNo})`);\nif (result.errorMessage) {\n  console.log(`  Error: ${result.errorMessage}`);\n}\nif (result.externalPostId) {\n  console.log(`  Published: ${result.externalPostId}`);\n}\n\nreturn [{ json: { message: 'Job processed', ...result } }];"
+      },
+      "id": "log-result",
+      "name": "Log Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2660,
+        100
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "no-op-end",
+      "name": "Done",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2880,
+        100
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "no-jobs-end",
+      "name": "No Jobs",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        900,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Job was already locked by another worker (race condition)\nconst job = $node[\"Prepare Jobs\"].json;\nconsole.log(`[Scheduler] Job ${job.id} already locked by another worker - skipping`);\nreturn [{ json: { message: 'Already locked', jobId: job.id } }];"
+      },
+      "id": "already-locked",
+      "name": "Already Locked",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        300
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every Minute": {
+      "main": [
+        [
+          {
+            "node": "Fetch Due Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Due Jobs": {
+      "main": [
+        [
+          {
+            "node": "Has Jobs?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Jobs?": {
+      "main": [
+        [
+          {
+            "node": "Prepare Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Jobs": {
+      "main": [
+        [
+          {
+            "node": "Lock Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lock Job": {
+      "main": [
+        [
+          {
+            "node": "Lock Success?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lock Success?": {
+      "main": [
+        [
+          {
+            "node": "Create Attempt Log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Already Locked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Attempt Log": {
+      "main": [
+        [
+          {
+            "node": "Publish Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish Post": {
+      "main": [
+        [
+          {
+            "node": "Process Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Result": {
+      "main": [
+        [
+          {
+            "node": "Update Attempt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Attempt": {
+      "main": [
+        [
+          {
+            "node": "Update Job Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Job Status": {
+      "main": [
+        [
+          {
+            "node": "Log Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Result": {
+      "main": [
+        [
+          {
+            "node": "Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "scheduler-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "your-n8n-instance-id"
+  },
+  "id": "scheduler-workflow",
+  "tags": []
+}

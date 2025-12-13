@@ -83,12 +83,17 @@ export default function ContentCreationForm() {
   const [lengthPref, setLengthPref] = useState<string>("short");
   // Cho phép chọn nhiều nền tảng cùng lúc
   const [platforms, setPlatforms] = useState<string[]>(["facebook"]);
+  // AI Image generation
+  const [autoGenerateImage, setAutoGenerateImage] = useState(false);
+  const [imagePrompt, setImagePrompt] = useState("");
 
   const { toast } = useToast();
 
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
+  const [scheduledPosts, setScheduledPosts] = useState<any[]>([]);
+  const [isLoadingSchedule, setIsLoadingSchedule] = useState(false);
 
   useEffect(() => {
     const tomorrow = new Date();
@@ -96,6 +101,30 @@ export default function ContentCreationForm() {
     setScheduleDate(tomorrow.toISOString().split("T")[0]);
     setScheduleTime("09:00");
   }, []);
+
+  useEffect(() => {
+    if (activeTab === "schedule") {
+      fetchScheduledPosts();
+    }
+  }, [activeTab]);
+
+  const fetchScheduledPosts = async () => {
+    setIsLoadingSchedule(true);
+    try {
+      // userId is now extracted from JWT cookie on the server
+      const res = await fetch("/api/schedule?status=PENDING");
+      const data = await res.json();
+      if (data.success && Array.isArray(data.jobs)) {
+        setScheduledPosts(data.jobs);
+      } else {
+        console.error("Invalid response format:", data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch schedule:", e);
+    } finally {
+      setIsLoadingSchedule(false);
+    }
+  };
 
   const handleGenerateContent = async () => {
     if (!topic.trim()) {
@@ -119,19 +148,24 @@ export default function ContentCreationForm() {
     setIsGenerating(true);
     setGeneratedContent("");
     setApiResult(null);
+    
+    // Debug: Log payload trước khi gửi
+    const payload = {
+      prompt: topic,
+      tone: tone || "than thien",
+      length: lengthPref || "ngan",
+      platform: platforms[0] || "facebook",
+      platforms,
+      autoGenerateImage,
+      imagePrompt,
+    };
+    console.log("=== Sending to n8n ===", payload);
+    
     try {
       const res = await fetch("/api/content/generate/proxy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: topic,
-          tone: tone || "than thien",
-          length: lengthPref || "ngan",
-          // Giữ tương thích ngược với workflow hiện tại (chuỗi đơn)
-          platform: platforms[0] || "facebook",
-          // Truyền thêm mảng nền tảng để hỗ trợ đăng đa nền tảng
-          platforms,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json().catch(() => null);
@@ -150,12 +184,29 @@ export default function ContentCreationForm() {
 
       setApiResult(data);
 
+      // Debug: Log toàn bộ response để kiểm tra structure
+      console.log("=== n8n Response ===", JSON.stringify(data, null, 2));
+
       const text =
         data?.data?.content_text ||
         data?.content_text ||
         data?.draft ||
         JSON.stringify(data);
       setGeneratedContent(text || "");
+      // Cập nhật preview media nếu workflow trả về
+      const media =
+        (Array.isArray(data?.data?.media) ? data.data.media : null) ||
+        (Array.isArray(data?.media) ? data.media : null);
+      
+      console.log("=== Extracted media ===", media);
+      
+      if (media && media.length) {
+        const validUrls = media.filter((u: any) => typeof u === "string");
+        console.log("=== Setting mediaUrls ===", validUrls);
+        setMediaUrls(validUrls);
+      } else {
+        console.warn("No media found in response");
+      }
       toast({
         title: "Đã tạo nội dung",
         description: "Nội dung đã sẵn sàng ở khung bên phải.",
@@ -294,6 +345,9 @@ export default function ContentCreationForm() {
           hashtags,
           media: mediaUrls,
           platforms,
+          // AI image generation flags
+          autoGenerateImage,
+          imagePrompt,
           webhookUrl: resolvedWebhook || undefined,
         }),
       });
@@ -334,13 +388,7 @@ export default function ContentCreationForm() {
     }
   };
 
-  // Helpers to resolve saved webhook URL and transform to webhook-test
-  function toTestWebhookUrl(url: string | null | undefined) {
-    if (!url) return null;
-    // n8n test webhook simply swaps path segment
-    return url.replace("/webhook/", "/webhook-test/");
-  }
-
+  // Helpers to resolve saved webhook URL
   async function resolveUserWebhookUrl(): Promise<string | null> {
     // Prefer the URL we just used when publishing
     if (lastTargetUrl) return lastTargetUrl;
@@ -357,13 +405,12 @@ export default function ContentCreationForm() {
     }
   }
 
-  // Test per-user workflow (ping) by posting directly to webhook-test
+  // Test per-user workflow (ping) by calling through /api/posts proxy (avoid CORS)
   const handleTestWorkflow = async () => {
     try {
       const pf = platforms[0] || "facebook";
       const saved = await resolveUserWebhookUrl();
-      const testUrl = toTestWebhookUrl(saved);
-      if (!testUrl) {
+      if (!saved) {
         toast({
           title: "Thiếu webhook",
           description:
@@ -372,10 +419,10 @@ export default function ContentCreationForm() {
         });
         return;
       }
-      const res = await fetch(testUrl, {
+      // Call through /api/posts instead of direct n8n webhook (avoid CORS)
+      const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // Mirror the exact publish payload shape
         body: JSON.stringify({
           content_text:
             generatedContent || `TEST_PING ${new Date().toISOString()}`,
@@ -383,17 +430,21 @@ export default function ContentCreationForm() {
           media: mediaUrls,
           platforms,
           platform: pf,
+          webhookUrl: saved,
+          isTest: true, // Flag to use webhook-test instead of webhook
         }),
       });
-      const execId = res.headers.get("x-n8n-execution-id") || null;
-      const ok = res.ok;
+      const body = await res.json().catch(() => ({}));
+      const execId = res.headers.get("x-n8n-execution-id") || body.execId || null;
+      const targetUrl = body.targetUrl || saved;
+      const ok = res.ok && body.success !== false;
       setLastExecId(execId);
-      setLastTargetUrl(saved);
+      setLastTargetUrl(targetUrl);
       if (!ok) {
-        const text = await res.text().catch(() => "");
+        const errMsg = body?.error || `HTTP ${res.status}`;
         toast({
           title: "Ping thất bại",
-          description: text || `HTTP ${res.status}`,
+          description: errMsg,
           variant: "destructive",
         });
         return;
@@ -562,13 +613,32 @@ export default function ContentCreationForm() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="additional-info">Thông tin bổ sung</Label>
-                <Textarea
-                  id="additional-info"
-                  placeholder="Thêm thông tin cụ thể, yêu cầu đặc biệt..."
-                  rows={3}
-                />
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="auto-generate-image"
+                    checked={autoGenerateImage}
+                    onCheckedChange={setAutoGenerateImage}
+                  />
+                  <Label htmlFor="auto-generate-image" className="cursor-pointer">
+                    Tạo ảnh AI tự động
+                  </Label>
+                </div>
+                {autoGenerateImage && (
+                  <div className="space-y-2 ml-8">
+                    <Label htmlFor="image-prompt">Image prompt</Label>
+                    <Textarea
+                      id="image-prompt"
+                      placeholder="Mô tả ảnh bạn muốn tạo (ví dụ: A modern office with people working, bright and professional)..."
+                      value={imagePrompt}
+                      onChange={(e) => setImagePrompt(e.target.value)}
+                      rows={3}
+                    />
+                    <p className="text-xs text-gray-500">
+                      💡 Mẹo: Mô tả chi tiết về đối tượng, màu sắc, phong cách, ánh sáng để có ảnh đẹp hơn
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4">
@@ -785,6 +855,37 @@ export default function ContentCreationForm() {
 
                   {/* Removed analytics preview (Engagement/Brand/Words) per request */}
 
+                  {/* Preview images from AI generation */}
+                  {mediaUrls.length > 0 && (
+                    <div className="mt-3">
+                      <Label className="text-sm font-medium mb-2 block">
+                        Ảnh preview {autoGenerateImage && "(từ AI)"}
+                      </Label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {mediaUrls.map((u, i) => (
+                          <div key={u} className="relative group">
+                            <img
+                              src={u}
+                              alt={`preview-${i}`}
+                              className="w-full h-32 object-cover rounded border-2 border-gray-200"
+                              onError={(e) => {
+                                console.error('Image load error:', u);
+                                e.currentTarget.src = '/placeholder.jpg';
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeMediaAt(i)}
+                              className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex space-x-2 pt-4">
                     <Button
                       variant="outline"
@@ -825,27 +926,7 @@ export default function ContentCreationForm() {
                       Chọn lịch đăng
                     </Button>
                   </div>
-                  {/* Media previews */}
-                  {mediaUrls.length > 0 && (
-                    <div className="mt-3 grid grid-cols-3 gap-3">
-                      {mediaUrls.map((u, i) => (
-                        <div key={u} className="relative">
-                          <img
-                            src={u}
-                            alt={`media-${i}`}
-                            className="w-full h-28 object-cover rounded"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeMediaAt(i)}
-                            className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {/* Media previews moved above buttons */}
                   {(lastExecId || lastTargetUrl) && (
                     <div className="mt-3 text-xs text-gray-600 space-y-1">
                       {lastExecId && (
@@ -981,15 +1062,65 @@ export default function ContentCreationForm() {
                             <Button
                               className="flex-1 bg-gradient-to-r from-green-600 to-blue-600"
                               disabled={!scheduleDate || !scheduleTime}
-                              onClick={() => {
-                                // Handle schedule
-                                console.log(
-                                  "Scheduling for:",
-                                  scheduleDate,
-                                  scheduleTime
-                                );
-                                setShowScheduleModal(false);
-                                // Show success message or redirect
+                              onClick={async () => {
+                                if (!generatedContent) {
+                                  toast({
+                                    title: "Chưa có nội dung",
+                                    description: "Vui lòng tạo nội dung trước khi lên lịch",
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+
+                                try {
+                                  // Combine date + time to ISO string
+                                  const scheduledAt = new Date(
+                                    `${scheduleDate}T${scheduleTime}:00`
+                                  ).toISOString();
+
+                                  const res = await fetch("/api/schedule", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                      content_text: generatedContent,
+                                      hashtags: apiResult?.data?.hashtags || [],
+                                      media: mediaUrls,
+                                      platforms,
+                                      scheduled_at: scheduledAt,
+                                      timezone: "Asia/Ho_Chi_Minh",
+                                      // userId is now extracted from JWT cookie on the server
+                                    }),
+                                  });
+
+                                  const data = await res.json();
+
+                                  if (data.success) {
+                                    toast({
+                                      title: "Đã lên lịch thành công!",
+                                      description: `Bài viết sẽ được đăng vào ${new Date(
+                                        scheduledAt
+                                      ).toLocaleString("vi-VN")}`,
+                                    });
+                                    setShowScheduleModal(false);
+                                    // Refresh schedule list nếu đang ở tab schedule
+                                    if (activeTab === "schedule") {
+                                      fetchScheduledPosts();
+                                    }
+                                  } else {
+                                    toast({
+                                      title: "Lỗi khi lên lịch",
+                                      description: data.error || "Vui lòng thử lại",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                } catch (error) {
+                                  console.error("Schedule error:", error);
+                                  toast({
+                                    title: "Lỗi kết nối",
+                                    description: "Không thể lên lịch bài viết",
+                                    variant: "destructive",
+                                  });
+                                }
                               }}
                             >
                               <Calendar className="w-4 h-4 mr-2" />
@@ -1045,69 +1176,182 @@ export default function ContentCreationForm() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {/* Today's Scheduled Posts */}
-                  <div>
-                    <h4 className="font-medium mb-3 flex items-center">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                      Hôm nay - 15/01/2024
-                    </h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-orange-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs">IG</span>
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium">
-                              Behind the scenes video
-                            </div>
-                            <div className="text-xs text-gray-600">
-                              2:00 PM - Đã lên lịch
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge
-                            variant="outline"
-                            className="bg-blue-100 text-blue-700"
-                          >
-                            Chờ đăng
-                          </Badge>
-                          <Button size="sm" variant="ghost">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs">in</span>
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium">
-                              Weekly newsletter
-                            </div>
-                            <div className="text-xs text-gray-600">
-                              5:00 PM - Đã lên lịch
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge
-                            variant="outline"
-                            className="bg-purple-100 text-purple-700"
-                          >
-                            Chờ đăng
-                          </Badge>
-                          <Button size="sm" variant="ghost">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
+                {isLoadingSchedule ? (
+                  <div className="text-center py-12">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-spin">
+                      <Calendar className="w-6 h-6 text-gray-400" />
                     </div>
+                    <p className="text-gray-600">Đang tải lịch đăng bài...</p>
                   </div>
+                ) : scheduledPosts.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Calendar className="w-6 h-6 text-gray-400" />
+                    </div>
+                    <h3 className="font-medium mb-2">
+                      Chưa có bài viết nào được lên lịch
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      Tạo nội dung và chọn "Chọn lịch đăng" để lên lịch đăng bài
+                    </p>
+                    <Button onClick={() => setActiveTab("create")}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Tạo nội dung mới
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {(() => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      const tomorrow = new Date(today);
+                      tomorrow.setDate(tomorrow.getDate() + 1);
+                      const weekEnd = new Date(today);
+                      weekEnd.setDate(weekEnd.getDate() + 7);
+
+                      const todayPosts = scheduledPosts.filter((p) => {
+                        const d = new Date(p.scheduledAt);
+                        d.setHours(0, 0, 0, 0);
+                        return d.getTime() === today.getTime();
+                      });
+                      const tomorrowPosts = scheduledPosts.filter((p) => {
+                        const d = new Date(p.scheduledAt);
+                        d.setHours(0, 0, 0, 0);
+                        return d.getTime() === tomorrow.getTime();
+                      });
+                      const weekPosts = scheduledPosts.filter((p) => {
+                        const d = new Date(p.scheduledAt);
+                        d.setHours(0, 0, 0, 0);
+                        return d > tomorrow && d < weekEnd;
+                      });
+
+                      const renderPost = (post: any) => {
+                        const platform =
+                          post.platforms?.[0] || post.platform || "facebook";
+                        const platformConfig: any = {
+                          facebook: {
+                            icon: "f",
+                            color: "bg-blue-500",
+                            name: "Facebook",
+                          },
+                          instagram: {
+                            icon: "IG",
+                            color:
+                              "bg-gradient-to-r from-pink-500 to-orange-500",
+                            name: "Instagram",
+                          },
+                          linkedin: {
+                            icon: "in",
+                            color: "bg-blue-600",
+                            name: "LinkedIn",
+                          },
+                          twitter: {
+                            icon: "X",
+                            color: "bg-gray-800",
+                            name: "Twitter",
+                          },
+                          tiktok: {
+                            icon: "TT",
+                            color: "bg-black",
+                            name: "TikTok",
+                          },
+                          youtube: {
+                            icon: "YT",
+                            color: "bg-red-500",
+                            name: "YouTube",
+                          },
+                        };
+                        const config =
+                          platformConfig[platform] || platformConfig.facebook;
+                        const time = new Date(
+                          post.scheduledAt
+                        ).toLocaleTimeString("vi-VN", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        });
+                        const preview =
+                          post.contentText?.slice(0, 50) +
+                          (post.contentText?.length > 50 ? "..." : "");
+
+                        return (
+                          <div
+                            key={post.id}
+                            className="flex items-center justify-between p-3 bg-blue-50 rounded-lg"
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div
+                                className={`w-8 h-8 ${config.color} rounded-full flex items-center justify-center`}
+                              >
+                                <span className="text-white text-xs">
+                                  {config.icon}
+                                </span>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium">
+                                  {preview || "Không có tiêu đề"}
+                                </div>
+                                <div className="text-xs text-gray-600">
+                                  {time} - Đã lên lịch
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Badge
+                                variant="outline"
+                                className="bg-blue-100 text-blue-700"
+                              >
+                                {post.status === "PENDING"
+                                  ? "Chờ đăng"
+                                  : post.status}
+                              </Badge>
+                              <Button size="sm" variant="ghost">
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      };
+
+                      return (
+                        <>
+                          {todayPosts.length > 0 && (
+                            <div>
+                              <h4 className="font-medium mb-3 flex items-center">
+                                <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                                Hôm nay - {today.toLocaleDateString("vi-VN")}
+                              </h4>
+                              <div className="space-y-3">
+                                {todayPosts.map(renderPost)}
+                              </div>
+                            </div>
+                          )}
+                          {tomorrowPosts.length > 0 && (
+                            <div>
+                              <h4 className="font-medium mb-3 flex items-center">
+                                <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                                Ngày mai - {tomorrow.toLocaleDateString("vi-VN")}
+                              </h4>
+                              <div className="space-y-3">
+                                {tomorrowPosts.map(renderPost)}
+                              </div>
+                            </div>
+                          )}
+                          {weekPosts.length > 0 && (
+                            <div>
+                              <h4 className="font-medium mb-3 flex items-center">
+                                <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                                Tuần này
+                              </h4>
+                              <div className="space-y-3">
+                                {weekPosts.map(renderPost)}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
 
                   {/* Tomorrow's Scheduled Posts */}
                   <div>
@@ -1234,27 +1478,6 @@ export default function ContentCreationForm() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Empty State */}
-                  {false && (
-                    <div className="text-center py-12">
-                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Calendar className="w-6 h-6 text-gray-400" />
-                      </div>
-                      <h3 className="font-medium mb-2">
-                        Chưa có bài viết nào được lên lịch
-                      </h3>
-                      <p className="text-gray-600 mb-4">
-                        Tạo nội dung và chọn "Chọn lịch đăng" để lên lịch đăng
-                        bài
-                      </p>
-                      <Button>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Tạo nội dung mới
-                      </Button>
-                    </div>
-                  )}
-                </div>
               </CardContent>
             </Card>
           </div>
@@ -1334,15 +1557,33 @@ export default function ContentCreationForm() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Bài viết đã lên lịch</span>
-                    <span className="font-medium">8</span>
+                    <span className="font-medium">{scheduledPosts.length}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Sẽ đăng hôm nay</span>
-                    <span className="font-medium">2</span>
+                    <span className="font-medium">
+                      {
+                        scheduledPosts.filter((p) => {
+                          const d = new Date(p.scheduledAt);
+                          const today = new Date();
+                          return d.toDateString() === today.toDateString();
+                        }).length
+                      }
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Sẽ đăng tuần này</span>
-                    <span className="font-medium text-green-600">6</span>
+                    <span className="font-medium text-green-600">
+                      {
+                        scheduledPosts.filter((p) => {
+                          const d = new Date(p.scheduledAt);
+                          const today = new Date();
+                          const weekEnd = new Date(today);
+                          weekEnd.setDate(weekEnd.getDate() + 7);
+                          return d >= today && d <= weekEnd;
+                        }).length
+                      }
+                    </span>
                   </div>
                 </div>
               </CardContent>

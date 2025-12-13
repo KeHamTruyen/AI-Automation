@@ -1,9 +1,10 @@
 {
+  "name": "template",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "user-cmiwy249i000152h9ryfc2tev-1765557572144",
+        "path": "user-cmi9xc7ti000183bqo11mgc6s-1763801700847",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -11,10 +12,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -704,
-        112
+        -320,
+        -128
       ],
-      "id": "f12c9539-91b4-4baf-a525-da6911915247",
+      "id": "c507c83f-1ae4-49f2-8d27-b10c82b88cfe",
       "webhookId": "4f26a6d4-fa78-4d0e-bbec-40c97bc44e08"
     },
     {
@@ -25,10 +26,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        1328,
-        80
+        1712,
+        -160
       ],
-      "id": "dd51f666-d9f5-482c-8ede-e9ff5e701640"
+      "id": "aa538d66-3c38-4d5e-8928-a15166425056"
     },
     {
       "parameters": {
@@ -38,10 +39,10 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        -432,
-        112
+        -48,
+        -128
       ],
-      "id": "fb32e5a4-8db3-49ab-96a5-d47c07053612"
+      "id": "68b9fa3c-73d8-43f7-898a-360a55eec70b"
     },
     {
       "parameters": {
@@ -144,10 +145,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.3,
       "position": [
-        -160,
-        96
+        224,
+        -144
       ],
-      "id": "3edbe0b4-1621-496f-b7e0-ba7f85519a56"
+      "id": "521244a9-524f-49bd-946f-0b3d3ba1aa63"
     },
     {
       "parameters": {
@@ -164,10 +165,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        48,
-        -112
+        432,
+        -352
       ],
-      "id": "e06822ad-f0e1-411c-b24b-5668ba5cf21a"
+      "id": "d9562187-093f-4859-9fb7-752b026f711d"
     },
     {
       "parameters": {
@@ -190,10 +191,16 @@
       "type": "n8n-nodes-base.facebookGraphApi",
       "typeVersion": 1,
       "position": [
-        272,
-        -16
+        656,
+        -256
       ],
-      "id": "2d013675-9d87-46f8-b53e-b874ebfab651",
+      "id": "897f132f-bd8b-4007-a6c6-55db45eccf84",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "Wd2AJrsjyrf1eXsb",
+          "name": "Facebook Graph account"
+        }
+      },
       "disabled": true
     },
     {
@@ -221,10 +228,10 @@
       "type": "n8n-nodes-base.facebookGraphApi",
       "typeVersion": 1,
       "position": [
-        128,
-        192
+        512,
+        -48
       ],
-      "id": "869941d1-7583-42ac-bfc1-885b3dcc4696",
+      "id": "83a0ccfe-07c5-4403-aaf7-a252b5cad2c5",
       "credentials": {
         "facebookGraphApi": {
           "id": "EfUlGSmnRRJ1xPnt",
@@ -254,10 +261,10 @@
       "type": "n8n-nodes-base.facebookGraphApi",
       "typeVersion": 1,
       "position": [
-        352,
-        192
+        736,
+        -48
       ],
-      "id": "1ed7b031-d91c-4f96-ba28-25f34250a5c5",
+      "id": "b5d35acf-a85d-486a-adb0-e2ac516a42f6",
       "credentials": {
         "facebookGraphApi": {
           "id": "EfUlGSmnRRJ1xPnt",
@@ -275,31 +282,11 @@
       "type": "n8n-nodes-base.twitter",
       "typeVersion": 2,
       "position": [
-        128,
-        496
+        512,
+        256
       ],
-      "id": "c8f11f0d-5383-474f-acf9-0c7cabe248d9",
+      "id": "1123472c-cb97-4464-96f8-1320b72b57b8",
       "disabled": true
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.linkedin.com/v2/ugcPosts",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"author\": \"urn:li:person:REPLACE_WITH_AUTHOR_ID\",\n  \"lifecycleState\": \"PUBLISHED\",\n  \"specificContent\": {\n    \"com.linkedin.ugc.ShareContent\": {\n      \"shareCommentary\": {\n        \"text\": ${$json.content_text || 'Hello LinkedIn'}\n      },\n      \"shareMediaCategory\": \"NONE\"\n    }\n  },\n  \"visibility\": {\n    \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\"\n  }\n}",
-        "options": {}
-      },
-      "name": "Post LinkedIn (placeholder)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        128,
-        704
-      ],
-      "id": "7659950a-cd99-45d2-bce9-5e092f25667b"
     },
     {
       "parameters": {
@@ -309,10 +296,10 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        528,
-        -224
+        912,
+        -464
       ],
-      "id": "bc2b8bcf-3809-4426-aee1-68440e727964"
+      "id": "6c72b3f3-0b39-469e-8938-3ad52b1ff888"
     },
     {
       "parameters": {
@@ -322,10 +309,10 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        544,
-        -16
+        928,
+        -256
       ],
-      "id": "72239320-cfd8-4800-89b2-964caf6c5740"
+      "id": "cca35c3b-dd07-44fd-a0d7-d40792eb492a"
     },
     {
       "parameters": {
@@ -335,10 +322,10 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        576,
-        192
+        960,
+        -48
       ],
-      "id": "47cafe4d-dad3-47aa-8932-dc03c5a5feba"
+      "id": "9d3e2921-febc-4d30-b80b-d3de55ea539b"
     },
     {
       "parameters": {
@@ -348,24 +335,11 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        368,
-        496
+        752,
+        256
       ],
-      "id": "a4aed523-0f23-4c3b-9774-cfc14144900d",
+      "id": "f6af5e18-96a0-45e1-87e4-6365ae2b3dd0",
       "disabled": true
-    },
-    {
-      "parameters": {
-        "functionCode": "const r = items[0].json; const id = r.id || r.postId || null; return [{ json: { platform: 'linkedin', success: !r.error, externalPostId: id, error: r.error || null, raw: r } }];"
-      },
-      "name": "Result LinkedIn",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        368,
-        704
-      ],
-      "id": "c7d41e93-45f5-4f8a-9925-0cee138093a8"
     },
     {
       "parameters": {
@@ -375,10 +349,10 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        1040,
-        80
+        1424,
+        -160
       ],
-      "id": "e4c7e5c8-d8ce-4758-8624-a2df009678bb"
+      "id": "3da863ca-e1a9-4cb7-a132-337c9151f122"
     },
     {
       "parameters": {
@@ -405,13 +379,78 @@
       "type": "n8n-nodes-base.facebookGraphApi",
       "typeVersion": 1,
       "position": [
-        272,
-        -224
+        656,
+        -464
       ],
-      "id": "fe2c53c1-6cb2-4286-9b64-75b7a642fa86",
+      "id": "e07acb3c-e32d-4ecd-940c-32ece400b9a9",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "Wd2AJrsjyrf1eXsb",
+          "name": "Facebook Graph account"
+        }
+      },
       "disabled": true
+    },
+    {
+      "parameters": {
+        "person": "113sxgyXnQ",
+        "text": "test",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        832,
+        496
+      ],
+      "id": "14c7dd85-5e84-4f94-bfb6-1eb1ce138956",
+      "name": "Create a post",
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "We6gD8YCpdPEhvGS",
+          "name": "test linkedin"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "person": "113sxgyXnQ",
+        "shareMediaCategory": "IMAGE",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        832,
+        704
+      ],
+      "id": "680e11ee-043f-41dc-9965-53d8d36f8103",
+      "name": "Create a post1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.hasImage}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "IF Has Image1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        448,
+        560
+      ],
+      "id": "55b56d62-a515-43a8-88c1-873bc8d4b2a7"
     }
   ],
+  "pinData": {},
   "connections": {
     "Inbound Post (Webhook)1": {
       "main": [
@@ -460,7 +499,7 @@
         ],
         [
           {
-            "node": "Post LinkedIn (placeholder)",
+            "node": "IF Has Image1",
             "type": "main",
             "index": 0
           }
@@ -518,22 +557,11 @@
         ]
       ]
     },
-    "Post Tweet": {
+    "Result IG Publish": {
       "main": [
         [
           {
-            "node": "Result Twitter",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Post LinkedIn (placeholder)": {
-      "main": [
-        [
-          {
-            "node": "Result LinkedIn",
+            "node": "Aggregate",
             "type": "main",
             "index": 0
           }
@@ -562,11 +590,11 @@
         ]
       ]
     },
-    "Result IG Publish": {
+    "Post Tweet": {
       "main": [
         [
           {
-            "node": "Aggregate",
+            "node": "Result Twitter",
             "type": "main",
             "index": 0
           }
@@ -574,17 +602,6 @@
       ]
     },
     "Result Twitter": {
-      "main": [
-        [
-          {
-            "node": "Aggregate",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Result LinkedIn": {
       "main": [
         [
           {
@@ -616,11 +633,57 @@
           }
         ]
       ]
+    },
+    "Create a post": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a post1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Has Image1": {
+      "main": [
+        [
+          {
+            "node": "Create a post",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a post1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c64e49ec-623d-4b37-8215-87f49f3f7de5",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "7435dce5e82963b5917f5dd085e640d9e48f3eee1559038e5ee2e732f7bb4630"
-  }
+  },
+  "id": "5jeFX00Kl8Q7YfXy",
+  "tags": []
 }

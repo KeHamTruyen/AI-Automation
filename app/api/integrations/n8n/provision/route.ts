@@ -41,16 +41,17 @@ export async function POST(request: NextRequest) {
       name?: string
       username?: string
       accessToken?: string
-      mode?: 'token' | 'byo'
+      mode?: 'token' | 'byo' | 'oauth'
       clientId?: string
       clientSecret?: string
     }
 
     const useByo = mode === 'byo'
+    const useOAuth = mode === 'oauth'
     if (!platform || !name || !username) {
       return jsonError("platform, name, username là bắt buộc")
     }
-    if (!useByo && !accessToken) {
+    if (!useByo && !useOAuth && !accessToken) {
       return jsonError("Thiếu accessToken trong chế độ token")
     }
     if (useByo && (!clientId || !clientSecret)) {
@@ -60,13 +61,30 @@ export async function POST(request: NextRequest) {
     const templateId = process.env.N8N_TEMPLATE_WORKFLOW_ID
     if (!templateId) return jsonError("Thiếu N8N_TEMPLATE_WORKFLOW_ID trong môi trường", 500)
 
-    // 1) Tạo SocialAccount (hoặc cập nhật nếu đã có, dựa theo userId+platform+username)
+    // 1) Tạo hoặc cập nhật SocialAccount
+    // Với OAuth mode: tạo stub record (chưa có token) hoặc reuse existing
     let social = await prisma.socialAccount.findFirst({ where: { userId, platform, username } })
     if (social) {
-      social = await prisma.socialAccount.update({ where: { id: social.id }, data: { name, accessToken: accessToken ?? social.accessToken } })
+      social = await prisma.socialAccount.update({ 
+        where: { id: social.id }, 
+        data: { 
+          name, 
+          accessToken: useOAuth ? null : (accessToken ?? social.accessToken), 
+          clientId: useByo || useOAuth ? clientId ?? (social as any).clientId : (social as any).clientId, 
+          clientSecret: useByo || useOAuth ? clientSecret ?? (social as any).clientSecret : (social as any).clientSecret 
+        } as any 
+      })
     } else {
       social = await prisma.socialAccount.create({
-        data: { userId, platform, name, username, accessToken: accessToken ?? null },
+        data: { 
+          userId, 
+          platform, 
+          name, 
+          username, 
+          accessToken: useOAuth ? null : (accessToken ?? null), 
+          clientId: useByo || useOAuth ? clientId ?? null : null, 
+          clientSecret: useByo || useOAuth ? clientSecret ?? null : null 
+        } as any,
       })
     }
     // 2) Lấy hoặc tạo workflow cấp user (nếu chưa có)
@@ -94,7 +112,11 @@ export async function POST(request: NextRequest) {
     // 3) Tạo n8n Credential theo mode
     let credential
     let credentialType: 'httpBasicAuth' | 'httpHeaderAuth' | 'twitterOAuth2Api' | 'facebookGraphApi'
-    if (useByo) {
+    if (useOAuth) {
+      // For OAuth mode, defer credential creation to callback after token exchange
+      credential = undefined as any
+      credentialType = 'httpHeaderAuth'
+    } else if (useByo) {
       const credName = `client-${platform}-${userId}-${Date.now()}`
       if (platform === 'twitter' || platform === 'x') {
         credential = await createTwitterOAuth2Credential(credName, clientId!, clientSecret!)
@@ -139,7 +161,7 @@ export async function POST(request: NextRequest) {
         console.warn('Không thể cập nhật node facebook:', e?.message)
       }
     }
-    if (!nodeUpdated) {
+    if (!nodeUpdated && !useOAuth) {
       // Thử thêm node mới; nếu PATCH bị chặn, fallback: tái tạo workflow từ template và bind credential trực tiếp
       try {
         await addPlatformAccountNode({
@@ -232,15 +254,16 @@ export async function POST(request: NextRequest) {
     const updated = await prisma.socialAccount.update({
       where: { id: social.id },
       data: {
-        n8nCredentialId: credential.id,
-        n8nCredentialName: credential.name,
+        n8nCredentialId: useOAuth ? null : credential.id,
+        n8nCredentialName: useOAuth ? null : credential.name,
         n8nWorkflowId: updatedWorkflowId,
         n8nWorkflowName: updatedWorkflowName,
         n8nWebhookUrl: updatedWebhookUrl,
       } as any,
     })
-    const connectUrl = process.env.N8N_BASE_URL ? `${process.env.N8N_BASE_URL.replace(/\/$/, '')}/credentials/${updated.n8nCredentialId}` : undefined
-    return NextResponse.json({ success: true, data: { socialAccount: updated, mode: useByo ? 'byo' : 'token', connectUrl, oauthNeeded: useByo, userWorkflowCreated: newlyCreatedUserWorkflow, nodeUpdated, workflowId: updatedWorkflowId, webhookUrl: updatedWebhookUrl } })
+    const connectUrl = (!useOAuth && process.env.N8N_BASE_URL && updated.n8nCredentialId) ? `${process.env.N8N_BASE_URL.replace(/\/$/, '')}/credentials/${updated.n8nCredentialId}` : undefined
+    const oauthStartUrl = useOAuth && platform.toLowerCase() === 'linkedin' ? `${process.env.NEXT_PUBLIC_APP_URL || ''}/api/auth/linkedin?socialId=${encodeURIComponent(updated.id)}` : undefined
+    return NextResponse.json({ success: true, data: { socialAccount: updated, mode: useByo ? 'byo' : (useOAuth ? 'oauth' : 'token'), connectUrl, oauthNeeded: useByo || useOAuth, oauthStartUrl, userWorkflowCreated: newlyCreatedUserWorkflow, nodeUpdated, workflowId: updatedWorkflowId, webhookUrl: updatedWebhookUrl } })
   } catch (error: any) {
     console.error("[n8n provision] error:", error)
     const message = process.env.NODE_ENV !== 'production' && error?.message

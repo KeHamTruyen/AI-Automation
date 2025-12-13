@@ -41,6 +41,10 @@ model SocialAccount {
   n8nWebhookUrl     String?
   n8nWorkflowId     String?
   n8nWorkflowName   String?
+  clientId          String?
+  clientSecret      String?
+  linkedinUrn       String?
+  metadata          Json?
   analytics         Analytics[]
   publications      ContentPublication[]
   user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -54,6 +58,7 @@ model Content {
   content         String
   hashtags        String[]       @default([])
   platforms       String[]       @default([])
+  media           String[]       @default([])
   type            ContentType
   status          ContentStatus  @default(DRAFT)
   scheduledAt     DateTime?

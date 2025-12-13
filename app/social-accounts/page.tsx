@@ -87,11 +87,11 @@ export default function SocialAccountsPage() {
   const [provPlatform, setProvPlatform] = useState<string>("")
   const [provName, setProvName] = useState("")
   const [provUsername, setProvUsername] = useState("")
-  const [provMode, setProvMode] = useState<"token" | "byo">("token")
+  const [provMode, setProvMode] = useState<"token" | "byo" | "oauth">("token")
   const [provAccessToken, setProvAccessToken] = useState("")
   const [provClientId, setProvClientId] = useState("")
   const [provClientSecret, setProvClientSecret] = useState("")
-  const [provResult, setProvResult] = useState<{ webhookUrl?: string; connectUrl?: string; oauthNeeded?: boolean } | null>(null)
+  const [provResult, setProvResult] = useState<{ webhookUrl?: string; connectUrl?: string; oauthNeeded?: boolean; oauthStartUrl?: string } | null>(null)
   const [selectedAccount, setSelectedAccount] = useState<SocialAccount | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [syncingAccounts, setSyncingAccounts] = useState<Set<string>>(new Set())
@@ -113,6 +113,18 @@ export default function SocialAccountsPage() {
 
   useEffect(() => {
     loadAccounts()
+    
+    // Check if redirected back from OAuth callback
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('connected') === 'linkedin') {
+      toast.success("Kết nối LinkedIn thành công!")
+      // Clear URL params
+      window.history.replaceState({}, '', '/social-accounts')
+    } else if (params.get('error')) {
+      const errorMsg = params.get('message') || 'OAuth failed'
+      toast.error(`Lỗi: ${errorMsg}`)
+      window.history.replaceState({}, '', '/social-accounts')
+    }
   }, [])
 
   const totalFollowers = accounts.reduce((sum, account) => sum + account.followers, 0)
@@ -272,13 +284,14 @@ export default function SocialAccountsPage() {
             <div className="space-y-4 py-2">
               <div className="space-y-2">
                 <Label>Chế độ kết nối</Label>
-                <Select value={provMode} onValueChange={(v: string) => setProvMode(v as 'token' | 'byo')}>
+                <Select value={provMode} onValueChange={(v: string) => setProvMode(v as 'token' | 'byo' | 'oauth')}>
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn chế độ" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="token">Dùng Access Token</SelectItem>
                     <SelectItem value="byo">BYO Client ID/Secret</SelectItem>
+                    <SelectItem value="oauth">OAuth (đề xuất)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -292,6 +305,7 @@ export default function SocialAccountsPage() {
                     <SelectItem value="facebook">Facebook</SelectItem>
                     <SelectItem value="instagram">Instagram</SelectItem>
                     <SelectItem value="twitter">Twitter / X</SelectItem>
+                    <SelectItem value="linkedin">LinkedIn</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -308,7 +322,7 @@ export default function SocialAccountsPage() {
                   <Label htmlFor="acc-token">Access Token (tạm thời cho POC)</Label>
                   <Input id="acc-token" value={provAccessToken} onChange={(e) => setProvAccessToken(e.target.value)} placeholder="Dán token nền tảng ở đây" />
                 </div>
-              ) : (
+              ) : provMode === 'byo' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="client-id">Client ID</Label>
@@ -321,6 +335,10 @@ export default function SocialAccountsPage() {
                   <div className="col-span-1 md:col-span-2 text-xs text-muted-foreground">
                     Lưu ý: BYO sẽ lưu cặp Client ID/Secret vào credential trong n8n. Việc trao đổi token OAuth chưa được thực hiện trong bước này.
                   </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Chế độ OAuth: hệ thống sẽ lưu Client ID/Secret (nếu cung cấp), sau đó chuyển hướng sang LinkedIn để cấp quyền lấy Access Token an toàn.</p>
                 </div>
               )}
               <div className="flex items-center justify-between gap-2">
@@ -349,7 +367,9 @@ export default function SocialAccountsPage() {
                         body: JSON.stringify(
                           provMode === 'token'
                             ? { platform: provPlatform, name: provName, username: provUsername, accessToken: provAccessToken, mode: 'token' }
-                            : { platform: provPlatform, name: provName, username: provUsername, mode: 'byo', clientId: provClientId, clientSecret: provClientSecret }
+                            : provMode === 'byo'
+                              ? { platform: provPlatform, name: provName, username: provUsername, mode: 'byo', clientId: provClientId, clientSecret: provClientSecret }
+                              : { platform: provPlatform, name: provName, username: provUsername, mode: 'oauth', clientId: provClientId, clientSecret: provClientSecret }
                         ),
                       })
                       const data = await res.json()
@@ -359,10 +379,20 @@ export default function SocialAccountsPage() {
                       const webhookUrl = data?.data?.socialAccount?.n8nWebhookUrl
                       const connectUrl = data?.data?.connectUrl
                       const oauthNeeded = data?.data?.oauthNeeded
-                      setProvResult({ webhookUrl, connectUrl, oauthNeeded })
-                      toast.success("Kết nối & provision thành công")
-                      // Reload list from backend
-                      await loadAccounts()
+                      const oauthStartUrl = data?.data?.oauthStartUrl
+                      setProvResult({ webhookUrl, connectUrl, oauthNeeded, oauthStartUrl })
+                      
+                      // For OAuth mode (LinkedIn), auto-redirect to OAuth flow instead of reloading accounts
+                      if (provMode === 'oauth' && oauthStartUrl) {
+                        toast.success("Đang chuyển sang LinkedIn để cấp quyền...")
+                        setTimeout(() => {
+                          window.location.href = oauthStartUrl
+                        }, 500)
+                      } else {
+                        toast.success("Kết nối & provision thành công")
+                        // Only reload list for non-OAuth modes (token/byo)
+                        await loadAccounts()
+                      }
                     } catch (e: any) {
                       console.error(e)
                       toast.error(e?.message || "Provision thất bại")
@@ -383,6 +413,30 @@ export default function SocialAccountsPage() {
                 <div className="text-sm text-muted-foreground">
                   Bước tiếp theo: mở credential trong n8n để kết nối OAuth →{" "}
                   <a className="underline" href={provResult.connectUrl} target="_blank" rel="noreferrer">Open in n8n</a>
+                </div>
+              )}
+              {provResult?.oauthStartUrl && provPlatform === 'linkedin' && (
+                <div className="text-sm text-muted-foreground">
+                  Hoặc bắt đầu OAuth LinkedIn trực tiếp →{" "}
+                  <a className="underline" href={provResult.oauthStartUrl} target="_blank" rel="noreferrer">Kết nối LinkedIn</a>
+                </div>
+              )}
+              {provResult && (
+                <div className="text-sm text-muted-foreground">
+                  {provPlatform === 'linkedin' ? (
+                    <button
+                      className="underline"
+                      onClick={() => {
+                        const socialId = (accounts.find(a => a.platform === 'linkedin' && a.username === provUsername) || {}).id
+                        if (socialId) {
+                          const url = `/api/auth/linkedin?socialId=${encodeURIComponent(socialId)}`
+                          window.open(url, '_blank')
+                        }
+                      }}
+                    >
+                      Kết nối OAuth LinkedIn ngay
+                    </button>
+                  ) : null}
                 </div>
               )}
             </div>
@@ -543,6 +597,20 @@ export default function SocialAccountsPage() {
                         >
                           <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
                         </Button>
+
+                        {account.platform === 'linkedin' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Kết nối OAuth LinkedIn"
+                            onClick={() => {
+                              const url = `/api/auth/linkedin?socialId=${encodeURIComponent(account.id)}`
+                              window.open(url, '_blank')
+                            }}
+                          >
+                            Kết nối LinkedIn
+                          </Button>
+                        )}
 
                         <Dialog
                           open={isSettingsOpen && selectedAccount?.id === account.id}

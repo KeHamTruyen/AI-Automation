@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { getUserIdFromRequest } from '@/lib/auth';
 
 const prisma = new PrismaClient();
 
@@ -13,8 +14,14 @@ const S = {
 } as const;
 type ScheduleStatus = typeof S[keyof typeof S];
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    // Get userId from JWT token
+    const userId = await getUserIdFromRequest(req);
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'Unauthorized. Please login first.' }, { status: 401 });
+    }
+
     const data = await req.json();
     const { content_text, hashtags = [], media = [], platforms = [], scheduled_at, timezone = 'UTC', draftId, recurrence_rule } = data;
     if (!content_text || !platforms.length || !scheduled_at) {
@@ -24,8 +31,6 @@ export async function POST(req: Request) {
     if (isNaN(when.getTime())) {
       return NextResponse.json({ success: false, error: 'Invalid scheduled_at' }, { status: 400 });
     }
-    // TODO: auth - assume userId from session; placeholder:
-    const userId = data.userId || 'demo-user';
     const job = await prisma.scheduledPost.create({
       data: {
         userId,
@@ -47,15 +52,19 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
+    // Get userId from JWT token
+    const userId = await getUserIdFromRequest(req);
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'Unauthorized. Please login first.' }, { status: 401 });
+    }
+
     const url = new URL(req.url);
     const from = url.searchParams.get('from');
     const to = url.searchParams.get('to');
     const statusParam = url.searchParams.get('status');
     const status = statusParam && Object.values(S).includes(statusParam as any) ? statusParam as ScheduleStatus : null;
-    // TODO auth user
-    const userId = url.searchParams.get('userId') || 'demo-user';
     const where: any = { userId };
     if (status) where.status = status;
     if (from) where.scheduledAt = { ...(where.scheduledAt || {}), gte: new Date(from) };

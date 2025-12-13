@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { jwtVerify } from "jose"
+import { normalizeMediaToR2 } from "@/lib/r2"
 
 // Simple GET for health/debug (helps verify route not 404)
 export async function GET() {
@@ -13,6 +14,7 @@ export async function POST(req: NextRequest) {
     const N8N_BASE_URL = process.env.N8N_BASE_URL
     const N8N_WEBHOOK_SECRET = process.env.N8N_WEBHOOK_SECRET
     const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key")
+    const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY
 
     if (!N8N_BASE_URL || !N8N_WEBHOOK_SECRET) {
       return NextResponse.json(
@@ -22,30 +24,57 @@ export async function POST(req: NextRequest) {
     }
 
     const payload = await req.json()
-    const { scheduled_at, webhookUrl: clientWebhookUrl } = payload || {}
+    const { scheduled_at, webhookUrl: clientWebhookUrl, isTest } = payload || {}
+
+    // Allow server-to-server authentication via internal header
+    const internalHeader = req.headers.get('x-internal-api-key') || req.headers.get('X-Internal-API-Key')
+    const internalAuth = !!INTERNAL_API_KEY && internalHeader === INTERNAL_API_KEY
+
+    // Resolve userId from either cookie (browser) or body/header (internal calls)
+    let resolvedUserId: string | undefined
+    try {
+      if (internalAuth) {
+        // Prefer explicit userId from payload or header in internal calls
+        resolvedUserId = (payload as any)?.userId || req.headers.get('x-user-id') || undefined
+      }
+      if (!resolvedUserId) {
+        const authCookie = req.cookies.get("auth-token")?.value
+        if (authCookie) {
+          const { payload: tokenPayload } = await jwtVerify(authCookie, JWT_SECRET)
+          resolvedUserId = (tokenPayload as any)?.userId as string | undefined
+        }
+      }
+    } catch (e) {
+      console.warn('/api/posts: userId resolve failed', e)
+    }
 
     // Try to route to the per-user workflow webhook if available
     let userWebhookUrl: string | null = null
     try {
-      const authCookie = req.cookies.get("auth-token")?.value
-      if (authCookie) {
-        const { payload: tokenPayload } = await jwtVerify(authCookie, JWT_SECRET)
-        const userId = (tokenPayload as any)?.userId as string | undefined
-        if (userId) {
-          const user = await prisma.user.findUnique({ where: { id: userId } })
-          userWebhookUrl = user?.n8nWebhookUrl ?? null
-        }
+      if (resolvedUserId) {
+        const user = await prisma.user.findUnique({ where: { id: resolvedUserId } })
+        userWebhookUrl = user?.n8nWebhookUrl ?? null
+        console.log('[api/posts] resolved user webhook:', { userId: resolvedUserId, userWebhookUrl })
       }
     } catch (e) {
-      // Non-fatal: fall back to global webhook below
-      console.warn("/api/posts: auth decode or user lookup failed, using global webhook")
+      // Non-fatal: fall back to client-provided webhook below
+      console.warn("/api/posts: user lookup failed, using client webhook if provided")
     }
 
     // Prefer explicit webhookUrl from client if provided and matches base URL
     let targetUrl = userWebhookUrl || null
     if (!targetUrl && typeof clientWebhookUrl === 'string' && clientWebhookUrl.startsWith(N8N_BASE_URL)) {
       targetUrl = clientWebhookUrl
+      console.log('[api/posts] using client webhook:', targetUrl)
     }
+    
+    // Convert to webhook-test if this is a test/ping request
+    if (isTest && targetUrl) {
+      targetUrl = targetUrl.replace('/webhook/', '/webhook-test/')
+      console.log('[api/posts] converted to test webhook:', targetUrl)
+    }
+    
+    console.log('[api/posts] final targetUrl:', targetUrl)
     // If still missing, we cannot publish (no generic global workflow path exists)
     if (!targetUrl) {
       return NextResponse.json(
@@ -86,6 +115,15 @@ export async function POST(req: NextRequest) {
     const singlePlatform = (payload as any)?.platform || (platforms.length === 1 ? platforms[0] : undefined)
 
     let execId: string | undefined
+    // Normalize media: upload data URLs to R2 (publish-time)
+    try {
+      const userIdForMedia = resolvedUserId || 'anonymous'
+      if (Array.isArray((payload as any)?.media)) {
+        (payload as any).media = await normalizeMediaToR2(userIdForMedia, (payload as any).media)
+      }
+    } catch (mediaErr) {
+      console.warn('[api/posts] media normalize failed', mediaErr)
+    }
     if (platforms.length > 1) {
       const results = [] as Array<{ platform: string; ok: boolean; status: number; data: any; execId?: string }>
       for (const pf of platforms) {
@@ -94,6 +132,33 @@ export async function POST(req: NextRequest) {
         results.push({ platform: pf, ok: r.ok, status: r.status, data: r.data, execId: r.execId })
       }
       const allOk = results.every(r => r.ok)
+
+      // Save published content to database if successful
+      if (allOk) {
+        try {
+          const userId = resolvedUserId
+          if (userId) {
+            const title = (payload.content_text || '').split(/\n+/)[0]?.slice(0, 80) || 'Bài đăng'
+            await prisma.content.create({
+              data: {
+                userId,
+                title,
+                content: payload.content_text || '',
+                hashtags: Array.isArray(payload.hashtags) ? payload.hashtags : [],
+                platforms,
+                media: Array.isArray((payload as any)?.media) ? (payload as any).media as string[] : [],
+                type: 'POST',
+                status: 'PUBLISHED',
+                publishedAt: new Date(),
+              },
+            })
+          }
+        } catch (saveErr) {
+          console.error('[api/posts] failed to save published content', saveErr)
+          // Non-fatal: post was published successfully
+        }
+      }
+
       const respHeaders = execId ? { "x-n8n-exec-id": execId } : undefined
       return NextResponse.json(
         { success: allOk, results, targetUrl, execId },
@@ -110,6 +175,31 @@ export async function POST(req: NextRequest) {
           { status: r.status || 502, headers: respHeaders },
         )
       }
+
+      // Save published content to database
+      try {
+        const userId = resolvedUserId
+        if (userId) {
+          const title = (payload.content_text || '').split(/\n+/)[0]?.slice(0, 80) || 'Bài đăng'
+          await prisma.content.create({
+            data: {
+              userId,
+              title,
+              content: payload.content_text || '',
+              hashtags: Array.isArray(payload.hashtags) ? payload.hashtags : [],
+              platforms: platforms.length > 0 ? platforms : [pf],
+              media: Array.isArray((payload as any)?.media) ? (payload as any).media as string[] : [],
+              type: 'POST',
+              status: 'PUBLISHED',
+              publishedAt: new Date(),
+            },
+          })
+        }
+      } catch (saveErr) {
+        console.error('[api/posts] failed to save published content', saveErr)
+        // Non-fatal: post was published successfully
+      }
+
       return NextResponse.json(
         { success: true, data: r.data, targetUrl, execId: r.execId },
         { status: 200, headers: respHeaders },

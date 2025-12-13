@@ -46,6 +46,16 @@ export default function ArchivePage() {
   const [activeTab, setActiveTab] = useState("all")
   const [drafts, setDrafts] = useState<Array<{ id: string; title: string; content: string; createdAt: string }>>([])
   const [loadingDrafts, setLoadingDrafts] = useState(false)
+  const [publishedPosts, setPublishedPosts] = useState<Array<{ 
+    id: string; 
+    title: string; 
+    content: string; 
+    platforms: string[]; 
+    hashtags: string[];
+    media: string[];
+    publishedAt: string;
+  }>>([])
+  const [loadingPublished, setLoadingPublished] = useState(false)
 
   useEffect(() => {
     const loadDrafts = async () => {
@@ -64,6 +74,25 @@ export default function ArchivePage() {
     }
     loadDrafts()
   }, [])
+
+  useEffect(() => {
+    const loadPublished = async () => {
+      if (activeTab !== 'published') return
+      try {
+        setLoadingPublished(true)
+        const res = await fetch("/api/contents?status=PUBLISHED&take=50")
+        const json = await res.json()
+        if (json?.success) {
+          setPublishedPosts(json.data)
+        }
+      } catch (e) {
+        console.error("Failed to load published posts", e)
+      } finally {
+        setLoadingPublished(false)
+      }
+    }
+    loadPublished()
+  }, [activeTab])
 
   // No mock dataset: sections without real data will show N/A
 
@@ -315,7 +344,7 @@ export default function ArchivePage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="all">Tất cả (N/A)</TabsTrigger>
-            <TabsTrigger value="published">Đã xuất bản (N/A)</TabsTrigger>
+            <TabsTrigger value="published">Đã xuất bản ({loadingPublished ? "…" : publishedPosts.length})</TabsTrigger>
             <TabsTrigger value="draft">Bản nháp ({loadingDrafts ? "…" : drafts.length})</TabsTrigger>
             <TabsTrigger value="high-performance">Hiệu suất cao (N/A)</TabsTrigger>
             <TabsTrigger value="analytics">Phân tích</TabsTrigger>
@@ -332,11 +361,69 @@ export default function ArchivePage() {
           <TabsContent value="published" className="space-y-6">
             <div className="bg-white rounded-lg border p-6">
               <h3 className="text-lg font-semibold mb-4">Nội dung đã xuất bản</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <Card className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-4 text-sm text-gray-600">N/A — Chưa có dữ liệu xuất bản</CardContent>
-                </Card>
-              </div>
+              {loadingPublished ? (
+                <div className="text-sm text-gray-500">Đang tải bài đăng...</div>
+              ) : publishedPosts.length === 0 ? (
+                <div className="text-sm text-gray-500">Chưa có bài đăng nào được xuất bản</div>
+              ) : (
+                <div className="space-y-4">
+                  {publishedPosts.map((post) => (
+                    <div key={post.id} className="p-4 border rounded-lg">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start space-x-4 flex-1 min-w-0">
+                          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Globe className="w-5 h-5 text-green-600" />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-semibold line-clamp-1">{post.title}</h3>
+                            <div className="text-sm text-gray-600">
+                              Đã đăng: {new Date(post.publishedAt).toLocaleString("vi-VN")}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              Nền tảng: {post.platforms.join(", ") || "N/A"} •{" "}
+                              Hashtags: {post.hashtags.length > 0 ? post.hashtags.slice(0, 3).join(" ") : "N/A"}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2 flex-shrink-0">
+                          <Button size="sm" variant="outline" onClick={() => navigator.clipboard?.writeText(post.content)}>
+                            <Copy className="w-4 h-4 mr-2" />
+                            Copy
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            Xem
+                          </Button>
+                        </div>
+                      </div>
+
+                      {Array.isArray(post.media) && post.media.length > 0 && (
+                        <div className="mt-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xs text-gray-500">Hình ảnh đính kèm</span>
+                            {post.media.length > 3 && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">+{post.media.length - 3}</span>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            {post.media.slice(0, 3).map((url, idx) => (
+                              <div key={idx} className="relative w-full aspect-square overflow-hidden rounded border bg-gray-50">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={url}
+                                  alt={`media-${idx}`}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </TabsContent>
 
