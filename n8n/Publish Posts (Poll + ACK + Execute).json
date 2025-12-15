@@ -1,673 +1,447 @@
 {
-  "name": "template",
   "nodes": [
     {
       "parameters": {
-        "httpMethod": "POST",
-        "path": "user-cmi9xc7ti000183bqo11mgc6s-1763801700847",
-        "responseMode": "responseNode",
-        "options": {}
+        "content": "# 🚨Add the CloudFlare API token, read this carefully\n\n### Add the workers AI authentication template\n### Then edit the token, and add the `Accounts -> Account Settings (Read)` permission and save it",
+        "height": 416,
+        "width": 448
       },
-      "name": "Inbound Post (Webhook)1",
-      "type": "n8n-nodes-base.webhook",
+      "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -320,
-        -128
+        -96,
+        -704
       ],
-      "id": "c507c83f-1ae4-49f2-8d27-b10c82b88cfe",
-      "webhookId": "4f26a6d4-fa78-4d0e-bbec-40c97bc44e08"
+      "id": "558e0af3-bcbc-4cb4-b626-3058f4196d31",
+      "name": "Sticky Note"
     },
     {
       "parameters": {
-        "options": {}
-      },
-      "name": "Respond",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [
-        1712,
-        -160
-      ],
-      "id": "aa538d66-3c38-4d5e-8928-a15166425056"
-    },
-    {
-      "parameters": {
-        "functionCode": "// Fan-out platforms: emit one item per requested platform\nconst raw = (items[0].json.body) ? items[0].json.body : items[0].json;\nconst content = raw.content_text || raw.content || '';\nlet platforms = Array.isArray(raw.platforms) ? raw.platforms.filter(p=>p) : (raw.platform ? [raw.platform] : []);\nplatforms = platforms.map(p=>String(p).toLowerCase());\nif (!platforms.length) platforms = ['facebook'];\nlet media = [];\nif (Array.isArray(raw.media)) media = raw.media.filter(u=> typeof u === 'string' && /^https?:/.test(u));\nelse if (typeof raw.media === 'string' && /^https?:/.test(raw.media)) media = [raw.media];\nconst hashtags = Array.isArray(raw.hashtags) ? raw.hashtags.filter(h=> typeof h === 'string') : (typeof raw.hashtags === 'string' ? raw.hashtags.split(/\\s+/).filter(s=>s.startsWith('#')) : []);\nreturn platforms.map(p=>({ json: { content_text: content, platform: p, media, hasImage: !!media[0], hashtags } }));"
-      },
-      "name": "Fanout Platforms",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        -48,
-        -128
-      ],
-      "id": "68b9fa3c-73d8-43f7-898a-360a55eec70b"
-    },
-    {
-      "parameters": {
-        "rules": {
-          "values": [
+        "assignments": {
+          "assignments": [
             {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{$json.platform}}",
-                    "rightValue": "facebook",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "fb"
-                  }
-                ],
-                "combinator": "and"
-              }
+              "id": "3f7d5020-0710-4f3c-858f-0485a2bd2963",
+              "name": "width",
+              "value": "=1024",
+              "type": "number"
             },
             {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{$json.platform}}",
-                    "rightValue": "instagram",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "ig"
-                  }
-                ],
-                "combinator": "and"
-              }
+              "id": "39b906fa-3e0b-45b9-9c1b-95cbc51e195d",
+              "name": "prompt",
+              "value": "={{ $('Webhook').item.json.body.imagePrompt }}",
+              "type": "string"
             },
             {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{$json.platform}}",
-                    "rightValue": "twitter",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "tw"
-                  }
-                ],
-                "combinator": "and"
-              }
+              "id": "3f8593d2-cfb3-437a-a9fc-4430995cb78f",
+              "name": "height",
+              "value": "=768",
+              "type": "number"
             },
             {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "0f59d49c-756f-4dcf-afbe-07316b48bfd2",
-                    "leftValue": "={{$json.platform}}",
-                    "rightValue": "linkedin",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              }
+              "id": "065181ef-404a-4860-9019-976e6e8391e0",
+              "name": "seed",
+              "value": "={{ Math.floor(Math.random() * 100000000) }}",
+              "type": "number"
+            },
+            {
+              "id": "2c131da3-e708-4468-bb09-d400e7e5f28c",
+              "name": "steps",
+              "value": 4,
+              "type": "number"
             }
           ]
         },
         "options": {}
       },
-      "name": "Switch Platform",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.3,
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
       "position": [
-        224,
-        -144
+        -768,
+        -512
       ],
-      "id": "521244a9-524f-49bd-946f-0b3d3ba1aa63"
+      "id": "2e2a5aad-b6f4-472e-a78e-52505a8fd9cf",
+      "name": "Setup workflow"
     },
     {
       "parameters": {
         "conditions": {
-          "boolean": [
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
             {
-              "value1": "={{$json.hasImage}}",
-              "value2": true
+              "id": "f6e30a82-76cd-4bfd-9bc5-b7fffb15e35c",
+              "leftValue": "={{ $json.width * $json.height > 1048576 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
             }
-          ]
-        }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
       },
-      "name": "IF FB Has Image",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2.2,
       "position": [
-        432,
-        -352
+        -464,
+        -464
       ],
-      "id": "d9562187-093f-4859-9fb7-752b026f711d"
+      "id": "84751949-9333-448e-b9c2-b72a91bbb631",
+      "name": "Check image size"
     },
     {
       "parameters": {
-        "httpRequestMethod": "POST",
-        "graphApiVersion": "v23.0",
-        "node": "me",
-        "edge": "feed",
-        "options": {
-          "queryParameters": {
-            "parameter": [
-              {
-                "name": "message",
-                "value": "={{$json.content_text}}"
-              }
-            ]
-          }
-        }
+        "errorMessage": "The size of the image (width x height) is larger than 1 megapixel"
       },
-      "name": "Post Facebook Feed",
-      "type": "n8n-nodes-base.facebookGraphApi",
+      "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        656,
-        -256
+        -272,
+        -640
       ],
-      "id": "897f132f-bd8b-4007-a6c6-55db45eccf84",
+      "id": "22e40dc2-7d1d-455a-9ac6-c9cfbe0d9bb2",
+      "name": "Image > 1 megapixel"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.cloudflare.com/client/v4/accounts/{{ $json.result[0].id }}/ai/run/@cf/black-forest-labs/flux-1-schnell",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "=json",
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "jsonBody": "={{ \n\nJSON.stringify(\n  {\n    prompt: $('Setup workflow').item.json.prompt,\n    seed: $('Setup workflow').item.json.seed,\n    \"width\": $('Setup workflow').item.json.width,\n    \"height\": $('Setup workflow').item.json.height,\n    \"steps\": $('Setup workflow').item.json.steps\n  }\n) \n\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        -416
+      ],
+      "id": "7b82f4b6-b3b4-4701-8066-304275d34ad5",
+      "name": "Get Flux Schnell image",
       "credentials": {
-        "facebookGraphApi": {
-          "id": "Wd2AJrsjyrf1eXsb",
-          "name": "Facebook Graph account"
+        "httpBearerAuth": {
+          "id": "EldIXMOPmzpNQf1L",
+          "name": "Cloudflare"
         }
-      },
-      "disabled": true
+      }
     },
     {
       "parameters": {
-        "httpRequestMethod": "POST",
-        "graphApiVersion": "v23.0",
-        "node": "17841449301482656",
-        "edge": "media",
-        "options": {
-          "queryParameters": {
-            "parameter": [
-              {
-                "name": "caption",
-                "value": "={{ $json.content_text }}"
-              },
-              {
-                "name": "image_url",
-                "value": "={{ $json.media[0] }}"
-              }
-            ]
-          }
-        }
+        "url": "https://api.cloudflare.com/client/v4/accounts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
       },
-      "name": "Create Instagram Media",
-      "type": "n8n-nodes-base.facebookGraphApi",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
-        512,
-        -48
+        -48,
+        -416
       ],
-      "id": "83a0ccfe-07c5-4403-aaf7-a252b5cad2c5",
+      "id": "819810e8-7216-4e4f-b414-06202dd9dc7b",
+      "name": "Get accounts",
       "credentials": {
-        "facebookGraphApi": {
-          "id": "EfUlGSmnRRJ1xPnt",
-          "name": "insta"
+        "httpBearerAuth": {
+          "id": "EldIXMOPmzpNQf1L",
+          "name": "Cloudflare"
         }
-      },
-      "disabled": true
+      }
     },
     {
       "parameters": {
-        "httpRequestMethod": "POST",
-        "graphApiVersion": "v23.0",
-        "node": "17841449301482656",
-        "edge": "media_publish",
-        "options": {
-          "queryParameters": {
-            "parameter": [
-              {
-                "name": "creation_id",
-                "value": "={{$json.id}}"
-              }
-            ]
-          }
-        }
+        "operation": "toBinary",
+        "sourceProperty": "result.image",
+        "options": {}
       },
-      "name": "Publish Instagram Media",
-      "type": "n8n-nodes-base.facebookGraphApi",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
       "position": [
-        736,
-        -48
+        464,
+        -448
       ],
-      "id": "b5d35acf-a85d-486a-adb0-e2ac516a42f6",
-      "credentials": {
-        "facebookGraphApi": {
-          "id": "EfUlGSmnRRJ1xPnt",
-          "name": "insta"
-        }
-      },
-      "disabled": true
+      "id": "2848e5a3-f244-40e5-9098-40e2f59e5f41",
+      "name": "Convert to File"
     },
     {
       "parameters": {
-        "text": "={{$json.content_text}}",
-        "additionalFields": {}
+        "jsCode": "// 1) Echo lại input từ FE (đi qua Webhook)\nconst root = $json;\nconst bodyRaw = root.body;\nlet recv = {};\nif (bodyRaw && typeof bodyRaw === 'string') {\n  try { recv = JSON.parse(bodyRaw) } catch { recv = {} }\n} else if (bodyRaw && typeof bodyRaw === 'object') {\n  recv = bodyRaw;\n} else {\n  recv = root || {};\n}\n\nconst meta = {\n  platform:$('Webhook').first().json.body.platform ,\n  tone:$('Webhook').first().json.body.tone,\n  length: $('Webhook').first().json.body.length,\n  imagePrompt:$('Webhook').first().json.body.imagePrompt\n};\n\n// 2) Lấy output từ AI Agent (đa nhà cung cấp)\nlet aiRaw =\n  root.text ??\n  root.output ??\n  root.message ??\n  root.data ??\n  root.content_text ??\n  root.draft ??\n  '';\n\n// Helper\nconst looksLikeJson = (s) => typeof s === 'string' && /^[\\[{]/.test(s.trim());\nconst toSingleSpaces = (s) => s.replace(/\\s+\\n/g, '\\n').replace(/[ \\t]+/g, ' ');\nconst unescapeNewlines = (s) => s.replace(/\\\\n/g, '\\n');\nconst normalizeText = (s) => toSingleSpaces(unescapeNewlines(String(s || '')).replace(/\\r\\n/g, '\\n')).trim();\n\n// 3) Chuẩn hoá thành object thống nhất\nlet contentText = '';\nlet hashtagsArr = [];\n\n// Tách hashtag từ string (giữ thứ tự xuất hiện, unique, lowercase)\nfunction extractHashtags(str) {\n  const found = [];\n  const set = new Set();\n  const re = /(^|[\\s.,;!?:()\\[\\]{}\"'])#([a-z0-9_]+)/gi;\n  let m;\n  while ((m = re.exec(str))) {\n    const tag = '#' + m[2].toLowerCase();\n    if (!set.has(tag)) {\n      set.add(tag);\n      found.push(tag);\n    }\n  }\n  return found;\n}\n\ntry {\n  if (typeof aiRaw === 'object' && aiRaw !== null) {\n    // TH: AI trả về object/array ở $json\n    const pick = Array.isArray(aiRaw) ? aiRaw[0] : aiRaw;\n\n    if (pick && pick.content_text) {\n      contentText = normalizeText(pick.content_text);\n      if (Array.isArray(pick.hashtags)) hashtagsArr = pick.hashtags.map(h => h.toLowerCase());\n      if (!hashtagsArr.length) hashtagsArr = extractHashtags(contentText);\n    } else if (pick && (pick.Caption || pick.Idea || pick.Environment || pick.Sound)) {\n      // TH: JSON theo mẫu Idea/Caption/Environment/Sound\n      const caption = (pick.Caption || '').trim();\n      const idea = (pick.Idea || '').trim();\n      const env = (pick.Environment || '').trim();\n      const sound = (pick.Sound || '').trim();\n      const status = (pick.Status || '').trim();\n\n      const body = [\n        caption && `Caption: ${caption}`,\n        idea && `Ý tưởng: ${idea}`,\n        env && `Môi trường: ${env}`,\n        sound && `Âm thanh: ${sound}`,\n        status && `Trạng thái: ${status}`,\n      ].filter(Boolean).join('\\n\\n');\n\n      contentText = normalizeText(body);\n      // Ưu tiên hashtag ngay trong Caption nếu có\n      hashtagsArr = extractHashtags(caption);\n      if (!hashtagsArr.length && pick.hashtags) {\n        hashtagsArr = Array.isArray(pick.hashtags)\n          ? pick.hashtags.map(h => h.toLowerCase())\n          : extractHashtags(String(pick.hashtags));\n      }\n      if (!hashtagsArr.length) hashtagsArr = extractHashtags(contentText);\n    } else if (pick && (pick.draft || pick.hashtags)) {\n      // TH: bạn đang có hiện tại\n      const draft = normalizeText(pick.draft || '');\n      const tags = Array.isArray(pick.hashtags) ? pick.hashtags.join(' ') : (pick.hashtags || '');\n      const tagsNorm = normalizeText(tags);\n      contentText = draft;\n      hashtagsArr = extractHashtags(tagsNorm);\n      if (!hashtagsArr.length) hashtagsArr = extractHashtags(contentText);\n    } else {\n      // Fallback: stringify object\n      contentText = normalizeText(JSON.stringify(pick));\n      hashtagsArr = extractHashtags(contentText);\n    }\n  } else if (looksLikeJson(aiRaw)) {\n    // TH: string nhưng là JSON (array hoặc object)\n    const parsed = JSON.parse(aiRaw);\n    const pick = Array.isArray(parsed) ? parsed[0] : parsed;\n\n    if (pick && pick.content_text) {\n      contentText = normalizeText(pick.content_text);\n      hashtagsArr = Array.isArray(pick.hashtags) ? pick.hashtags.map(h => h.toLowerCase()) : extractHashtags(contentText);\n    } else if (pick && (pick.Caption || pick.Idea || pick.Environment || pick.Sound)) {\n      const caption = (pick.Caption || '').trim();\n      const idea = (pick.Idea || '').trim();\n      const env = (pick.Environment || '').trim();\n      const sound = (pick.Sound || '').trim();\n      const status = (pick.Status || '').trim();\n\n      const body = [\n        caption && `Caption: ${caption}`,\n        idea && `Ý tưởng: ${idea}`,\n        env && `Môi trường: ${env}`,\n        sound && `Âm thanh: ${sound}`,\n        status && `Trạng thái: ${status}`,\n      ].filter(Boolean).join('\\n\\n');\n\n      contentText = normalizeText(body);\n      hashtagsArr = extractHashtags(caption);\n      if (!hashtagsArr.length && pick.hashtags) {\n        hashtagsArr = Array.isArray(pick.hashtags)\n          ? pick.hashtags.map(h => h.toLowerCase())\n          : extractHashtags(String(pick.hashtags));\n      }\n      if (!hashtagsArr.length) hashtagsArr = extractHashtags(contentText);\n    } else if (pick && (pick.draft || pick.hashtags)) {\n      const draft = normalizeText(pick.draft || '');\n      const tags = Array.isArray(pick.hashtags) ? pick.hashtags.join(' ') : (pick.hashtags || '');\n      contentText = draft;\n      hashtagsArr = extractHashtags(tags);\n      if (!hashtagsArr.length) hashtagsArr = extractHashtags(contentText);\n    } else {\n      contentText = normalizeText(JSON.stringify(pick));\n      hashtagsArr = extractHashtags(contentText);\n    }\n  } else {\n    // TH: string thuần\n    const s = normalizeText(aiRaw);\n    // Cắt thân bài và dòng hashtag nếu có\n    const lines = s.split('\\n');\n    const bodyLines = [];\n    const hashLines = [];\n    for (const line of lines) {\n      const t = line.trim();\n      if (t.startsWith('#') || t.includes(' #')) hashLines.push(t);\n      else bodyLines.push(line);\n    }\n    contentText = bodyLines.join('\\n').trim();\n    hashtagsArr = extractHashtags(hashLines.join(' '));\n    if (!hashtagsArr.length) hashtagsArr = extractHashtags(contentText);\n  }\n} catch (e) {\n  // Fallback an toàn\n  const s = normalizeText(aiRaw);\n  contentText = s;\n  hashtagsArr = extractHashtags(s);\n}\n\n// 4) Giới hạn & format hashtag: unique, lowercase, tối đa 12\nconst unique = [];\nconst seen = new Set();\nfor (const h of hashtagsArr) {\n  const tag = h.toLowerCase();\n  if (!seen.has(tag)) {\n    seen.add(tag);\n    unique.push(tag);\n  }\n}\nhashtagsArr = unique.slice(0, 12);\n\n// Ghép bài + hashtags (để FE hiển thị ngay)\nconst hashtagsStr = hashtagsArr.join(' ');\nconst finalText = hashtagsArr.length ? `${contentText}\\n\\n${hashtagsStr}` : contentText;\n\n// 6) Media từ FE\nconst media = Array.isArray(recv.media) ? recv.media.filter(u => /^https?:/i.test(String(u))) : [];\n\n// 7) Trả về format thống nhất cho FE\nconst basePayload = {\n  success: true,\n  received: {\n    prompt: $('Webhook').first().json.body.prompt,\n    tone: meta.tone,\n    length: meta.length,\n    platform: meta.platform,\n    autoGenerateImage: $('Webhook').first().json.body.autoGenerateImage,\n    imagePrompt: meta.imagePrompt,\n  },\n  data: {\n    content_text: finalText,\n    hashtags: hashtagsArr,\n    platform: meta.platform,\n    tone: meta.tone,\n    length: meta.length,\n    generatedAt: new Date().toISOString(),\n    media,\n  }\n};\n\nreturn [{ json: { ...basePayload, normalized: basePayload } }];"
       },
-      "name": "Post Tweet",
-      "type": "n8n-nodes-base.twitter",
+      "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        512,
-        256
+        -1456,
+        112
       ],
-      "id": "1123472c-cb97-4464-96f8-1320b72b57b8",
-      "disabled": true
+      "id": "ba7da6a0-7cd2-4111-9f3c-e64940deaab1",
+      "name": "Code in JavaScript1"
     },
     {
       "parameters": {
-        "functionCode": "// Standardize platform result\nconst inJson = items[0].json;\nconst raw = inJson || {};\nconst id = raw.id || raw.postId || raw.externalPostId || raw.creation_id || null;\nreturn [{ json: { platform: raw.platform || $json.platform || 'unknown', success: !raw.error, externalPostId: id, error: raw.error || null, raw } }];"
+        "options": {}
       },
-      "name": "Normalize Result FB Photo",
-      "type": "n8n-nodes-base.function",
+      "id": "abf1c158-b7b3-4f95-9efe-bc54f457cabd",
+      "name": "Respond ",
+      "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        912,
-        -464
-      ],
-      "id": "6c72b3f3-0b39-469e-8938-3ad52b1ff888"
+        1520,
+        64
+      ]
     },
     {
       "parameters": {
-        "functionCode": "const r = items[0].json; const id = r.id || r.postId || r.externalPostId || null; return [{ json: { platform: 'facebook', success: !r.error, externalPostId: id, error: r.error || null, raw: r } }];"
+        "jsCode": "// Lấy full item (có cả json và binary)\nconst item = $input.first();\nconst currentJson = item.json || {};\n\n// Lấy payload text đã normalize từ node trước\nconst baseNode = $node['Code in JavaScript1'].json || {};\nconst normalized = baseNode.normalized || baseNode;\n\nlet imageUrl = null;\n\n// Nếu item có binary từ Convert to File thì tạo data URL cho FE preview\nif (item.binary && item.binary.data) {\n  const bin = item.binary.data;\n  const mime = bin.mimeType || 'image/jpeg';\n  const b64 = bin.data;\n  if (typeof b64 === 'string' && b64.length > 0) {\n    imageUrl = `data:${mime};base64,${b64}`;\n  }\n}\n\n// Các đường khác: nếu upstream đã có url/base64 trong JSON\nif (!imageUrl && typeof currentJson.imageUrl === 'string') imageUrl = currentJson.imageUrl;\n\nif (!imageUrl && currentJson.predictions && Array.isArray(currentJson.predictions)) {\n  const p = currentJson.predictions[0] || {};\n  if (typeof p.imageUri === 'string' && p.imageUri.startsWith('http')) imageUrl = p.imageUri;\n  if (!imageUrl && typeof p.bytesBase64Encoded === 'string') {\n    imageUrl = 'data:image/png;base64,' + p.bytesBase64Encoded;\n  }\n}\n\nif (!imageUrl && currentJson.data) {\n  const d = currentJson.data;\n  if (Array.isArray(d) && d[0]) {\n    if (typeof d[0].url === 'string') imageUrl = d[0].url;\n    if (!imageUrl && typeof d[0].b64_json === 'string') {\n      imageUrl = 'data:image/png;base64,' + d[0].b64_json;\n    }\n  }\n  if (!imageUrl && d.images && Array.isArray(d.images) && d.images[0]) {\n    if (typeof d.images[0].url === 'string') imageUrl = d.images[0].url;\n    if (!imageUrl && typeof d.images[0].b64_json === 'string') {\n      imageUrl = 'data:image/png;base64,' + d.images[0].b64_json;\n    }\n  }\n}\n\nif (!imageUrl && currentJson.candidates && Array.isArray(currentJson.candidates)) {\n  const c = currentJson.candidates[0];\n  const part = c && c.content && Array.isArray(c.content.parts) ? c.content.parts[0] : null;\n  if (part && part.inlineData && typeof part.inlineData.data === 'string') {\n    imageUrl = 'data:image/png;base64,' + part.inlineData.data;\n  }\n}\n\nconst media = Array.isArray(normalized.data?.media) ? normalized.data.media.slice() : [];\nif (imageUrl) media.push(imageUrl);\n\nconst out = {\n  ...normalized,\n  data: {\n    ...normalized.data,\n    media,\n  },\n};\n\nreturn [{ json: out }];\n"
       },
-      "name": "Normalize Result FB Feed",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "id": "f0aca451-76a7-4ced-ab45-842adf4939f4",
+      "name": "Finalize Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
-        928,
-        -256
-      ],
-      "id": "cca35c3b-dd07-44fd-a0d7-d40792eb492a"
-    },
-    {
-      "parameters": {
-        "functionCode": "const r = items[0].json; const id = r.id || r.externalPostId || null; return [{ json: { platform: 'instagram', success: !r.error, externalPostId: id, error: r.error || null, raw: r } }];"
-      },
-      "name": "Result IG Publish",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        960,
-        -48
-      ],
-      "id": "9d3e2921-febc-4d30-b80b-d3de55ea539b"
-    },
-    {
-      "parameters": {
-        "functionCode": "const r = items[0].json; return [{ json: { platform: 'twitter', success: !r.error, externalPostId: r.id || null, error: r.error || null, raw: r } }];"
-      },
-      "name": "Result Twitter",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        752,
-        256
-      ],
-      "id": "f6af5e18-96a0-45e1-87e4-6365ae2b3dd0",
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "functionCode": "// Aggregate accepts variable number of platform result items.\n// Each incoming item already normalized.\nif (!items || !items.length) {\n  return [{ json: { success: true, results: [], warning: 'No platform results' } }];\n}\nreturn [{ json: { success: true, results: items.map(i => i.json) } }];"
-      },
-      "name": "Aggregate",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        1424,
-        -160
-      ],
-      "id": "3da863ca-e1a9-4cb7-a132-337c9151f122"
-    },
-    {
-      "parameters": {
-        "httpRequestMethod": "POST",
-        "graphApiVersion": "v23.0",
-        "node": "me",
-        "edge": "photos",
-        "options": {
-          "queryParameters": {
-            "parameter": [
-              {
-                "name": "url",
-                "value": "={{$json.media[0]}}"
-              },
-              {
-                "name": "caption",
-                "value": "={{$json.content_text}}"
-              }
-            ]
-          }
-        }
-      },
-      "name": "Post Facebook Photo1",
-      "type": "n8n-nodes-base.facebookGraphApi",
-      "typeVersion": 1,
-      "position": [
-        656,
-        -464
-      ],
-      "id": "e07acb3c-e32d-4ecd-940c-32ece400b9a9",
-      "credentials": {
-        "facebookGraphApi": {
-          "id": "Wd2AJrsjyrf1eXsb",
-          "name": "Facebook Graph account"
-        }
-      },
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "person": "113sxgyXnQ",
-        "text": "test",
-        "additionalFields": {}
-      },
-      "type": "n8n-nodes-base.linkedIn",
-      "typeVersion": 1,
-      "position": [
-        832,
-        496
-      ],
-      "id": "14c7dd85-5e84-4f94-bfb6-1eb1ce138956",
-      "name": "Create a post",
-      "credentials": {
-        "linkedInOAuth2Api": {
-          "id": "We6gD8YCpdPEhvGS",
-          "name": "test linkedin"
-        }
-      },
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "person": "113sxgyXnQ",
-        "shareMediaCategory": "IMAGE",
-        "additionalFields": {}
-      },
-      "type": "n8n-nodes-base.linkedIn",
-      "typeVersion": 1,
-      "position": [
-        832,
-        704
-      ],
-      "id": "680e11ee-043f-41dc-9965-53d8d36f8103",
-      "name": "Create a post1",
-      "disabled": true
+        1088,
+        -272
+      ]
     },
     {
       "parameters": {
         "conditions": {
           "boolean": [
             {
-              "value1": "={{$json.hasImage}}",
+              "value1": "={{$node[\"Webhook\"].json[\"body\"][\"autoGenerateImage\"] && !!$node[\"Webhook\"].json[\"body\"][\"imagePrompt\"]}}",
               "value2": true
             }
           ]
         }
       },
-      "name": "IF Has Image1",
+      "id": "a6f66ae8-7f24-4290-9686-1528415af0b5",
+      "name": "IF Generate Image",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        448,
-        560
+        -1200,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -2144,
+        336
       ],
-      "id": "55b56d62-a515-43a8-88c1-873bc8d4b2a7"
+      "id": "68fe2c53-7664-4479-af98-d5f00732b15d",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "d8JXN8kohL0dLa37",
+          "name": "n8ntest"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        -1760,
+        400
+      ],
+      "id": "68c021b4-4632-4e9a-aafd-aee0fd5a8d2f",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json[\"body\"][\"prompt\"]}} \n- Viết một bài {{$json[\"body\"][\"length\"]}} \nbằng giọng văn {{$json[\"body\"][\"tone\"]}} \ncho nền tảng {{$json[\"body\"][\"platform\"]}}.\n\nYêu cầu:\n- Viết nội dung hoàn chỉnh, thu hút, dễ đọc trên mạng xã hội.\n- Thêm 3-5 hashtag tiếng Việt/phù hợp ở cuối bài.\n- Không hỏi lại người dùng, không yêu cầu thêm thông tin, chỉ xuất ra nội dung hoàn chỉnh.\n",
+        "options": {
+          "systemMessage": "You are a creative marketing assistant.\nGenerate engaging, platform-optimized content based on user's input.\nKeep tone consistent and suitable for branding.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -1904,
+        112
+      ],
+      "id": "119e83c6-6feb-4ad8-a7f5-98371ba866ca",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-content",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "fcaf9b9c-763f-4659-a6b0-d78eb817ba2f",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -2288,
+        112
+      ],
+      "webhookId": "24a4dc7f-b5c1-4c4e-a440-e1d7076ee46c"
     }
   ],
-  "pinData": {},
   "connections": {
-    "Inbound Post (Webhook)1": {
+    "Setup workflow": {
       "main": [
         [
           {
-            "node": "Fanout Platforms",
+            "node": "Check image size",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Fanout Platforms": {
+    "Check image size": {
       "main": [
         [
           {
-            "node": "Switch Platform",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Switch Platform": {
-      "main": [
-        [
-          {
-            "node": "IF FB Has Image",
+            "node": "Image > 1 megapixel",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Create Instagram Media",
+            "node": "Get accounts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Flux Schnell image": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get accounts": {
+      "main": [
+        [
+          {
+            "node": "Get Flux Schnell image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Finalize Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "IF Generate Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Payload": {
+      "main": [
+        [
+          {
+            "node": "Respond ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Generate Image": {
+      "main": [
+        [
+          {
+            "node": "Setup workflow",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Post Tweet",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "IF Has Image1",
+            "node": "Finalize Payload",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "IF FB Has Image": {
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
       "main": [
         [
           {
-            "node": "Post Facebook Photo1",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Post Facebook Feed",
+            "node": "Code in JavaScript1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Post Facebook Feed": {
+    "Webhook": {
       "main": [
         [
           {
-            "node": "Normalize Result FB Feed",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create Instagram Media": {
-      "main": [
-        [
-          {
-            "node": "Publish Instagram Media",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Publish Instagram Media": {
-      "main": [
-        [
-          {
-            "node": "Result IG Publish",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Result IG Publish": {
-      "main": [
-        [
-          {
-            "node": "Aggregate",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Normalize Result FB Photo": {
-      "main": [
-        [
-          {
-            "node": "Aggregate",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Normalize Result FB Feed": {
-      "main": [
-        [
-          {
-            "node": "Aggregate",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Post Tweet": {
-      "main": [
-        [
-          {
-            "node": "Result Twitter",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Result Twitter": {
-      "main": [
-        [
-          {
-            "node": "Aggregate",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Aggregate": {
-      "main": [
-        [
-          {
-            "node": "Respond",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Post Facebook Photo1": {
-      "main": [
-        [
-          {
-            "node": "Normalize Result FB Photo",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create a post": {
-      "main": [
-        [
-          {
-            "node": "Aggregate",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create a post1": {
-      "main": [
-        [
-          {
-            "node": "Aggregate",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF Has Image1": {
-      "main": [
-        [
-          {
-            "node": "Create a post",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Create a post1",
+            "node": "AI Agent1",
             "type": "main",
             "index": 0
           }
@@ -675,15 +449,9 @@
       ]
     }
   },
-  "active": false,
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "versionId": "c64e49ec-623d-4b37-8215-87f49f3f7de5",
+  "pinData": {},
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "7435dce5e82963b5917f5dd085e640d9e48f3eee1559038e5ee2e732f7bb4630"
-  },
-  "id": "5jeFX00Kl8Q7YfXy",
-  "tags": []
+  }
 }

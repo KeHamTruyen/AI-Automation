@@ -536,7 +536,7 @@ export async function addPlatformAccountNode(opts: {
         nodeCredentialType: 'httpHeaderAuth',
         sendBody: true,
         specifyBody: 'json',
-        jsonBody: `={{ JSON.stringify({\n  author: "${authorUrn}",\n  lifecycleState: "PUBLISHED",\n  specificContent: {\n    "com.linkedin.ugc.ShareContent": {\n      shareCommentary: {\n        text: $json.content_text || "Hello LinkedIn"\n      },\n      shareMediaCategory: "NONE"\n    }\n  },\n  visibility: {\n    "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"\n  }\n}) }}`,
+        jsonBody: `={{\n  JSON.stringify({\n    author: "${authorUrn}",\n    lifecycleState: "PUBLISHED",\n\n    specificContent: {\n      "com.linkedin.ugc.ShareContent": {\n        shareCommentary: {\n          text: $('Fanout Platforms').item.json.content_text\n        },\n\n        shareMediaCategory: (\n          (\n            $json.asset ||\n            $('HTTP Request').item.json.value?.asset ||\n            $('HTTP Request').item.json.asset\n          )\n          ? "IMAGE"\n          : "NONE"\n        ),\n\n        media: (\n          (\n            $json.asset ||\n            $('HTTP Request').item.json.value?.asset ||\n            $('HTTP Request').item.json.asset\n          )\n          ? [\n              {\n                status: "READY",\n                media:\n                  $json.asset ||\n                  $('HTTP Request').item.json.value?.asset ||\n                  $('HTTP Request').item.json.asset\n              }\n            ]\n          : []\n        )\n      }\n    },\n\n    visibility: {\n      "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"\n    }\n  })\n}}`,
         options: {}
       }
     } else {
@@ -605,30 +605,55 @@ export async function updateExistingNodeCredential(opts: {
   const connections = wf.connections ? JSON.parse(JSON.stringify(wf.connections)) : {}
 
   const hint = (opts.nodeNameHint || opts.platform).toLowerCase()
-  const target = nodes.find((n: any) => String(n.name || '').toLowerCase().includes(hint))
-  if (!target) {
+  
+  // For LinkedIn, find ALL nodes that need updating (Post LinkedIn + HTTP Request for register upload)
+  let targets: any[] = []
+  if (opts.platform.toLowerCase() === 'linkedin') {
+    targets = nodes.filter((n: any) => {
+      const name = String(n.name || '').toLowerCase()
+      return name.includes('linkedin') || (name.includes('http request') && n.parameters?.url?.includes('linkedin'))
+    })
+  } else {
+    const target = nodes.find((n: any) => String(n.name || '').toLowerCase().includes(hint))
+    if (target) targets = [target]
+  }
+  
+  if (targets.length === 0) {
     return { workflow: wf, updated: false }
   }
-  target.credentials = target.credentials || {}
-  // Map credentialType to key
-  if (opts.credentialType === 'httpHeaderAuth') {
-    target.credentials.httpHeaderAuth = { id: opts.credentialId, name: opts.credentialName }
+
+  // Update all target nodes
+  for (const target of targets) {
+    target.credentials = target.credentials || {}
     
-    // For LinkedIn, also update jsonBody with actual URN and authentication
-    if (opts.platform.toLowerCase() === 'linkedin' && opts.linkedinUrn) {
-      const authorUrn = `urn:li:person:${opts.linkedinUrn}`
-      target.parameters = target.parameters || {}
-      target.parameters.authentication = 'predefinedCredentialType'
-      target.parameters.nodeCredentialType = 'httpHeaderAuth'
-      target.parameters.jsonBody = `={{ JSON.stringify({\n  author: "${authorUrn}",\n  lifecycleState: "PUBLISHED",\n  specificContent: {\n    "com.linkedin.ugc.ShareContent": {\n      shareCommentary: {\n        text: $json.content_text || "Hello LinkedIn"\n      },\n      shareMediaCategory: "NONE"\n    }\n  },\n  visibility: {\n    "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"\n  }\n}) }}`
+    // Map credentialType to key
+    if (opts.credentialType === 'httpHeaderAuth') {
+      target.credentials.httpHeaderAuth = { id: opts.credentialId, name: opts.credentialName }
+      
+      // For LinkedIn nodes, also update authentication parameters and URN
+      if (opts.platform.toLowerCase() === 'linkedin' && opts.linkedinUrn) {
+        const authorUrn = `urn:li:person:${opts.linkedinUrn}`
+        target.parameters = target.parameters || {}
+        target.parameters.authentication = 'predefinedCredentialType'
+        target.parameters.nodeCredentialType = 'httpHeaderAuth'
+        
+        const nodeName = String(target.name || '').toLowerCase()
+        
+        // Update jsonBody based on node type
+        if (nodeName.includes('post')) {
+          // Post LinkedIn node - full UGC post body
+          target.parameters.jsonBody = `={{\n  JSON.stringify({\n    author: "${authorUrn}",\n    lifecycleState: "PUBLISHED",\n\n    specificContent: {\n      "com.linkedin.ugc.ShareContent": {\n        shareCommentary: {\n          text: $('Fanout Platforms').item.json.content_text\n        },\n\n        shareMediaCategory: (\n          (\n            $json.asset ||\n            $('HTTP Request').item.json.value?.asset ||\n            $('HTTP Request').item.json.asset\n          )\n          ? "IMAGE"\n          : "NONE"\n        ),\n\n        media: (\n          (\n            $json.asset ||\n            $('HTTP Request').item.json.value?.asset ||\n            $('HTTP Request').item.json.asset\n          )\n          ? [\n              {\n                status: "READY",\n                media:\n                  $json.asset ||\n                  $('HTTP Request').item.json.value?.asset ||\n                  $('HTTP Request').item.json.asset\n              }\n            ]\n          : []\n        )\n      }\n    },\n\n    visibility: {\n      "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"\n    }\n  })\n}}`
+        } else if (nodeName.includes('http request') || target.parameters?.url?.includes('registerUpload')) {
+          // HTTP Request (Register Upload) node - register upload body
+          target.parameters.jsonBody = `{\n  "registerUploadRequest": {\n    "owner": "${authorUrn}",\n    "recipes": ["urn:li:digitalmediaRecipe:feedshare-image"],\n    "serviceRelationships": [\n      {\n        "relationshipType": "OWNER",\n        "identifier": "urn:li:userGeneratedContent"\n      }\n    ]\n  }\n}`
+        }
+      }
+    } else if (opts.credentialType === 'facebookGraphApi') {
+      target.credentials.facebookGraphApi = { id: opts.credentialId, name: opts.credentialName }
+    } else {
+      // Generic assignment
+      target.credentials[opts.credentialType] = { id: opts.credentialId, name: opts.credentialName }
     }
-  } else if (opts.credentialType === 'facebookGraphApi') {
-    target.credentials.facebookGraphApi = { id: opts.credentialId, name: opts.credentialName }
-  } else if (opts.credentialType === 'twitterOAuth2Api') {
-    target.credentials.twitterOAuth2Api = { id: opts.credentialId, name: opts.credentialName }
-  } else {
-    // Generic assignment
-    target.credentials[opts.credentialType] = { id: opts.credentialId, name: opts.credentialName }
   }
 
   const patch: Partial<Workflow> = { nodes }

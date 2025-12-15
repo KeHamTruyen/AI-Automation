@@ -3,7 +3,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "user-cmiwy249i000152h9ryfc2tev-1765557572144",
+        "path": "template",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -11,10 +11,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -704,
-        112
+        -2288,
+        384
       ],
-      "id": "f12c9539-91b4-4baf-a525-da6911915247",
+      "id": "a0f6bbb1-968d-4c22-8f08-e8fbbcad493d",
       "webhookId": "4f26a6d4-fa78-4d0e-bbec-40c97bc44e08"
     },
     {
@@ -25,10 +25,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        1328,
-        80
+        928,
+        336
       ],
-      "id": "dd51f666-d9f5-482c-8ede-e9ff5e701640"
+      "id": "79e4cd52-692b-4d52-935e-365d0ccf07a2"
     },
     {
       "parameters": {
@@ -38,10 +38,10 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        -432,
-        112
+        -1936,
+        384
       ],
-      "id": "fb32e5a4-8db3-49ab-96a5-d47c07053612"
+      "id": "acf92b39-354c-4907-b6b8-bea89e2864c0"
     },
     {
       "parameters": {
@@ -144,10 +144,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.3,
       "position": [
-        -160,
-        96
+        -1584,
+        352
       ],
-      "id": "3edbe0b4-1621-496f-b7e0-ba7f85519a56"
+      "id": "fc8d3769-b03f-43db-9ea2-290297f664cd"
     },
     {
       "parameters": {
@@ -164,10 +164,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        48,
-        -112
+        -1216,
+        -80
       ],
-      "id": "e06822ad-f0e1-411c-b24b-5668ba5cf21a"
+      "id": "2bb3880f-2bb2-4133-98e7-447ef0f0c3a6"
     },
     {
       "parameters": {
@@ -190,10 +190,10 @@
       "type": "n8n-nodes-base.facebookGraphApi",
       "typeVersion": 1,
       "position": [
-        272,
-        -16
+        -816,
+        64
       ],
-      "id": "2d013675-9d87-46f8-b53e-b874ebfab651",
+      "id": "a6032c63-b495-43d2-a127-a978aec24383",
       "disabled": true
     },
     {
@@ -221,10 +221,10 @@
       "type": "n8n-nodes-base.facebookGraphApi",
       "typeVersion": 1,
       "position": [
-        128,
-        192
+        -1104,
+        352
       ],
-      "id": "869941d1-7583-42ac-bfc1-885b3dcc4696",
+      "id": "525713d9-4d66-4bf6-aed0-b36333fdd1ba",
       "credentials": {
         "facebookGraphApi": {
           "id": "EfUlGSmnRRJ1xPnt",
@@ -254,10 +254,10 @@
       "type": "n8n-nodes-base.facebookGraphApi",
       "typeVersion": 1,
       "position": [
-        352,
-        192
+        -832,
+        352
       ],
-      "id": "1ed7b031-d91c-4f96-ba28-25f34250a5c5",
+      "id": "7c78dd28-9b5e-4e6b-8c99-bb64d10f21ef",
       "credentials": {
         "facebookGraphApi": {
           "id": "EfUlGSmnRRJ1xPnt",
@@ -275,10 +275,10 @@
       "type": "n8n-nodes-base.twitter",
       "typeVersion": 2,
       "position": [
-        128,
-        496
+        -800,
+        608
       ],
-      "id": "c8f11f0d-5383-474f-acf9-0c7cabe248d9",
+      "id": "4baa0043-cd3f-42d5-ae8f-a374cce4be82",
       "disabled": true
     },
     {
@@ -289,17 +289,23 @@
         "nodeCredentialType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"author\": \"urn:li:person:REPLACE_WITH_AUTHOR_ID\",\n  \"lifecycleState\": \"PUBLISHED\",\n  \"specificContent\": {\n    \"com.linkedin.ugc.ShareContent\": {\n      \"shareCommentary\": {\n        \"text\": ${$json.content_text || 'Hello LinkedIn'}\n      },\n      \"shareMediaCategory\": \"NONE\"\n    }\n  },\n  \"visibility\": {\n    \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\"\n  }\n}",
+        "jsonBody": "={{\n  JSON.stringify({\n    author: \"urn:li:person:REPLACE_WITH_YOUR_URN\",          // đổi nếu cần (person/org)\n    lifecycleState: \"PUBLISHED\",\n\n    specificContent: {\n      \"com.linkedin.ugc.ShareContent\": {\n        shareCommentary: {\n          text: $('Fanout Platforms').item.json.content_text\n        },\n\n        // so sánh có asset hay không để quyết định post ảnh hay text-only\n        shareMediaCategory: (\n          (\n            $json.asset ||                       // nếu asset đã được map ra item hiện tại\n            $('HTTP Request').item.json.value?.asset ||  // nếu asset nằm trong registerUpload response\n            $('HTTP Request').item.json.asset    // nếu asset được flatten ra\n          )\n          ? \"IMAGE\"\n          : \"NONE\"\n        ),\n\n        // nếu có asset -> media array; không có -> []\n        media: (\n          (\n            $json.asset ||\n            $('HTTP Request').item.json.value?.asset ||\n            $('HTTP Request').item.json.asset\n          )\n          ? [\n              {\n                status: \"READY\",\n                media:\n                  $json.asset ||\n                  $('HTTP Request').item.json.value?.asset ||\n                  $('HTTP Request').item.json.asset\n              }\n            ]\n          : []\n        )\n      }\n    },\n\n    visibility: {\n      \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\"\n    }\n  })\n}}\n",
         "options": {}
       },
       "name": "Post LinkedIn (placeholder)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        128,
-        704
+        -64,
+        848
       ],
-      "id": "7659950a-cd99-45d2-bce9-5e092f25667b"
+      "id": "9830a8c7-8581-4c52-8de9-6b1388b9ea45",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ITfOCG0N8WWOiIfF",
+          "name": "bearer-linkedin-cmiwy249i000152h9ryfc2tev-1765594445767"
+        }
+      }
     },
     {
       "parameters": {
@@ -309,10 +315,10 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        528,
-        -224
+        -432,
+        -320
       ],
-      "id": "bc2b8bcf-3809-4426-aee1-68440e727964"
+      "id": "d5025f72-ceda-4dcb-b268-f83ff972f13c"
     },
     {
       "parameters": {
@@ -322,10 +328,10 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        544,
-        -16
+        -416,
+        64
       ],
-      "id": "72239320-cfd8-4800-89b2-964caf6c5740"
+      "id": "37170abb-1810-4d6d-b612-dea45abf1992"
     },
     {
       "parameters": {
@@ -335,10 +341,10 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        576,
-        192
+        -496,
+        352
       ],
-      "id": "47cafe4d-dad3-47aa-8932-dc03c5a5feba"
+      "id": "cf23721e-a1a7-428b-bd60-2bb02c2653ad"
     },
     {
       "parameters": {
@@ -348,10 +354,10 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        368,
-        496
+        -464,
+        608
       ],
-      "id": "a4aed523-0f23-4c3b-9774-cfc14144900d",
+      "id": "db40df9b-d5a5-48f6-b7d9-71af651cbbe9",
       "disabled": true
     },
     {
@@ -362,10 +368,10 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        368,
-        704
+        160,
+        688
       ],
-      "id": "c7d41e93-45f5-4f8a-9925-0cee138093a8"
+      "id": "cb4c8b95-d583-4a6b-b647-d7dd9bb733c9"
     },
     {
       "parameters": {
@@ -375,10 +381,10 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        1040,
-        80
+        384,
+        336
       ],
-      "id": "e4c7e5c8-d8ce-4758-8624-a2df009678bb"
+      "id": "705af5b9-dbcd-437f-9830-9666653921dc"
     },
     {
       "parameters": {
@@ -405,11 +411,121 @@
       "type": "n8n-nodes-base.facebookGraphApi",
       "typeVersion": 1,
       "position": [
-        272,
-        -224
+        -816,
+        -320
       ],
-      "id": "fe2c53c1-6cb2-4286-9b64-75b7a642fa86",
+      "id": "422d9611-a403-43de-aacd-999ead118aa8",
       "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/assets?action=registerUpload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"registerUploadRequest\": {\n    \"owner\": \"urn:li:person:REPLACE_WITH_YOUR_URN\",\n    \"recipes\": [\"urn:li:digitalmediaRecipe:feedshare-image\"],\n    \"serviceRelationships\": [\n      {\n        \"relationshipType\": \"OWNER\",\n        \"identifier\": \"urn:li:userGeneratedContent\"\n      }\n    ]\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -960,
+        880
+      ],
+      "id": "045fcfe8-faaf-4fe6-b05d-99351363387e",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ITfOCG0N8WWOiIfF",
+          "name": "bearer-linkedin-cmiwy249i000152h9ryfc2tev-1765594445767"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $json.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "={{$binary.data.mimeType}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -496,
+        880
+      ],
+      "id": "fccb952b-24fe-4880-9eb1-16e677b675df",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('IF Linkedin Has Image').item.json.media[0] }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -720,
+        880
+      ],
+      "id": "d578638d-c2af-412f-ab6a-21cebe1bc785",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.hasImage}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "IF Linkedin Has Image",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1184,
+        1072
+      ],
+      "id": "e050aa8d-7c7b-42ac-a410-8dbbb21ba4a9"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = items[0].json;\nreturn [{\n  json: {\n    content_text: item.content_text,\n    asset: item.asset || null\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        1088
+      ],
+      "id": "2eef375c-4558-45bb-aa12-04f368cb999c",
+      "name": "Code in JavaScript"
     }
   ],
   "connections": {
@@ -460,7 +576,7 @@
         ],
         [
           {
-            "node": "Post LinkedIn (placeholder)",
+            "node": "IF Linkedin Has Image",
             "type": "main",
             "index": 0
           }
@@ -611,6 +727,68 @@
         [
           {
             "node": "Normalize Result FB Photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Linkedin Has Image": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Post LinkedIn (placeholder)",
             "type": "main",
             "index": 0
           }
