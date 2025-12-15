@@ -130,7 +130,7 @@ export default function ContentCreationForm() {
     if (!topic.trim()) {
       toast({
         title: "Thiếu chủ đề",
-        description: "Vui lòng nhập Chủ đề/Từ khóa trước khi tạo.",
+        description: "Vui lòng nhập prompt trước khi tạo.",
         variant: "destructive",
       });
       return;
@@ -553,31 +553,13 @@ export default function ContentCreationForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="topic">Chủ đề/Từ khóa *</Label>
+                <Label htmlFor="topic">Prompt *</Label>
                 <Input
                   id="topic"
                   placeholder="VD: AI trong marketing, xu hướng công nghệ 2024..."
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="target-audience">Đối tượng mục tiêu</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn đối tượng" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="business-owners">
-                      Chủ doanh nghiệp
-                    </SelectItem>
-                    <SelectItem value="marketers">Marketer</SelectItem>
-                    <SelectItem value="developers">Developer</SelectItem>
-                    <SelectItem value="students">Sinh viên</SelectItem>
-                    <SelectItem value="general">Đại chúng</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
 
               <div className="space-y-2">
