@@ -63,49 +63,49 @@ AI Marketing Engine là một nền tảng marketing tự động hoàn chỉnh,
 ## 🏗️ Project Structure
 
 \`\`\`
-├── app/                           # Next.js App Router
-│   ├── api/                       # API endpoints
-│   │   ├── auth/                  # Authentication routes
-│   │   │   ├── login/             # POST - Login
-│   │   │   ├── logout/            # POST - Logout
-│   │   │   ├── register/          # POST - Register
-│   │   │   ├── me/                # GET - Current user info
-│   │   │   └── linkedin/          # OAuth flow
-│   │   ├── contents/              # Published content management
-│   │   │   └── [id]/              # GET - Chi tiết published post
-│   │   ├── drafts/                # Draft management
-│   │   │   └── [id]/              # GET/PATCH - Chi tiết & update draft
-│   │   ├── posts/                 # POST - Publish content
-│   │   ├── schedule/              # Scheduler endpoints
-│   │   ├── social-accounts/       # Social account management
-│   │   ├── uploads/               # File upload to R2
-│   │   └── integrations/n8n/      # n8n workflow provisioning
-│   ├── login/                     # Login page
-│   ├── dashboard/                 # Main dashboard (with logout button)
-│   ├── content-creation/          # AI content creation tool
-│   ├── social-accounts/           # Social accounts management UI
-│   ├── archive/                   # Archive with Published/Draft tabs
-│   │   └── [id]/                  # Detail page (Published read-only, Draft edit)
-│   ├── brand-analysis/            # Brand analysis tool
-│   ├── cms/                       # Content management system
-│   ├── performance-management/    # Analytics & reporting
-│   └── ai-representative/         # AI Avatar creation
-├── components/                    # Reusable UI components
-│   ├── ui/                        # shadcn/ui components
-│   └── auth-provider.tsx          # Auth context provider
-├── lib/                           # Utilities & configurations
-│   ├── prisma.ts                  # Database client
-│   ├── linkedin.ts                # LinkedIn OAuth helpers
-│   ├── n8n.ts                     # n8n API integration
-│   ├── r2.ts                      # Cloudflare R2 storage
-│   └── utils.ts                   # Helper functions
-├── prisma/                        # Database schema & migrations
-│   ├── schema.prisma              # Database models
-│   └── seed.ts                    # Demo data seeding
-├── scheduler/                     # Background job worker
-│   └── index.ts                   # Cron job for scheduled posts
-├── middleware.ts                  # Route protection & auth check
-└── public/                        # Static assets
+├── app/ # Next.js App Router
+│ ├── api/ # API endpoints
+│ │ ├── auth/ # Authentication routes
+│ │ │ ├── login/ # POST - Login
+│ │ │ ├── logout/ # POST - Logout
+│ │ │ ├── register/ # POST - Register
+│ │ │ ├── me/ # GET - Current user info
+│ │ │ └── linkedin/ # OAuth flow
+│ │ ├── contents/ # Published content management
+│ │ │ └── [id]/ # GET - Chi tiết published post
+│ │ ├── drafts/ # Draft management
+│ │ │ └── [id]/ # GET/PATCH - Chi tiết & update draft
+│ │ ├── posts/ # POST - Publish content
+│ │ ├── schedule/ # Scheduler endpoints
+│ │ ├── social-accounts/ # Social account management
+│ │ ├── uploads/ # File upload to R2
+│ │ └── integrations/n8n/ # n8n workflow provisioning
+│ ├── login/ # Login page
+│ ├── dashboard/ # Main dashboard (with logout button)
+│ ├── content-creation/ # AI content creation tool
+│ ├── social-accounts/ # Social accounts management UI
+│ ├── archive/ # Archive with Published/Draft tabs
+│ │ └── [id]/ # Detail page (Published read-only, Draft edit)
+│ ├── brand-analysis/ # Brand analysis tool
+│ ├── cms/ # Content management system
+│ ├── performance-management/ # Analytics & reporting
+│ └── ai-representative/ # AI Avatar creation
+├── components/ # Reusable UI components
+│ ├── ui/ # shadcn/ui components
+│ └── auth-provider.tsx # Auth context provider
+├── lib/ # Utilities & configurations
+│ ├── prisma.ts # Database client
+│ ├── linkedin.ts # LinkedIn OAuth helpers
+│ ├── n8n.ts # n8n API integration
+│ ├── r2.ts # Cloudflare R2 storage
+│ └── utils.ts # Helper functions
+├── prisma/ # Database schema & migrations
+│ ├── schema.prisma # Database models
+│ └── seed.ts # Demo data seeding
+├── scheduler/ # Background job worker
+│ └── index.ts # Cron job for scheduled posts
+├── middleware.ts # Route protection & auth check
+└── public/ # Static assets
 \`\`\`
 
 ## 🚀 Quick Start
@@ -379,11 +379,13 @@ Nếu không cấu hình `R2_PUBLIC_BASE_URL`, mã sẽ fallback về dạng URL
 ### Cách hoạt động
 
 #### Upload thủ công
+
 - API `POST /api/uploads` nhận `formData(file)` và thực hiện `PutObject` lên R2.
 - Trả về JSON `{ success: true, url, key }` thay vì `{ path }` cũ.
 - Frontend tự động dùng `data.url` nếu có; fallback sang `data.path` cho tương thích ngược.
 
 #### Auto-transfer AI images
+
 - Khi AI tạo ảnh (DALL-E, Midjourney, etc.), URL trả về thường **tạm thời và expire** sau vài giờ/ngày.
 - Khi user bấm **"Lưu nháp"** hoặc **"Đăng bài"**:
   1. Frontend gọi `POST /api/media/transfer` với array URLs AI
