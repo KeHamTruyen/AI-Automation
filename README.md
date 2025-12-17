@@ -16,21 +16,21 @@ AI Marketing Engine là một nền tảng marketing tự động hoàn chỉnh,
 ### 🏠 **Core Pages**
 
 - **Home** (`/`) - Landing page với tổng quan tính năng
-- **Dashboard** (`/dashboard`) - Tổng quan hiệu suất và thống kê
-- **Login** (`/login`) - Xác thực người dùng với JWT
+- **Dashboard** (`/dashboard`) - Tổng quan hiệu suất, thống kê và điều hướng nhanh
+- **Login** (`/login`) - Xác thực người dùng với JWT (HTTP-only cookies)
 
 ### 🤖 **AI-Powered Tools**
 
 - **AI Representative** (`/ai-representative`) - Tạo AI Avatar, Voice AI, Video AI
-- **Content Creation** (`/content-creation`) - Tạo nội dung với AI
-- **Brand Analysis** (`/brand-analysis`) - Phân tích thương hiệu và đối thủ
+- **Content Creation** (`/content-creation`) - Tạo nội dung tự động với AI, lên lịch và đăng đa nền tảng
+- **Brand Analysis** (`/brand-analysis`) - Phân tích chân dung thương hiệu và đối thủ cạnh tranh
 
 ### 📊 **Management Features**
 
-- **Social Accounts** (`/social-accounts`) - Quản lý tài khoản mạng xã hội
-- **CMS** (`/cms`) - Quản lý nội dung
-- **Performance Management** (`/performance-management`) - Theo dõi hiệu suất
-- **Archive** (`/archive`) - Lưu trữ và quản lý dữ liệu
+- **Social Accounts** (`/social-accounts`) - Quản lý kết nối mạng xã hội (LinkedIn OAuth, Facebook/Instagram Token)
+- **CMS** (`/cms`) - Quản lý nội dung đa nền tảng
+- **Performance Management** (`/performance-management`) - Theo dõi hiệu suất và analytics
+- **Archive** (`/archive`) - Lưu trữ bài viết Published, Draft, và phân tích hiệu suất
 
 ## 🛠️ Tech Stack
 
@@ -63,25 +63,49 @@ AI Marketing Engine là một nền tảng marketing tự động hoàn chỉnh,
 ## 🏗️ Project Structure
 
 \`\`\`
-├── app/ # Next.js App Router
-│ ├── api/ # API endpoints
-│ │ ├── auth/ # Authentication routes
-│ │ ├── content/ # Content management
-│ │ └── social-accounts/ # Social media integration
-│ ├── login/ # Login page
-│ ├── dashboard/ # Main dashboard
-│ ├── ai-representative/ # AI tools
-│ └── [other-pages]/ # Feature pages
-├── components/ # Reusable UI components
-├── lib/ # Utilities và configurations
-│ ├── prisma.ts # Database client
-│ ├── api.ts # API client
-│ └── utils.ts # Helper functions
-├── prisma/ # Database schema và migrations
-│ ├── schema.prisma # Database models
-│ └── seed.ts # Demo data seeding
-├── middleware.ts # Route protection
-└── public/ # Static assets
+├── app/                           # Next.js App Router
+│   ├── api/                       # API endpoints
+│   │   ├── auth/                  # Authentication routes
+│   │   │   ├── login/             # POST - Login
+│   │   │   ├── logout/            # POST - Logout
+│   │   │   ├── register/          # POST - Register
+│   │   │   ├── me/                # GET - Current user info
+│   │   │   └── linkedin/          # OAuth flow
+│   │   ├── contents/              # Published content management
+│   │   │   └── [id]/              # GET - Chi tiết published post
+│   │   ├── drafts/                # Draft management
+│   │   │   └── [id]/              # GET/PATCH - Chi tiết & update draft
+│   │   ├── posts/                 # POST - Publish content
+│   │   ├── schedule/              # Scheduler endpoints
+│   │   ├── social-accounts/       # Social account management
+│   │   ├── uploads/               # File upload to R2
+│   │   └── integrations/n8n/      # n8n workflow provisioning
+│   ├── login/                     # Login page
+│   ├── dashboard/                 # Main dashboard (with logout button)
+│   ├── content-creation/          # AI content creation tool
+│   ├── social-accounts/           # Social accounts management UI
+│   ├── archive/                   # Archive with Published/Draft tabs
+│   │   └── [id]/                  # Detail page (Published read-only, Draft edit)
+│   ├── brand-analysis/            # Brand analysis tool
+│   ├── cms/                       # Content management system
+│   ├── performance-management/    # Analytics & reporting
+│   └── ai-representative/         # AI Avatar creation
+├── components/                    # Reusable UI components
+│   ├── ui/                        # shadcn/ui components
+│   └── auth-provider.tsx          # Auth context provider
+├── lib/                           # Utilities & configurations
+│   ├── prisma.ts                  # Database client
+│   ├── linkedin.ts                # LinkedIn OAuth helpers
+│   ├── n8n.ts                     # n8n API integration
+│   ├── r2.ts                      # Cloudflare R2 storage
+│   └── utils.ts                   # Helper functions
+├── prisma/                        # Database schema & migrations
+│   ├── schema.prisma              # Database models
+│   └── seed.ts                    # Demo data seeding
+├── scheduler/                     # Background job worker
+│   └── index.ts                   # Cron job for scheduled posts
+├── middleware.ts                  # Route protection & auth check
+└── public/                        # Static assets
 \`\`\`
 
 ## 🚀 Quick Start
@@ -201,17 +225,23 @@ Xem chi tiết trong [`DATABASE_SETUP.md`](./DATABASE_SETUP.md) để:
 
 ## 🔐 Authentication & Authorization
 
-- **JWT-based authentication** với HTTP-only cookies
-- **Role-based access control** (Admin/User)
-- **Protected routes** với middleware
-- **Automatic token refresh** và logout
+- **JWT-based authentication** với HTTP-only cookies cho bảo mật tối ưu
+- **Role-based access control** (Admin/User) với middleware protection
+- **Protected routes** tự động redirect nếu chưa đăng nhập
+- **Logout functionality** có sẵn trong Dashboard header
+- **Mock authentication** support (không cần database) với demo accounts
+- **LinkedIn OAuth 2.0** integration cho social account connection
+- **Facebook/Instagram Token** authentication (manual access token)
 
 ## 🤖 AI Integration Features
 
-- **Content Generation**: OpenAI GPT integration
-- **AI Avatar Creation**: Virtual brand representatives
-- **Voice AI**: Text-to-speech capabilities
-- **Smart Analytics**: AI-powered insights
+- **Content Generation**: OpenAI GPT integration cho tạo caption, hashtag, và nội dung marketing
+- **AI Image Generation**: DALL-E integration tạo ảnh tự động, auto-transfer sang R2 storage khi lưu
+- **AI Avatar Creation**: Virtual brand representatives với personality customization
+- **Voice AI**: Text-to-speech capabilities cho video content
+- **Smart Analytics**: AI-powered insights từ performance data
+- **Multi-platform optimization**: Tự động điều chỉnh nội dung theo từng nền tảng (LinkedIn, Facebook, Instagram)
+- **Persistent Storage**: AI-generated images được tự động download và lưu vĩnh viễn trên R2 (không bị expire)
 
 ## 📚 Additional Resources
 
@@ -225,9 +255,43 @@ Xem [`AI-Prompt-Usage-Guide.md`](./AI-Prompt-Usage-Guide.md) để học:
 
 ### **API Documentation**
 
-- Authentication endpoints: `/api/auth/*`
-- Content management: `/api/content/*`
-- Social accounts: `/api/social-accounts/*`
+#### **Authentication Endpoints**
+
+- `POST /api/auth/login` - Đăng nhập (JWT token + HTTP-only cookie)
+- `POST /api/auth/logout` - Đăng xuất (xóa auth cookie)
+- `POST /api/auth/register` - Đăng ký tài khoản mới
+- `GET /api/auth/me` - Lấy thông tin user hiện tại (từ JWT)
+- `GET /api/auth/linkedin` - Khởi tạo LinkedIn OAuth flow
+- `GET /api/auth/linkedin/callback` - Callback sau khi OAuth LinkedIn thành công
+
+#### **Content Management**
+
+- `GET /api/contents` - List nội dung (filter theo status: PUBLISHED/DRAFT)
+- `GET /api/contents/[id]` - Chi tiết 1 bài published
+- `GET /api/drafts` - List bản nháp
+- `GET /api/drafts/[id]` - Chi tiết 1 bản nháp
+- `PATCH /api/drafts/[id]` - Cập nhật bản nháp
+- `POST /api/posts` - Publish nội dung lên social platforms
+
+#### **Social Accounts**
+
+- `GET /api/social-accounts` - Danh sách social accounts của user
+- `POST /api/integrations/n8n/provision` - Kết nối social account + tạo n8n workflow
+- `DELETE /api/integrations/n8n/provision` - Xóa social account và workflow
+
+#### **Scheduler**
+
+- `GET /api/schedule` - List scheduled posts (filter theo date range, status)
+- `POST /api/schedule` - Tạo scheduled post mới
+- `POST /api/schedule/[id]/cancel` - Hủy scheduled post
+- `POST /api/schedule/[id]/run-now` - Chạy ngay (không chờ scheduledAt)
+
+#### **Media Upload**
+
+- `POST /api/uploads` - Upload file lên Cloudflare R2 (return public URL)
+- `POST /api/media/transfer` - Transfer AI-generated images từ external URLs sang R2 storage
+
+> **Note**: Khi AI tạo ảnh (DALL-E, etc.), URL trả về thường tạm thời và sẽ expire. Hệ thống tự động download và upload lên R2 khi user bấm "Lưu nháp" hoặc "Đăng bài" để đảm bảo ảnh được lưu trữ vĩnh viễn.
 
 ## 🗃 Database Models (Hiện trạng)
 
@@ -314,9 +378,20 @@ Nếu không cấu hình `R2_PUBLIC_BASE_URL`, mã sẽ fallback về dạng URL
 
 ### Cách hoạt động
 
+#### Upload thủ công
 - API `POST /api/uploads` nhận `formData(file)` và thực hiện `PutObject` lên R2.
 - Trả về JSON `{ success: true, url, key }` thay vì `{ path }` cũ.
 - Frontend tự động dùng `data.url` nếu có; fallback sang `data.path` cho tương thích ngược.
+
+#### Auto-transfer AI images
+- Khi AI tạo ảnh (DALL-E, Midjourney, etc.), URL trả về thường **tạm thời và expire** sau vài giờ/ngày.
+- Khi user bấm **"Lưu nháp"** hoặc **"Đăng bài"**:
+  1. Frontend gọi `POST /api/media/transfer` với array URLs AI
+  2. API download từng ảnh từ external URL
+  3. Upload lên R2 storage với filename unique
+  4. Trả về array URLs R2 vĩnh viễn
+  5. Lưu URLs R2 vào database (không phải URLs AI)
+- **Fallback**: Nếu transfer fail, giữ nguyên URL gốc (graceful degradation)
 
 ### Ưu tiên URL
 
@@ -339,6 +414,8 @@ Nếu không cấu hình `R2_PUBLIC_BASE_URL`, mã sẽ fallback về dạng URL
 - Thêm xác thực kích thước/tỷ lệ trước khi upload.
 - Chính sách dọn rác định kỳ (cron) cho media cũ không còn tham chiếu.
 - Tuỳ chọn tạo presigned URL thay vì public nếu cần giới hạn truy cập tạm thời (không cần thiết cho social posting).
+- Tối ưu: Batch transfer nhiều ảnh song song với Promise.all để tăng tốc.
+- CDN caching cho R2 URLs để giảm latency.
 
 > Nếu thấy log cảnh báo `[r2] Missing R2 env vars`, nghĩa là server chưa được cấu hình R2 và upload sẽ lỗi.
 

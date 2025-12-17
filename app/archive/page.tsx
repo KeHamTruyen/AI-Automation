@@ -376,7 +376,10 @@ export default function ArchivePage() {
                           </div>
                           <div className="min-w-0">
                             <h3 className="font-semibold line-clamp-1">{post.title}</h3>
-                            <div className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                              {post.content || "Không có nội dung"}
+                            </p>
+                            <div className="text-sm text-gray-600 mt-2">
                               Đã đăng: {new Date(post.publishedAt).toLocaleString("vi-VN")}
                             </div>
                             <div className="text-xs text-gray-500">
@@ -386,40 +389,14 @@ export default function ArchivePage() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2 flex-shrink-0">
-                          <Button size="sm" variant="outline" onClick={() => navigator.clipboard?.writeText(post.content)}>
-                            <Copy className="w-4 h-4 mr-2" />
-                            Copy
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            Xem
-                          </Button>
+                          <Link href={`/archive/${post.id}`}>
+                            <Button size="sm" variant="outline">
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              Xem
+                            </Button>
+                          </Link>
                         </div>
                       </div>
-
-                      {Array.isArray(post.media) && post.media.length > 0 && (
-                        <div className="mt-4">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-xs text-gray-500">Hình ảnh đính kèm</span>
-                            {post.media.length > 3 && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">+{post.media.length - 3}</span>
-                            )}
-                          </div>
-                          <div className="grid grid-cols-3 gap-2">
-                            {post.media.slice(0, 3).map((url, idx) => (
-                              <div key={idx} className="relative w-full aspect-square overflow-hidden rounded border bg-gray-50">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                  src={url}
-                                  alt={`media-${idx}`}
-                                  className="w-full h-full object-cover"
-                                  loading="lazy"
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -445,15 +422,14 @@ export default function ArchivePage() {
                         </div>
                         <div>
                           <h3 className="font-semibold line-clamp-1">{item.title}</h3>
-                          <div className="text-sm text-gray-600">{new Date(item.createdAt).toLocaleDateString("vi-VN")}</div>
+                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                            {item.content || "Không có nội dung"}
+                          </p>
+                          <div className="text-sm text-gray-600 mt-2">{new Date(item.createdAt).toLocaleDateString("vi-VN")}</div>
                           <div className="text-xs text-gray-500">Nền tảng: N/A • Hashtags: N/A</div>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Button size="sm" variant="outline" onClick={() => navigator.clipboard?.writeText(item.content)}>
-                          <Copy className="w-4 h-4 mr-2" />
-                          Copy
-                        </Button>
                         <Link href={`/archive/${item.id}`}>
                           <Button size="sm" variant="outline">
                             <Edit className="w-4 h-4 mr-2" />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -41,12 +42,23 @@ import {
   Play,
   Edit,
   Home,
+  LogOut,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("overview");
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -92,6 +104,9 @@ export default function DashboardPage() {
             </Button>
             <Button variant="ghost" size="sm">
               <Settings className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleLogout} title="Đăng xuất">
+              <LogOut className="w-5 h-5" />
             </Button>
             <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-medium">A</span>

@@ -96,6 +96,15 @@ export default function SocialAccountsPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [syncingAccounts, setSyncingAccounts] = useState<Set<string>>(new Set())
 
+  // Auto-set mode when platform changes
+  useEffect(() => {
+    if (provPlatform === 'linkedin') {
+      setProvMode('oauth')
+    } else if (provPlatform === 'facebook' || provPlatform === 'instagram') {
+      setProvMode('token')
+    }
+  }, [provPlatform])
+
   async function loadAccounts() {
     try {
       setLoading(true)
@@ -284,7 +293,11 @@ export default function SocialAccountsPage() {
             <div className="space-y-4 py-2">
               <div className="space-y-2">
                 <Label>Chế độ kết nối</Label>
-                <Select value={provMode} onValueChange={(v: string) => setProvMode(v as 'token' | 'byo' | 'oauth')}>
+                <Select 
+                  value={provMode} 
+                  onValueChange={(v: string) => setProvMode(v as 'token' | 'byo' | 'oauth')}
+                  disabled={provPlatform === 'linkedin' || provPlatform === 'facebook' || provPlatform === 'instagram'}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn chế độ" />
                   </SelectTrigger>
@@ -294,6 +307,13 @@ export default function SocialAccountsPage() {
                     <SelectItem value="oauth">OAuth (đề xuất)</SelectItem>
                   </SelectContent>
                 </Select>
+                {(provPlatform === 'linkedin' || provPlatform === 'facebook' || provPlatform === 'instagram') && (
+                  <p className="text-xs text-muted-foreground">
+                    {provPlatform === 'linkedin' 
+                      ? '✓ LinkedIn mặc định dùng OAuth' 
+                      : '✓ Facebook/Instagram mặc định dùng Access Token'}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Nền tảng</Label>
@@ -308,6 +328,11 @@ export default function SocialAccountsPage() {
                     <SelectItem value="linkedin">LinkedIn</SelectItem>
                   </SelectContent>
                 </Select>
+                {accounts.find(acc => acc.platform === provPlatform) && (
+                  <p className="text-xs text-orange-600">
+                    ⚠️ Đã có tài khoản {provPlatform}. Kết nối mới sẽ thay thế tài khoản cũ.
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="acc-name">Tên hiển thị</Label>
@@ -361,6 +386,25 @@ export default function SocialAccountsPage() {
                     setProvLoading(true)
                     setProvResult(null)
                     try {
+                      // Check if platform already exists and auto-delete old account
+                      const existingAccount = accounts.find(acc => acc.platform === provPlatform)
+                      if (existingAccount) {
+                        toast.info(`Đang thay thế tài khoản ${provPlatform} cũ...`)
+                        try {
+                          // Delete old account first
+                          const deleteRes = await fetch(`/api/integrations/n8n/provision?socialAccountId=${encodeURIComponent(existingAccount.id)}`, {
+                            method: "DELETE",
+                          })
+                          const deleteData = await deleteRes.json()
+                          if (!deleteRes.ok) {
+                            console.warn("Auto-delete old account failed:", deleteData?.error)
+                          }
+                        } catch (deleteError) {
+                          console.warn("Error deleting old account:", deleteError)
+                          // Continue anyway
+                        }
+                      }
+
                       const res = await fetch("/api/integrations/n8n/provision", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -404,11 +448,7 @@ export default function SocialAccountsPage() {
                   {provLoading ? "Đang kết nối..." : "Kết nối"}
                 </Button>
               </div>
-              {provResult?.webhookUrl && (
-                <div className="text-sm text-muted-foreground">
-                  Webhook riêng của tài khoản: <span className="break-all font-mono">{provResult.webhookUrl}</span>
-                </div>
-              )}
+              {/* Webhook URL hidden from users */}
               {provResult?.oauthNeeded && provResult?.connectUrl && (
                 <div className="text-sm text-muted-foreground">
                   Bước tiếp theo: mở credential trong n8n để kết nối OAuth →{" "}
@@ -572,11 +612,7 @@ export default function SocialAccountsPage() {
                     {/* Last Sync */}
                     <div className="text-xs text-muted-foreground space-y-1">
                       <div>Đồng bộ lần cuối: {formatDate(account.lastSync)}</div>
-                      {account.n8nWebhookUrl && (
-                        <div className="truncate">
-                          Webhook: <span title={account.n8nWebhookUrl} className="font-mono">{account.n8nWebhookUrl}</span>
-                        </div>
-                      )}
+                      {/* Webhook URL hidden from users */}
                     </div>
 
                     <Separator />
@@ -766,15 +802,6 @@ export default function SocialAccountsPage() {
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
-
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleTestAccount(account)}
-                          title="Test đăng bài qua webhook"
-                        >
-                          <Play className="h-4 w-4 text-green-600" />
-                        </Button>
                       </div>
                     </div>
                   </CardContent>

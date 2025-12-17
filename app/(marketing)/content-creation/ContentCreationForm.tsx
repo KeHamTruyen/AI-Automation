@@ -75,6 +75,7 @@ export default function ContentCreationForm() {
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   // Controlled inputs to send to n8n
   const [topic, setTopic] = useState("");
@@ -94,6 +95,22 @@ export default function ContentCreationForm() {
   const [scheduleTime, setScheduleTime] = useState("");
   const [scheduledPosts, setScheduledPosts] = useState<any[]>([]);
   const [isLoadingSchedule, setIsLoadingSchedule] = useState(false);
+
+  // Fetch user info to get role
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        if (data.success && data.data?.role) {
+          setUserRole(data.data.role.toLowerCase());
+        }
+      } catch (e) {
+        // Silent fail - role stays null
+      }
+    };
+    fetchUserRole();
+  }, []);
 
   useEffect(() => {
     const tomorrow = new Date();
@@ -149,7 +166,6 @@ export default function ContentCreationForm() {
     setGeneratedContent("");
     setApiResult(null);
     
-    // Debug: Log payload trước khi gửi
     const payload = {
       prompt: topic,
       tone: tone || "than thien",
@@ -159,7 +175,6 @@ export default function ContentCreationForm() {
       autoGenerateImage,
       imagePrompt,
     };
-    console.log("=== Sending to n8n ===", payload);
     
     try {
       const res = await fetch("/api/content/generate/proxy", {
@@ -170,7 +185,6 @@ export default function ContentCreationForm() {
 
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        console.error("Generate failed", data);
         toast({
           title: "Tạo nội dung thất bại",
           description:
@@ -184,35 +198,26 @@ export default function ContentCreationForm() {
 
       setApiResult(data);
 
-      // Debug: Log toàn bộ response để kiểm tra structure
-      console.log("=== n8n Response ===", JSON.stringify(data, null, 2));
-
       const text =
         data?.data?.content_text ||
         data?.content_text ||
         data?.draft ||
         JSON.stringify(data);
       setGeneratedContent(text || "");
-      // Cập nhật preview media nếu workflow trả về
+      
       const media =
         (Array.isArray(data?.data?.media) ? data.data.media : null) ||
         (Array.isArray(data?.media) ? data.media : null);
       
-      console.log("=== Extracted media ===", media);
-      
       if (media && media.length) {
         const validUrls = media.filter((u: any) => typeof u === "string");
-        console.log("=== Setting mediaUrls ===", validUrls);
         setMediaUrls(validUrls);
-      } else {
-        console.warn("No media found in response");
       }
       toast({
         title: "Đã tạo nội dung",
         description: "Nội dung đã sẵn sàng ở khung bên phải.",
       });
     } catch (e: any) {
-      console.error(e);
       toast({
         title: "Lỗi kết nối",
         description: "Không gọi được API proxy.",
@@ -233,6 +238,28 @@ export default function ContentCreationForm() {
       return;
     }
     try {
+      // Transfer AI-generated images to R2 first
+      let finalMediaUrls = mediaUrls;
+      if (mediaUrls.length > 0) {
+        toast({
+          title: "Đang lưu ảnh...",
+          description: "Đang upload ảnh lên storage...",
+        });
+        
+        const transferResponse = await fetch("/api/media/transfer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ urls: mediaUrls }),
+        });
+        
+        if (transferResponse.ok) {
+          const transferData = await transferResponse.json();
+          if (transferData.success && transferData.urls) {
+            finalMediaUrls = transferData.urls;
+          }
+        }
+      }
+
       const title =
         generatedContent.split(/\n+/)[0]?.slice(0, 80) || "Bản nháp";
       const res = await fetch("/api/drafts", {
@@ -242,7 +269,7 @@ export default function ContentCreationForm() {
           title,
           content_text: generatedContent,
           hashtags: hashtags,
-          media: mediaUrls,
+          media: finalMediaUrls,
           platforms,
         }),
       });
@@ -305,6 +332,34 @@ export default function ContentCreationForm() {
       });
       return;
     }
+    
+    // Transfer AI-generated images to R2 first
+    let finalMediaUrls = mediaUrls;
+    if (mediaUrls.length > 0) {
+      try {
+        toast({
+          title: "Đang lưu ảnh...",
+          description: "Đang upload ảnh lên storage...",
+        });
+        
+        const transferResponse = await fetch("/api/media/transfer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ urls: mediaUrls }),
+        });
+        
+        if (transferResponse.ok) {
+          const transferData = await transferResponse.json();
+          if (transferData.success && transferData.urls) {
+            finalMediaUrls = transferData.urls;
+          }
+        }
+      } catch (error) {
+        console.error("Media transfer error:", error);
+        // Continue with original URLs if transfer fails
+      }
+    }
+    
     // Attempt to get per-user webhook URL first to avoid server-side 400
     let resolvedWebhook: string | null = null;
     try {
@@ -343,7 +398,7 @@ export default function ContentCreationForm() {
         body: JSON.stringify({
           content_text: generatedContent,
           hashtags,
-          media: mediaUrls,
+          media: finalMediaUrls,  // Use R2 URLs instead of AI URLs
           platforms,
           // AI image generation flags
           autoGenerateImage,
@@ -790,13 +845,6 @@ export default function ContentCreationForm() {
                     >
                       <Copy className="w-4 h-4" />
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setShowDebug((s) => !s)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
                   </div>
                 )}
               </CardTitle>
@@ -826,15 +874,6 @@ export default function ContentCreationForm() {
                     />
                   </div>
 
-                  {/* Raw JSON (debug) */}
-                  {showDebug && (
-                    <div className="bg-white border rounded-lg p-3">
-                      <pre className="text-xs overflow-auto max-h-60">
-                        {JSON.stringify(apiResult, null, 2)}
-                      </pre>
-                    </div>
-                  )}
-
                   {/* Removed analytics preview (Engagement/Brand/Words) per request */}
 
                   {/* Preview images from AI generation */}
@@ -851,7 +890,6 @@ export default function ContentCreationForm() {
                               alt={`preview-${i}`}
                               className="w-full h-32 object-cover rounded border-2 border-gray-200"
                               onError={(e) => {
-                                console.error('Image load error:', u);
                                 e.currentTarget.src = '/placeholder.jpg';
                               }}
                             />
@@ -892,13 +930,15 @@ export default function ContentCreationForm() {
                         </>
                       )}
                     </Button>
-                    <Button
-                      variant="outline"
-                      className="flex-1 bg-transparent"
-                      onClick={handleTestWorkflow}
-                    >
-                      Ping workflow
-                    </Button>
+                    {userRole === 'admin' && (
+                      <Button
+                        variant="outline"
+                        className="flex-1 bg-transparent"
+                        onClick={handleTestWorkflow}
+                      >
+                        Ping workflow
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       className="flex-1 bg-transparent"
@@ -909,22 +949,7 @@ export default function ContentCreationForm() {
                     </Button>
                   </div>
                   {/* Media previews moved above buttons */}
-                  {(lastExecId || lastTargetUrl) && (
-                    <div className="mt-3 text-xs text-gray-600 space-y-1">
-                      {lastExecId && (
-                        <div>
-                          <span className="font-semibold">Execution ID:</span>{" "}
-                          {lastExecId}
-                        </div>
-                      )}
-                      {lastTargetUrl && (
-                        <div className="break-all">
-                          <span className="font-semibold">Webhook URL:</span>{" "}
-                          {lastTargetUrl}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {/* Debug info hidden from users */}
 
                   {publishResults.length > 0 && (
                     <div className="bg-white border rounded-lg p-3 space-y-2">

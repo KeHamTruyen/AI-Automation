@@ -78,7 +78,7 @@ export default function ContentCreationPage() {
 
   const handleGenerateContent = async () => {
     if (!topic.trim()) {
-      toast({ title: "Thiếu chủ đề", description: "Vui lòng nhập Chủ đề/Từ khóa trước khi tạo.", variant: "destructive" })
+      toast({ title: "Thiếu chủ đề", description: "Vui lòng nhập prompt trước khi tạo.", variant: "destructive" })
       return
     }
 
@@ -457,7 +457,7 @@ export default function ContentCreationPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="topic">Chủ đề/Từ khóa *</Label>
+                        <Label htmlFor="topic">prompt *</Label>
                         <Input
                           id="topic"
                           placeholder="VD: AI trong marketing, xu hướng công nghệ 2024..."
