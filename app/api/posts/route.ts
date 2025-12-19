@@ -33,15 +33,23 @@ export async function POST(req: NextRequest) {
     // Resolve userId from either cookie (browser) or body/header (internal calls)
     let resolvedUserId: string | undefined
     try {
-      if (internalAuth) {
-        // Prefer explicit userId from payload or header in internal calls
-        resolvedUserId = (payload as any)?.userId || req.headers.get('x-user-id') || undefined
+      // First try payload userId (for both UI and internal calls)
+      if ((payload as any)?.userId) {
+        resolvedUserId = (payload as any).userId
+        console.log('[api/posts] userId from payload:', resolvedUserId)
       }
+      // Then try header (for internal calls)
+      if (!resolvedUserId && internalAuth) {
+        resolvedUserId = req.headers.get('x-user-id') || undefined
+        console.log('[api/posts] userId from header:', resolvedUserId)
+      }
+      // Finally try JWT cookie (for browser calls)
       if (!resolvedUserId) {
         const authCookie = req.cookies.get("auth-token")?.value
         if (authCookie) {
           const { payload: tokenPayload } = await jwtVerify(authCookie, JWT_SECRET)
           resolvedUserId = (tokenPayload as any)?.userId as string | undefined
+          console.log('[api/posts] userId from JWT:', resolvedUserId)
         }
       }
     } catch (e) {

@@ -60,6 +60,7 @@ async function processDueJobs() {
       });
 
       const payload = {
+        userId: job.userId,  // CRITICAL: Send userId so /api/posts can lookup webhook
         content_text: job.contentText,
         hashtags: job.hashtags,
         media: job.media,
@@ -73,35 +74,51 @@ async function processDueJobs() {
       const target = process.env.SCHEDULER_PUBLISH_ENDPOINT || 'http://localhost:3000/api/posts';
       const res = await fetch(target, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Scheduled-Id': job.id },
+        headers: { 
+          'Content-Type': 'application/json', 
+          'X-Scheduled-Id': job.id,
+          'X-User-Id': job.userId,  // Also send in header
+          'X-Internal-API-Key': process.env.INTERNAL_API_KEY || ''  // Authenticate as internal service
+        },
         body: JSON.stringify(payload)
       });
       const body = await res.json().catch(() => ({}));
+      
+      // Special handling: if error is "No webhook URL", mark as skipped (don't retry)
+      const noWebhookError = body?.error?.includes('No per-user webhook') || body?.error?.includes('provision');
       const success = res.ok && body?.success !== false;
+      const shouldSkip = !success && res.status === 400 && noWebhookError;
 
       await prisma.scheduledPostAttempt.update({
         where: { id: attemptRecord.id },
         data: {
-          success,
+          success: shouldSkip ? true : success, // Treat skip as "success" to avoid retry
           finishedAt: new Date(),
-          errorMessage: success ? null : body?.error || `HTTP ${res.status}`,
+          errorMessage: shouldSkip 
+            ? 'SKIPPED: No webhook URL (user needs to provision social account)' 
+            : (success ? null : body?.error || `HTTP ${res.status}`),
           executionId: res.headers.get('x-n8n-exec-id') || undefined,
           platformResults: body?.results ? body.results : undefined
         }
       });
 
-      if (success) {
+      if (success || shouldSkip) {
         await prisma.scheduledPost.update({
           where: { id: job.id },
           data: {
             status: S.SUCCESS,
-            externalResults: body?.results || body?.externalPostId ? [{
-              platform: job.platforms[0],
-              success: true,
-              externalPostId: body.externalPostId || body.results?.[0]?.externalPostId || null
-            }] : undefined
+            externalResults: shouldSkip 
+              ? [{ platform: job.platforms[0], success: false, error: 'No webhook - user needs social account' }]
+              : (body?.results || body?.externalPostId ? [{
+                  platform: job.platforms[0],
+                  success: true,
+                  externalPostId: body.externalPostId || body.results?.[0]?.externalPostId || null
+                }] : undefined)
           }
         });
+        if (shouldSkip) {
+          console.log('[scheduler] job skipped (no webhook)', job.id);
+        }
       } else {
         const newAttemptCount = attemptNo;
         if (newAttemptCount < MAX_ATTEMPTS) {
@@ -152,6 +169,7 @@ async function processDuePublications() {
       if (locked.count === 0) continue;
       const attemptNo = pub.attemptCount + 1;
       const payload = {
+        userId: pub.content.userId,  // CRITICAL: Send userId
         content_text: pub.captionOverride || pub.content.content,
         hashtags: pub.content.hashtags,
         media: pub.mediaOverride.length ? pub.mediaOverride : [],
@@ -163,7 +181,12 @@ async function processDuePublications() {
       const target = process.env.SCHEDULER_PUBLISH_ENDPOINT || 'http://localhost:3000/api/posts';
       const res = await fetch(target, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Publication-Id': pub.id },
+        headers: { 
+          'Content-Type': 'application/json', 
+          'X-Publication-Id': pub.id,
+          'X-User-Id': pub.content.userId,
+          'X-Internal-API-Key': process.env.INTERNAL_API_KEY || ''
+        },
         body: JSON.stringify(payload)
       });
       const body = await res.json().catch(() => ({}));

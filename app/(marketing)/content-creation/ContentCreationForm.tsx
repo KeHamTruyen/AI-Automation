@@ -129,10 +129,12 @@ export default function ContentCreationForm() {
     setIsLoadingSchedule(true);
     try {
       // userId is now extracted from JWT cookie on the server
-      const res = await fetch("/api/schedule?status=PENDING");
+      // Fetch all statuses (not just PENDING) to show full history
+      const res = await fetch("/api/schedule");
       const data = await res.json();
       if (data.success && Array.isArray(data.jobs)) {
         setScheduledPosts(data.jobs);
+        console.log('[fetchScheduledPosts] Loaded', data.jobs.length, 'jobs');
       } else {
         console.error("Invalid response format:", data);
       }
@@ -1080,6 +1082,36 @@ export default function ContentCreationForm() {
                                 }
 
                                 try {
+                                  // Transfer AI-generated images to R2 first
+                                  let finalMediaUrls = mediaUrls;
+                                  if (mediaUrls.length > 0) {
+                                    try {
+                                      toast({
+                                        title: "Đang lưu ảnh...",
+                                        description: "Đang upload ảnh lên storage...",
+                                      });
+                                      
+                                      const transferResponse = await fetch("/api/media/transfer", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ urls: mediaUrls }),
+                                      });
+                                      
+                                      if (transferResponse.ok) {
+                                        const transferData = await transferResponse.json();
+                                        if (transferData.success && transferData.urls) {
+                                          finalMediaUrls = transferData.urls;
+                                          console.log('[Schedule] Transferred to R2:', transferData.urls);
+                                        }
+                                      } else {
+                                        console.error('[Schedule] Transfer failed:', await transferResponse.text());
+                                      }
+                                    } catch (error) {
+                                      console.error("[Schedule] Media transfer error:", error);
+                                      // Continue with original URLs if transfer fails
+                                    }
+                                  }
+
                                   // Combine date + time to ISO string
                                   const scheduledAt = new Date(
                                     `${scheduleDate}T${scheduleTime}:00`
@@ -1091,7 +1123,7 @@ export default function ContentCreationForm() {
                                     body: JSON.stringify({
                                       content_text: generatedContent,
                                       hashtags: apiResult?.data?.hashtags || [],
-                                      media: mediaUrls,
+                                      media: finalMediaUrls,
                                       platforms,
                                       scheduled_at: scheduledAt,
                                       timezone: "Asia/Ho_Chi_Minh",
@@ -1279,11 +1311,24 @@ export default function ContentCreationForm() {
                         const preview =
                           post.contentText?.slice(0, 50) +
                           (post.contentText?.length > 50 ? "..." : "");
+                        
+                        // Status badge config
+                        const statusConfig: any = {
+                          PENDING: { label: 'Chờ đăng', color: 'bg-yellow-100 text-yellow-700' },
+                          PROCESSING: { label: 'Đang đăng', color: 'bg-blue-100 text-blue-700' },
+                          SUCCESS: { label: 'Đã đăng', color: 'bg-green-100 text-green-700' },
+                          ERROR: { label: 'Lỗi', color: 'bg-red-100 text-red-700' },
+                          CANCELLED: { label: 'Đã hủy', color: 'bg-gray-100 text-gray-700' },
+                        };
+                        const statusInfo = statusConfig[post.status] || statusConfig.PENDING;
 
                         return (
                           <div
                             key={post.id}
-                            className="flex items-center justify-between p-3 bg-blue-50 rounded-lg"
+                            className={`flex items-center justify-between p-3 rounded-lg ${
+                              post.status === 'ERROR' ? 'bg-red-50' : 
+                              post.status === 'SUCCESS' ? 'bg-green-50' : 'bg-blue-50'
+                            }`}
                           >
                             <div className="flex items-center space-x-3">
                               <div
@@ -1298,18 +1343,16 @@ export default function ContentCreationForm() {
                                   {preview || "Không có tiêu đề"}
                                 </div>
                                 <div className="text-xs text-gray-600">
-                                  {time} - Đã lên lịch
+                                  {time} - {post.status === 'SUCCESS' ? 'Đã đăng' : post.status === 'ERROR' ? 'Đăng thất bại' : 'Đã lên lịch'}
                                 </div>
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
                               <Badge
                                 variant="outline"
-                                className="bg-blue-100 text-blue-700"
+                                className={statusInfo.color}
                               >
-                                {post.status === "PENDING"
-                                  ? "Chờ đăng"
-                                  : post.status}
+                                {statusInfo.label}
                               </Badge>
                               <Button size="sm" variant="ghost">
                                 <Edit className="w-4 h-4" />
