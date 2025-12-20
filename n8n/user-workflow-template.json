@@ -289,23 +289,18 @@
         "nodeCredentialType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{\n  JSON.stringify({\n    author: \"urn:li:person:REPLACE_WITH_YOUR_URN\",          // đổi nếu cần (person/org)\n    lifecycleState: \"PUBLISHED\",\n\n    specificContent: {\n      \"com.linkedin.ugc.ShareContent\": {\n        shareCommentary: {\n          text: $('Fanout Platforms').item.json.content_text\n        },\n\n        // so sánh có asset hay không để quyết định post ảnh hay text-only\n        shareMediaCategory: (\n          (\n            $json.asset ||                       // nếu asset đã được map ra item hiện tại\n            $('HTTP Request').item.json.value?.asset ||  // nếu asset nằm trong registerUpload response\n            $('HTTP Request').item.json.asset    // nếu asset được flatten ra\n          )\n          ? \"IMAGE\"\n          : \"NONE\"\n        ),\n\n        // nếu có asset -> media array; không có -> []\n        media: (\n          (\n            $json.asset ||\n            $('HTTP Request').item.json.value?.asset ||\n            $('HTTP Request').item.json.asset\n          )\n          ? [\n              {\n                status: \"READY\",\n                media:\n                  $json.asset ||\n                  $('HTTP Request').item.json.value?.asset ||\n                  $('HTTP Request').item.json.asset\n              }\n            ]\n          : []\n        )\n      }\n    },\n\n    visibility: {\n      \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\"\n    }\n  })\n}}\n",
+        "jsonBody": "={{\n  JSON.stringify({\n    author: \"urn:li:person:REPLACE_WITH_YOUR_URN\",          // đổi nếu cần (person/org)\n    lifecycleState: \"PUBLISHED\",\n\n    specificContent: {\n      \"com.linkedin.ugc.ShareContent\": {\n        shareCommentary: {\n          text: $('Fanout Platforms').item.json.content_text\n        },\n\n        // so sánh có asset hay không để quyết định post ảnh hay text-only\n        shareMediaCategory: (\n          (\n            $json.asset                      // nếu asset đã được map ra item hiện tại\n          )\n          ? \"IMAGE\"\n          : \"NONE\"\n        ),\n\n        // nếu có asset -> media array; không có -> []\n        media: (\n          (\n            $json.asset ||\n            $('HTTP Request').item.json.value?.asset ||\n            $('HTTP Request').item.json.asset\n          )\n          ? [\n              {\n                status: \"READY\",\n                media:\n                  $json.asset ||\n                  $('HTTP Request').item.json.value?.asset ||\n                  $('HTTP Request').item.json.asset\n              }\n            ]\n          : []\n        )\n      }\n    },\n\n    visibility: {\n      \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\"\n    }\n  })\n}}\n",
         "options": {}
       },
       "name": "Post LinkedIn (placeholder)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        -64,
-        848
+        -32,
+        1088
       ],
       "id": "9830a8c7-8581-4c52-8de9-6b1388b9ea45",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "ITfOCG0N8WWOiIfF",
-          "name": "bearer-linkedin-cmiwy249i000152h9ryfc2tev-1765594445767"
-        }
-      }
+      "credentials": {}
     },
     {
       "parameters": {
@@ -436,12 +431,7 @@
       ],
       "id": "045fcfe8-faaf-4fe6-b05d-99351363387e",
       "name": "HTTP Request",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "ITfOCG0N8WWOiIfF",
-          "name": "bearer-linkedin-cmiwy249i000152h9ryfc2tev-1765594445767"
-        }
-      }
+      "credentials": {}
     },
     {
       "parameters": {
@@ -516,13 +506,13 @@
     },
     {
       "parameters": {
-        "jsCode": "const item = items[0].json;\nreturn [{\n  json: {\n    content_text: item.content_text,\n    asset: item.asset || null\n  }\n}];\n"
+        "jsCode": "const item = items[0].json;\nreturn [{\n  json: {\n    content_text: item.content_text,\n    asset:                  $('HTTP Request').item.json.value?.asset ||\n                  $('HTTP Request').item.json.asset||item.asset || null\n  }\n}];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -288,
-        1088
+        -272,
+        880
       ],
       "id": "2eef375c-4558-45bb-aa12-04f368cb999c",
       "name": "Code in JavaScript"
@@ -777,7 +767,7 @@
         ],
         [
           {
-            "node": "Code in JavaScript",
+            "node": "Post LinkedIn (placeholder)",
             "type": "main",
             "index": 0
           }

@@ -52,6 +52,7 @@ import {
   Target,
   TrendingUp,
   X,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
@@ -1321,6 +1322,7 @@ export default function ContentCreationForm() {
                           CANCELLED: { label: 'Đã hủy', color: 'bg-gray-100 text-gray-700' },
                         };
                         const statusInfo = statusConfig[post.status] || statusConfig.PENDING;
+                        const canEdit = ['PENDING', 'ERROR'].includes(post.status);
 
                         return (
                           <div
@@ -1354,9 +1356,60 @@ export default function ContentCreationForm() {
                               >
                                 {statusInfo.label}
                               </Badge>
-                              <Button size="sm" variant="ghost">
-                                <Edit className="w-4 h-4" />
-                              </Button>
+                              {canEdit && (
+                                <>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    onClick={async () => {
+                                      const newTime = prompt('Nhập thời gian mới (YYYY-MM-DD HH:MM)', 
+                                        new Date(post.scheduledAt).toISOString().slice(0, 16).replace('T', ' '));
+                                      if (!newTime) return;
+                                      
+                                      try {
+                                        const scheduled_at = new Date(newTime.replace(' ', 'T')).toISOString();
+                                        const res = await fetch(`/api/schedule/${post.id}`, {
+                                          method: 'PATCH',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ scheduled_at })
+                                        });
+                                        const data = await res.json();
+                                        if (data.success) {
+                                          toast({ title: 'Đã cập nhật thời gian!' });
+                                          fetchScheduledPosts();
+                                        } else {
+                                          toast({ title: 'Lỗi', description: data.error, variant: 'destructive' });
+                                        }
+                                      } catch (error) {
+                                        toast({ title: 'Lỗi kết nối', variant: 'destructive' });
+                                      }
+                                    }}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    onClick={async () => {
+                                      if (!confirm('Xóa bài đã lên lịch này?')) return;
+                                      try {
+                                        const res = await fetch(`/api/schedule/${post.id}`, { method: 'DELETE' });
+                                        const data = await res.json();
+                                        if (data.success) {
+                                          toast({ title: 'Đã xóa!' });
+                                          fetchScheduledPosts();
+                                        } else {
+                                          toast({ title: 'Lỗi', description: data.error, variant: 'destructive' });
+                                        }
+                                      } catch (error) {
+                                        toast({ title: 'Lỗi kết nối', variant: 'destructive' });
+                                      }
+                                    }}
+                                  >
+                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                  </Button>
+                                </>
+                              )}
                             </div>
                           </div>
                         );
@@ -1402,132 +1455,6 @@ export default function ContentCreationForm() {
                     })()}
                   </div>
                 )}
-
-                  {/* Tomorrow's Scheduled Posts */}
-                  <div>
-                    <h4 className="font-medium mb-3 flex items-center">
-                      <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                      Ngày mai - 16/01/2024
-                    </h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs">f</span>
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium">
-                              Marketing tips for SME
-                            </div>
-                            <div className="text-xs text-gray-600">
-                              9:00 AM - Đã lên lịch
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge
-                            variant="outline"
-                            className="bg-green-100 text-green-700"
-                          >
-                            Chờ đăng
-                          </Badge>
-                          <Button size="sm" variant="ghost">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs">YT</span>
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium">
-                              Product demo video
-                            </div>
-                            <div className="text-xs text-gray-600">
-                              3:00 PM - Đã lên lịch
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge
-                            variant="outline"
-                            className="bg-orange-100 text-orange-700"
-                          >
-                            Chờ đăng
-                          </Badge>
-                          <Button size="sm" variant="ghost">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* This Week's Scheduled Posts */}
-                  <div>
-                    <h4 className="font-medium mb-3 flex items-center">
-                      <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                      Tuần này
-                    </h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs">X</span>
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium">
-                              Industry insights thread
-                            </div>
-                            <div className="text-xs text-gray-600">
-                              18/01 - 10:00 AM - Đã lên lịch
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge
-                            variant="outline"
-                            className="bg-yellow-100 text-yellow-700"
-                          >
-                            Chờ đăng
-                          </Badge>
-                          <Button size="sm" variant="ghost">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-pink-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs">TT</span>
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium">
-                              Trending challenge video
-                            </div>
-                            <div className="text-xs text-gray-600">
-                              19/01 - 7:00 PM - Đã lên lịch
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge
-                            variant="outline"
-                            className="bg-pink-100 text-pink-700"
-                          >
-                            Chờ đăng
-                          </Badge>
-                          <Button size="sm" variant="ghost">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
               </CardContent>
             </Card>
           </div>
