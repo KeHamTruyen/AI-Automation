@@ -17,6 +17,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -138,6 +139,16 @@ export default function LoginPage() {
                 "Đăng nhập"
               )}
             </Button>
+
+            <div className="text-center text-sm text-gray-600">
+              Chưa có tài khoản?{" "}
+              <Link
+                href="/register"
+                className="text-blue-600 hover:underline font-medium"
+              >
+                Đăng ký ngay
+              </Link>
+            </div>
           </form>
 
           <div className="mt-6 p-4 bg-slate-50 rounded-lg">
