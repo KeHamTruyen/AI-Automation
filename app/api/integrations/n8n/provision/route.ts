@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { jwtVerify } from "jose"
 import { prisma } from "@/lib/prisma"
-import { createHttpHeaderBearerCredential, createBasicAuthCredential, createTwitterOAuth2Credential, createFacebookGraphApiCredential, cloneWorkflowFromTemplate, addPlatformAccountNode, updateExistingNodeCredential, createFacebookTokenCredential, createWorkflowFromTemplateWithAccounts, deleteWorkflow } from "@/lib/n8n"
+import { createHttpHeaderBearerCredential, createBasicAuthCredential, createTwitterOAuth2Credential, createFacebookGraphApiCredential, cloneWorkflowFromTemplate, addPlatformAccountNode, updateExistingNodeCredential, createFacebookTokenCredential, createWorkflowFromTemplateWithAccounts, deleteWorkflow, setPlatformNodesActive } from "@/lib/n8n"
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key")
 
@@ -95,6 +95,18 @@ export async function POST(request: NextRequest) {
     let userWebhookUrl = user.n8nWebhookUrl
     let newlyCreatedUserWorkflow = false
 
+    // ALWAYS recreate workflow from latest template to sync changes
+    // Get all existing accounts to preserve them in new workflow
+    const allAccounts = await prisma.socialAccount.findMany({ 
+      where: { 
+        userId,
+        n8nCredentialId: { not: null },
+        n8nCredentialName: { not: null }
+      } 
+    })
+    
+    const shouldRecreate = allAccounts.length > 0 || userWorkflowId
+    
     if (!userWorkflowId) {
       // Clone 1 workflow master cho user (platform generic 'base')
       const baseClone = await cloneWorkflowFromTemplate({
@@ -107,6 +119,55 @@ export async function POST(request: NextRequest) {
       userWebhookUrl = baseClone.webhookUrl || null
       newlyCreatedUserWorkflow = true
       await prisma.user.update({ where: { id: userId }, data: { n8nWorkflowId: userWorkflowId, n8nWorkflowName: userWorkflowName, n8nWebhookUrl: userWebhookUrl } })
+    } else if (shouldRecreate) {
+      // Recreate workflow from latest template with all accounts
+      console.log('[n8n provision] Recreating workflow from latest template')
+      
+      const accountsForWorkflow = allAccounts.map(acc => ({
+        platform: acc.platform,
+        accountDisplayName: acc.name,
+        credentialId: acc.n8nCredentialId!,
+        credentialName: acc.n8nCredentialName!,
+        credentialType: acc.platform === 'twitter' ? 'twitterOAuth2Api' : 'facebookGraphApi',
+        nodeId: ((acc as any).metadata as any)?.igUserId
+      }))
+      
+      console.log(`[n8n provision] Recreating with ${accountsForWorkflow.length} existing platforms`)
+      
+      const { workflow, webhookUrl } = await createWorkflowFromTemplateWithAccounts({
+        templateId,
+        userId,
+        accounts: accountsForWorkflow,
+      })
+      
+      const oldId = userWorkflowId
+      userWorkflowId = workflow.id
+      userWorkflowName = workflow.name
+      userWebhookUrl = webhookUrl || null
+      newlyCreatedUserWorkflow = true // Mark as recreated to skip node update later
+      
+      await prisma.user.update({ 
+        where: { id: userId }, 
+        data: { 
+          n8nWorkflowId: userWorkflowId, 
+          n8nWorkflowName: userWorkflowName, 
+          n8nWebhookUrl: userWebhookUrl 
+        } 
+      })
+      
+      // Update all social accounts with new workflow
+      await prisma.socialAccount.updateMany({
+        where: { userId },
+        data: { n8nWorkflowId: userWorkflowId, n8nWebhookUrl: userWebhookUrl } as any
+      })
+      
+      // Delete old workflow
+      if (oldId && oldId !== userWorkflowId) {
+        try { 
+          await deleteWorkflow(oldId)
+          console.log(`[n8n provision] Deleted old workflow ${oldId}`)
+        } catch {}
+      }
     }
 
     // 3) Tạo n8n Credential theo mode
@@ -146,7 +207,26 @@ export async function POST(request: NextRequest) {
     let updatedWorkflowName = userWorkflowName!
     let updatedWebhookUrl = userWebhookUrl || null
     let nodeUpdated = false
-    if (platform === 'facebook') {
+    
+    // Nếu vừa recreate workflow, cần update credential cho platform hiện tại
+    if (newlyCreatedUserWorkflow && !useOAuth) {
+      console.log(`[n8n provision] Updating credentials for ${platform} in recreated workflow`)
+      try {
+        const res = await updateExistingNodeCredential({
+          workflowId: updatedWorkflowId,
+          platform,
+          credentialId: credential.id,
+          credentialName: credential.name,
+          credentialType,
+          nodeNameHint: platform,
+        })
+        nodeUpdated = res.updated
+        console.log(`[n8n provision] Credential updated for ${platform}: ${nodeUpdated}`)
+      } catch (e: any) {
+        console.warn(`Không thể cập nhật credential cho ${platform}:`, e?.message)
+      }
+    } else if (platform === 'facebook' && !newlyCreatedUserWorkflow) {
+      // Logic cũ: chỉ update nếu chưa recreate
       try {
         const res = await updateExistingNodeCredential({
           workflowId: updatedWorkflowId,
@@ -243,6 +323,23 @@ export async function POST(request: NextRequest) {
                 console.log(`[n8n provision] Deleted old workflow ${oldId}`)
               } catch {}
             }
+            
+            // Activate nodes for all platforms after recreation
+            console.log('[n8n provision] Activating nodes for all platforms')
+            for (const acc of accountsForWorkflow) {
+              try {
+                await setPlatformNodesActive({
+                  workflowId: updatedWorkflowId,
+                  platform: acc.platform as any,
+                  active: true,
+                  credentialId: acc.credentialId,
+                  credentialName: acc.credentialName
+                })
+                console.log(`[n8n provision] Activated ${acc.platform} nodes`)
+              } catch (e: any) {
+                console.error(`[n8n provision] Failed to activate ${acc.platform}:`, e.message)
+              }
+            }
           } catch (err) {
             console.warn('Fallback recreate workflow failed:', (err as any)?.message)
           }
@@ -299,11 +396,12 @@ export async function DELETE(request: NextRequest) {
             const { setPlatformNodesActive } = await import("@/lib/n8n")
             
             // Map platform to correct platform type
-            const platformMap: Record<string, 'facebook' | 'instagram' | 'twitter'> = {
+            const platformMap: Record<string, 'facebook' | 'instagram' | 'twitter' | 'linkedin'> = {
               'facebook': 'facebook',
               'instagram': 'instagram',
               'twitter': 'twitter',
-              'x': 'twitter'
+              'x': 'twitter',
+              'linkedin': 'linkedin'
             }
             const platformKey = platformMap[social.platform.toLowerCase()] || 'facebook'
             

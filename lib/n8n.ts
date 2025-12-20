@@ -607,11 +607,18 @@ export async function updateExistingNodeCredential(opts: {
   const hint = (opts.nodeNameHint || opts.platform).toLowerCase()
   
   // For LinkedIn, find ALL nodes that need updating (Post LinkedIn + HTTP Request for register upload)
+  // For Facebook, find ALL nodes (Feed + Photo + any other FB nodes)
   let targets: any[] = []
   if (opts.platform.toLowerCase() === 'linkedin') {
     targets = nodes.filter((n: any) => {
       const name = String(n.name || '').toLowerCase()
       return name.includes('linkedin') || (name.includes('http request') && n.parameters?.url?.includes('linkedin'))
+    })
+  } else if (opts.platform.toLowerCase() === 'facebook') {
+    // Find ALL Facebook nodes (Feed, Photo, etc.)
+    targets = nodes.filter((n: any) => {
+      const name = String(n.name || '').toLowerCase()
+      return name.includes('facebook')
     })
   } else {
     const target = nodes.find((n: any) => String(n.name || '').toLowerCase().includes(hint))
@@ -654,11 +661,15 @@ export async function updateExistingNodeCredential(opts: {
       // Generic assignment
       target.credentials[opts.credentialType] = { id: opts.credentialId, name: opts.credentialName }
     }
+    
+    // ACTIVATE node (set disabled = false)
+    target.disabled = false
   }
 
   const patch: Partial<Workflow> = { nodes }
   try {
     const updated = await updateWorkflow(opts.workflowId, patch)
+    console.log(`[updateExistingNodeCredential] Updated and activated ${targets.length} nodes for ${opts.platform}`)
     return { workflow: updated, updated: true }
   } catch (e: any) {
     const msg = String(e?.message || '')
@@ -777,8 +788,12 @@ export async function setPlatformNodesActive(opts: {
   function isLinkedInNode(n: any): boolean {
     const t = String(n?.type || '').toLowerCase()
     const name = String(n?.name || '').toLowerCase()
-    // LinkedIn uses httpRequest node with name containing 'linkedin'
-    return t.includes('httprequest') && name.includes('linkedin')
+    // LinkedIn uses httpRequest nodes (HTTP Request, HTTP Request1, HTTP Request2)
+    // and a main node with 'linkedin' in the name
+    if (name.includes('linkedin')) return true
+    // Also match HTTP Request nodes that have httpHeaderAuth credential (LinkedIn-specific)
+    if (t.includes('httprequest') && n?.credentials?.httpHeaderAuth) return true
+    return false
   }
 
   console.log(`[setPlatformNodesActive] Scanning ${nodes.length} nodes for platform=${plat}, active=${opts.active}`)

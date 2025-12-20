@@ -148,3 +148,23 @@
 2025-12-20T08:32:17:     at node:internal/main/run_main_module:28:49
 2025-12-20T08:32:17: 
 2025-12-20T08:32:17: Node.js v20.12.0
+2025-12-20T14:51:16: drafts.GET error PrismaClientInitializationError: 
+2025-12-20T14:51:16: Invalid `prisma.content.findMany()` invocation:
+2025-12-20T14:51:16: 
+2025-12-20T14:51:16: 
+2025-12-20T14:51:16: Can't reach database server at `ep-bold-queen-a1ix243w-pooler.ap-southeast-1.aws.neon.tech:5432`
+2025-12-20T14:51:16: 
+2025-12-20T14:51:16: Please make sure your database server is running at `ep-bold-queen-a1ix243w-pooler.ap-southeast-1.aws.neon.tech:5432`.
+2025-12-20T14:51:16:     at $n.handleRequestError (C:\Users\Admin\AI-Automation\node_modules\@prisma\client\runtime\library.js:121:7615)
+2025-12-20T14:51:16:     at $n.handleAndLogRequestError (C:\Users\Admin\AI-Automation\node_modules\@prisma\client\runtime\library.js:121:6623)
+2025-12-20T14:51:16:     at $n.request (C:\Users\Admin\AI-Automation\node_modules\@prisma\client\runtime\library.js:121:6307)
+2025-12-20T14:51:16:     at async l (C:\Users\Admin\AI-Automation\node_modules\@prisma\client\runtime\library.js:130:9633)
+2025-12-20T14:51:16:     at async d (C:\Users\Admin\AI-Automation\.next\server\app\api\drafts\route.js:1:1212)
+2025-12-20T14:51:16:     at async C:\Users\Admin\AI-Automation\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:37010
+2025-12-20T14:51:16:     at async eC.execute (C:\Users\Admin\AI-Automation\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:27552)
+2025-12-20T14:51:16:     at async eC.handle (C:\Users\Admin\AI-Automation\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:38344)
+2025-12-20T14:51:16:     at async doRender (C:\Users\Admin\AI-Automation\node_modules\next\dist\server\base-server.js:1352:42)
+2025-12-20T14:51:16:     at async cacheEntry.responseCache.get.routeKind (C:\Users\Admin\AI-Automation\node_modules\next\dist\server\base-server.js:1574:28) {
+2025-12-20T14:51:16:   clientVersion: '5.22.0',
+2025-12-20T14:51:16:   errorCode: undefined
+2025-12-20T14:51:16: }

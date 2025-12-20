@@ -96,6 +96,7 @@ export default function ContentCreationForm() {
   const [scheduleTime, setScheduleTime] = useState("");
   const [scheduledPosts, setScheduledPosts] = useState<any[]>([]);
   const [isLoadingSchedule, setIsLoadingSchedule] = useState(false);
+  const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
 
   // Fetch user info to get role
   useEffect(() => {
@@ -111,6 +112,27 @@ export default function ContentCreationForm() {
       }
     };
     fetchUserRole();
+  }, []);
+
+  // Fetch connected social accounts
+  useEffect(() => {
+    const fetchConnectedAccounts = async () => {
+      try {
+        const res = await fetch('/api/social-accounts');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          const platforms = data.data.map((acc: any) => acc.platform.toLowerCase());
+          setConnectedPlatforms(platforms);
+          // Auto-select first connected platform if none selected
+          if (platforms.length > 0 && platforms.length === 0) {
+            setPlatforms([platforms[0]]);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch connected accounts:', e);
+      }
+    };
+    fetchConnectedAccounts();
   }, []);
 
   useEffect(() => {
@@ -336,13 +358,53 @@ export default function ContentCreationForm() {
       return;
     }
     
-    // Transfer AI-generated images to R2 first
-    let finalMediaUrls = mediaUrls;
-    if (mediaUrls.length > 0) {
+    // Upload local files to R2 first
+    let finalMediaUrls: string[] = [];
+    if (mediaFiles.length > 0) {
+      try {
+        toast({
+          title: "Đang upload ảnh...",
+          description: `Đang upload ${mediaFiles.length} ảnh lên R2...`,
+        });
+        
+        for (const file of mediaFiles) {
+          const fd = new FormData();
+          fd.append("file", file);
+          const uploadRes = await fetch("/api/uploads", {
+            method: "POST",
+            body: fd,
+          });
+          
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            if (uploadData.success && uploadData.url) {
+              finalMediaUrls.push(uploadData.url);
+            }
+          } else {
+            throw new Error(`Upload failed for ${file.name}`);
+          }
+        }
+        
+        toast({
+          title: "Upload thành công",
+          description: `Đã upload ${finalMediaUrls.length} ảnh`,
+        });
+      } catch (error: any) {
+        console.error("Upload error:", error);
+        toast({
+          title: "Upload thất bại",
+          description: error.message || "Không thể upload ảnh",
+          variant: "destructive",
+        });
+        setIsPublishing(false);
+        return; // Stop if upload fails
+      }
+    } else if (mediaUrls.length > 0) {
+      // Transfer AI-generated images (external URLs) to R2
       try {
         toast({
           title: "Đang lưu ảnh...",
-          description: "Đang upload ảnh lên storage...",
+          description: "Đang transfer ảnh AI lên storage...",
         });
         
         const transferResponse = await fetch("/api/media/transfer", {
@@ -359,7 +421,7 @@ export default function ContentCreationForm() {
         }
       } catch (error) {
         console.error("Media transfer error:", error);
-        // Continue with original URLs if transfer fails
+        finalMediaUrls = mediaUrls; // Fallback to original URLs
       }
     }
     
@@ -523,39 +585,20 @@ export default function ContentCreationForm() {
   };
 
   // Upload helper: single or multiple files
+  // Changed: Do NOT upload to R2 immediately, only store files locally
   const handleFilesSelected = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const list = Array.from(files);
     setMediaFiles((m) => [...m, ...list]);
-    // Auto-upload each file
-    setIsUploading(true);
-    try {
-      for (const f of list) {
-        const fd = new FormData();
-        fd.append("file", f);
-        const res = await fetch("/api/uploads", { method: "POST", body: fd });
-        const data = await res.json().catch(() => null);
-        if (res.ok && (data?.url || data?.path)) {
-          const url = data.url || ((window.location.origin || "") + data.path);
-          setMediaUrls((prev) => [...prev, url]);
-        } else {
-          toast({
-            title: "Upload thất bại",
-            description: data?.error || "Không upload được ảnh.",
-            variant: "destructive",
-          });
-        }
-      }
-    } catch (e: any) {
-      console.error(e);
-      toast({
-        title: "Lỗi upload",
-        description: "Không thể upload file.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-    }
+    
+    // Create preview URLs (blob URLs for display)
+    const previewUrls = list.map(f => URL.createObjectURL(f));
+    setMediaUrls((prev) => [...prev, ...previewUrls]);
+    
+    toast({
+      title: "Đã thêm ảnh",
+      description: `${list.length} ảnh sẽ được upload khi bấm Đăng bài`,
+    });
   };
 
   const removeMediaAt = (index: number) => {
@@ -683,70 +726,82 @@ export default function ContentCreationForm() {
 
               <div className="space-y-4">
                 <Label>Nền tảng đăng bài (chọn nhiều)</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    {
-                      name: "Facebook",
-                      value: "facebook",
-                      icon: "f",
-                      color: "bg-blue-500",
-                    },
-                    {
-                      name: "Instagram",
-                      value: "instagram",
-                      icon: "IG",
-                      color: "bg-gradient-to-r from-pink-500 to-orange-500",
-                    },
-                    {
-                      name: "LinkedIn",
-                      value: "linkedin",
-                      icon: "in",
-                      color: "bg-blue-600",
-                    },
-                    {
-                      name: "TikTok",
-                      value: "tiktok",
-                      icon: "TT",
-                      color: "bg-black",
-                    },
-                    {
-                      name: "YouTube",
-                      value: "youtube",
-                      icon: "YT",
-                      color: "bg-red-500",
-                    },
-                    {
-                      name: "Twitter",
-                      value: "twitter",
-                      icon: "X",
-                      color: "bg-gray-800",
-                    },
-                  ].map((p) => (
-                    <button
-                      type="button"
-                      key={p.value}
-                      onClick={() =>
-                        setPlatforms((prev) =>
-                          prev.includes(p.value)
-                            ? prev.filter((v) => v !== p.value)
-                            : [...prev, p.value]
-                        )
-                      }
-                      className={`flex items-center space-x-2 p-2 rounded border transition-colors ${
-                        platforms.includes(p.value)
-                          ? "border-green-600 bg-green-50"
-                          : "border-gray-200 hover:bg-gray-50"
-                      }`}
-                    >
-                      <div
-                        className={`w-6 h-6 ${p.color} rounded text-white text-xs flex items-center justify-center`}
-                      >
-                        {p.icon}
-                      </div>
-                      <span className="text-sm">{p.name}</span>
-                    </button>
-                  ))}
-                </div>
+                {connectedPlatforms.length === 0 ? (
+                  <div className="text-sm text-gray-500 p-4 border border-dashed rounded">
+                    Chưa kết nối tài khoản nào. Vui lòng{" "}
+                    <a href="/social-accounts" className="text-blue-600 underline">
+                      kết nối tài khoản
+                    </a>{" "}
+                    trước.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      {
+                        name: "Facebook",
+                        value: "facebook",
+                        icon: "f",
+                        color: "bg-blue-500",
+                      },
+                      {
+                        name: "Instagram",
+                        value: "instagram",
+                        icon: "IG",
+                        color: "bg-gradient-to-r from-pink-500 to-orange-500",
+                      },
+                      {
+                        name: "LinkedIn",
+                        value: "linkedin",
+                        icon: "in",
+                        color: "bg-blue-600",
+                      },
+                      {
+                        name: "TikTok",
+                        value: "tiktok",
+                        icon: "TT",
+                        color: "bg-black",
+                      },
+                      {
+                        name: "YouTube",
+                        value: "youtube",
+                        icon: "YT",
+                        color: "bg-red-500",
+                      },
+                      {
+                        name: "Twitter",
+                        value: "twitter",
+                        icon: "X",
+                        color: "bg-gray-800",
+                      },
+                    ]
+                      .filter((p) => connectedPlatforms.includes(p.value))
+                      .map((p) => (
+                        <button
+                          type="button"
+                          key={p.value}
+                          onClick={() =>
+                            setPlatforms((prev) =>
+                              prev.includes(p.value)
+                                ? prev.filter((v) => v !== p.value)
+                                : [...prev, p.value]
+                            )
+                          }
+                          className={`flex items-center space-x-2 p-2 rounded border transition-colors ${
+                            platforms.includes(p.value)
+                              ? "border-green-600 bg-green-50"
+                              : "border-gray-200 hover:bg-gray-50"
+                          }`}
+                        >
+                          <div
+                            className={`w-6 h-6 ${p.color} rounded text-white text-xs flex items-center justify-center`}
+                          >
+                            {p.icon}
+                          </div>
+                          <span className="text-sm">{p.name}</span>
+                        </button>
+                      ))}
+                  </div>
+                )}
                 <div className="text-xs text-gray-500 flex items-center gap-2 flex-wrap">
                   <span>Đang chọn:</span>
                   {platforms.length === 0 ? (
@@ -1083,13 +1138,49 @@ export default function ContentCreationForm() {
                                 }
 
                                 try {
-                                  // Transfer AI-generated images to R2 first
-                                  let finalMediaUrls = mediaUrls;
-                                  if (mediaUrls.length > 0) {
+                                  // Upload local files to R2 first
+                                  let finalMediaUrls: string[] = [];
+                                  if (mediaFiles.length > 0) {
+                                    try {
+                                      toast({
+                                        title: "Đang upload ảnh...",
+                                        description: `Đang upload ${mediaFiles.length} ảnh lên R2...`,
+                                      });
+                                      
+                                      for (const file of mediaFiles) {
+                                        const fd = new FormData();
+                                        fd.append("file", file);
+                                        const uploadRes = await fetch("/api/uploads", {
+                                          method: "POST",
+                                          body: fd,
+                                        });
+                                        
+                                        if (uploadRes.ok) {
+                                          const uploadData = await uploadRes.json();
+                                          if (uploadData.success && uploadData.url) {
+                                            finalMediaUrls.push(uploadData.url);
+                                          }
+                                        } else {
+                                          throw new Error(`Upload failed for ${file.name}`);
+                                        }
+                                      }
+                                      
+                                      console.log('[Schedule] Uploaded to R2:', finalMediaUrls);
+                                    } catch (error: any) {
+                                      console.error("Upload error:", error);
+                                      toast({
+                                        title: "Upload thất bại",
+                                        description: error.message || "Không thể upload ảnh",
+                                        variant: "destructive",
+                                      });
+                                      return; // Stop if upload fails
+                                    }
+                                  } else if (mediaUrls.length > 0) {
+                                    // Transfer AI-generated images (external URLs) to R2
                                     try {
                                       toast({
                                         title: "Đang lưu ảnh...",
-                                        description: "Đang upload ảnh lên storage...",
+                                        description: "Đang transfer ảnh AI lên storage...",
                                       });
                                       
                                       const transferResponse = await fetch("/api/media/transfer", {
@@ -1109,7 +1200,7 @@ export default function ContentCreationForm() {
                                       }
                                     } catch (error) {
                                       console.error("[Schedule] Media transfer error:", error);
-                                      // Continue with original URLs if transfer fails
+                                      finalMediaUrls = mediaUrls; // Fallback to original URLs
                                     }
                                   }
 

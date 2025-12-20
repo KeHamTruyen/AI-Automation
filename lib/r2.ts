@@ -7,6 +7,16 @@ const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME
 const R2_PUBLIC_DEV_URL = process.env.R2_PUBLIC_DEV_URL?.trim()
 const R2_PUBLIC_BASE_URL = process.env.R2_PUBLIC_BASE_URL?.trim()
 
+// Debug logging
+console.log('[r2] Config loaded:', {
+  accountId: R2_ACCOUNT_ID ? `${R2_ACCOUNT_ID.slice(0, 8)}...` : 'MISSING',
+  accessKeyId: R2_ACCESS_KEY_ID ? `${R2_ACCESS_KEY_ID.slice(0, 8)}...` : 'MISSING',
+  secretKey: R2_SECRET_ACCESS_KEY ? 'SET' : 'MISSING',
+  bucket: R2_BUCKET_NAME || 'MISSING',
+  publicDevUrl: R2_PUBLIC_DEV_URL || 'MISSING',
+  publicBaseUrl: R2_PUBLIC_BASE_URL || 'MISSING'
+})
+
 // Export bucket name for other modules
 export const r2BucketName = R2_BUCKET_NAME
 
@@ -15,6 +25,8 @@ export const r2BucketName = R2_BUCKET_NAME
 const endpoint = R2_ACCOUNT_ID
   ? `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
   : undefined
+
+console.log('[r2] S3 Client endpoint:', endpoint || 'MISSING')
 
 export const r2Client = new S3Client({
   region: "auto",

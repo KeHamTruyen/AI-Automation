@@ -292,40 +292,24 @@ export default function SocialAccountsPage() {
             </DialogHeader>
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label>Chế độ kết nối</Label>
-                <Select 
-                  value={provMode} 
-                  onValueChange={(v: string) => setProvMode(v as 'token' | 'byo' | 'oauth')}
-                  disabled={provPlatform === 'linkedin' || provPlatform === 'facebook' || provPlatform === 'instagram'}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn chế độ" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="token">Dùng Access Token</SelectItem>
-                    <SelectItem value="byo">BYO Client ID/Secret</SelectItem>
-                    <SelectItem value="oauth">OAuth (đề xuất)</SelectItem>
-                  </SelectContent>
-                </Select>
-                {(provPlatform === 'linkedin' || provPlatform === 'facebook' || provPlatform === 'instagram') && (
-                  <p className="text-xs text-muted-foreground">
-                    {provPlatform === 'linkedin' 
-                      ? '✓ LinkedIn mặc định dùng OAuth' 
-                      : '✓ Facebook/Instagram mặc định dùng Access Token'}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
                 <Label>Nền tảng</Label>
                 <Select value={provPlatform} onValueChange={setProvPlatform}>
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn nền tảng" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="facebook">Facebook</SelectItem>
-                    <SelectItem value="instagram">Instagram</SelectItem>
-                    <SelectItem value="twitter">Twitter / X</SelectItem>
-                    <SelectItem value="linkedin">LinkedIn</SelectItem>
+                    <SelectItem value="facebook">
+                      <div className="flex items-center">
+                        <Facebook className="h-4 w-4 mr-2" />
+                        Facebook
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="linkedin">
+                      <div className="flex items-center">
+                        <Linkedin className="h-4 w-4 mr-2" />
+                        LinkedIn
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 {accounts.find(acc => acc.platform === provPlatform) && (
@@ -334,58 +318,101 @@ export default function SocialAccountsPage() {
                   </p>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="acc-name">Tên hiển thị</Label>
-                <Input id="acc-name" value={provName} onChange={(e) => setProvName(e.target.value)} placeholder="VD: Fanpage Công ty" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="acc-username">Username</Label>
-                <Input id="acc-username" value={provUsername} onChange={(e) => setProvUsername(e.target.value)} placeholder="VD: @company_page" />
-              </div>
-              {provMode === "token" ? (
-                <div className="space-y-2">
-                  <Label htmlFor="acc-token">Access Token (tạm thời cho POC)</Label>
-                  <Input id="acc-token" value={provAccessToken} onChange={(e) => setProvAccessToken(e.target.value)} placeholder="Dán token nền tảng ở đây" />
-                </div>
-              ) : provMode === 'byo' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              {provPlatform && (
+                <>
                   <div className="space-y-2">
-                    <Label htmlFor="client-id">Client ID</Label>
-                    <Input id="client-id" value={provClientId} onChange={(e) => setProvClientId(e.target.value)} placeholder="Nhập Client ID" />
+                    <Label>Phương thức kết nối</Label>
+                    <Select 
+                      value={provMode} 
+                      onValueChange={(v: string) => setProvMode(v as 'token' | 'byo' | 'oauth')}
+                      disabled={provPlatform === 'linkedin' || provPlatform === 'facebook' || provPlatform === 'instagram'}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn phương thức" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="token">Dùng Access Token</SelectItem>
+                        <SelectItem value="byo">BYO Client ID/Secret</SelectItem>
+                        <SelectItem value="oauth">OAuth (đề xuất)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {provPlatform === 'linkedin' && (
+                      <p className="text-xs text-muted-foreground">
+                        ✓ LinkedIn mặc định dùng OAuth (bắt buộc)
+                      </p>
+                    )}
+                    {(provPlatform === 'facebook' || provPlatform === 'instagram') && (
+                      <p className="text-xs text-muted-foreground">
+                        ✓ {provPlatform === 'facebook' ? 'Facebook' : 'Instagram'} mặc định dùng Access Token
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="client-secret">Client Secret</Label>
-                    <Input id="client-secret" type="password" value={provClientSecret} onChange={(e) => setProvClientSecret(e.target.value)} placeholder="Nhập Client Secret" />
+                    <Label htmlFor="acc-name">Tên hiển thị</Label>
+                    <Input id="acc-name" value={provName} onChange={(e) => setProvName(e.target.value)} placeholder="VD: Fanpage Công ty" />
                   </div>
-                  <div className="col-span-1 md:col-span-2 text-xs text-muted-foreground">
-                    Lưu ý: BYO sẽ lưu cặp Client ID/Secret vào credential trong n8n. Việc trao đổi token OAuth chưa được thực hiện trong bước này.
+                  <div className="space-y-2">
+                    <Label htmlFor="acc-username">Username</Label>
+                    <Input id="acc-username" value={provUsername} onChange={(e) => setProvUsername(e.target.value)} placeholder="VD: @company_page" />
                   </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Chế độ OAuth: hệ thống sẽ lưu Client ID/Secret (nếu cung cấp), sau đó chuyển hướng sang LinkedIn để cấp quyền lấy Access Token an toàn.</p>
-                </div>
-              )}
-              <div className="flex items-center justify-between gap-2">
-                <Button
-                  className="w-full"
-                  disabled={provLoading}
-                  onClick={async () => {
-                    if (!provPlatform || !provName || !provUsername) {
-                      toast.error("Vui lòng điền đủ thông tin")
-                      return
-                    }
-                    if (provMode === 'token' && !provAccessToken) {
-                      toast.error("Thiếu access token")
-                      return
-                    }
-                    if (provMode === 'byo' && (!provClientId || !provClientSecret)) {
-                      toast.error("Thiếu Client ID/Secret")
-                      return
-                    }
-                    setProvLoading(true)
-                    setProvResult(null)
-                    try {
+                  {provMode === "token" ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="acc-token">Access Token</Label>
+                      <Textarea 
+                        id="acc-token" 
+                        value={provAccessToken} 
+                        onChange={(e) => setProvAccessToken(e.target.value)} 
+                        placeholder="Dán token từ nền tảng ở đây"
+                        className="min-h-[100px] font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {provPlatform === 'facebook' && 'Lấy token từ: developers.facebook.com/tools/accesstoken'}
+                        {provPlatform === 'instagram' && 'Dùng Facebook token với quyền Instagram'}
+                      </p>
+                    </div>
+                  ) : provMode === 'byo' ? (
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="client-id">Client ID</Label>
+                        <Input id="client-id" value={provClientId} onChange={(e) => setProvClientId(e.target.value)} placeholder="Nhập Client ID" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="client-secret">Client Secret</Label>
+                        <Input id="client-secret" type="password" value={provClientSecret} onChange={(e) => setProvClientSecret(e.target.value)} placeholder="Nhập Client Secret" />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Lưu ý: BYO sẽ lưu cặp Client ID/Secret vào credential trong n8n. Việc trao đổi token OAuth chưa được thực hiện trong bước này.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-sm font-medium text-blue-900">✓ Phương thức OAuth</p>
+                      <p className="text-sm text-blue-700">
+                        Hệ thống sẽ chuyển hướng bạn sang {provPlatform === 'linkedin' ? 'LinkedIn' : provPlatform} để cấp quyền an toàn.
+                      </p>
+                    </div>
+                      )}
+                  <div className="flex items-center justify-between gap-2">
+                    <Button
+                      className="w-full"
+                      disabled={provLoading}
+                      onClick={async () => {
+                        if (!provPlatform || !provName || !provUsername) {
+                          toast.error("Vui lòng điền đủ thông tin")
+                          return
+                        }
+                        if (provMode === 'token' && !provAccessToken) {
+                          toast.error("Thiếu access token")
+                          return
+                        }
+                        if (provMode === 'byo' && (!provClientId || !provClientSecret)) {
+                          toast.error("Thiếu Client ID/Secret")
+                          return
+                            }
+                        setProvLoading(true)
+                        setProvResult(null)
+                        try {
                       // Check if platform already exists and auto-delete old account
                       const existingAccount = accounts.find(acc => acc.platform === provPlatform)
                       if (existingAccount) {
@@ -420,64 +447,66 @@ export default function SocialAccountsPage() {
                       if (!res.ok || !data?.success) {
                         throw new Error(data?.error || "Provision thất bại")
                       }
-                      const webhookUrl = data?.data?.socialAccount?.n8nWebhookUrl
-                      const connectUrl = data?.data?.connectUrl
-                      const oauthNeeded = data?.data?.oauthNeeded
-                      const oauthStartUrl = data?.data?.oauthStartUrl
-                      setProvResult({ webhookUrl, connectUrl, oauthNeeded, oauthStartUrl })
-                      
-                      // For OAuth mode (LinkedIn), auto-redirect to OAuth flow instead of reloading accounts
-                      if (provMode === 'oauth' && oauthStartUrl) {
-                        toast.success("Đang chuyển sang LinkedIn để cấp quyền...")
-                        setTimeout(() => {
-                          window.location.href = oauthStartUrl
-                        }, 500)
-                      } else {
-                        toast.success("Kết nối & provision thành công")
-                        // Only reload list for non-OAuth modes (token/byo)
-                        await loadAccounts()
-                      }
-                    } catch (e: any) {
-                      console.error(e)
-                      toast.error(e?.message || "Provision thất bại")
-                    } finally {
-                      setProvLoading(false)
-                    }
-                  }}
-                >
-                  {provLoading ? "Đang kết nối..." : "Kết nối"}
-                </Button>
-              </div>
-              {/* Webhook URL hidden from users */}
-              {provResult?.oauthNeeded && provResult?.connectUrl && (
-                <div className="text-sm text-muted-foreground">
-                  Bước tiếp theo: mở credential trong n8n để kết nối OAuth →{" "}
-                  <a className="underline" href={provResult.connectUrl} target="_blank" rel="noreferrer">Open in n8n</a>
-                </div>
-              )}
-              {provResult?.oauthStartUrl && provPlatform === 'linkedin' && (
-                <div className="text-sm text-muted-foreground">
-                  Hoặc bắt đầu OAuth LinkedIn trực tiếp →{" "}
-                  <a className="underline" href={provResult.oauthStartUrl} target="_blank" rel="noreferrer">Kết nối LinkedIn</a>
-                </div>
-              )}
-              {provResult && (
-                <div className="text-sm text-muted-foreground">
-                  {provPlatform === 'linkedin' ? (
-                    <button
-                      className="underline"
-                      onClick={() => {
-                        const socialId = (accounts.find(a => a.platform === 'linkedin' && a.username === provUsername) || {}).id
-                        if (socialId) {
-                          const url = `/api/auth/linkedin?socialId=${encodeURIComponent(socialId)}`
-                          window.open(url, '_blank')
+                          const webhookUrl = data?.data?.socialAccount?.n8nWebhookUrl
+                          const connectUrl = data?.data?.connectUrl
+                          const oauthNeeded = data?.data?.oauthNeeded
+                          const oauthStartUrl = data?.data?.oauthStartUrl
+                          setProvResult({ webhookUrl, connectUrl, oauthNeeded, oauthStartUrl })
+                          
+                          // For OAuth mode (LinkedIn), auto-redirect to OAuth flow instead of reloading accounts
+                          if (provMode === 'oauth' && oauthStartUrl) {
+                            toast.success("Đang chuyển sang LinkedIn để cấp quyền...")
+                            setTimeout(() => {
+                              window.location.href = oauthStartUrl
+                            }, 500)
+                          } else {
+                            toast.success("Kết nối & provision thành công")
+                            // Only reload list for non-OAuth modes (token/byo)
+                            await loadAccounts()
+                          }
+                        } catch (e: any) {
+                          console.error(e)
+                          toast.error(e?.message || "Provision thất bại")
+                        } finally {
+                          setProvLoading(false)
                         }
                       }}
                     >
-                      Kết nối OAuth LinkedIn ngay
-                    </button>
-                  ) : null}
-                </div>
+                      {provLoading ? "Đang kết nối..." : "Kết nối"}
+                    </Button>
+                  </div>
+                  {/* Webhook URL hidden from users */}
+                  {provResult?.oauthNeeded && provResult?.connectUrl && (
+                    <div className="text-sm text-muted-foreground">
+                      Bước tiếp theo: mở credential trong n8n để kết nối OAuth →{" "}
+                      <a className="underline" href={provResult.connectUrl} target="_blank" rel="noreferrer">Open in n8n</a>
+                    </div>
+                  )}
+                  {provResult?.oauthStartUrl && provPlatform === 'linkedin' && (
+                    <div className="text-sm text-muted-foreground">
+                      Hoặc bắt đầu OAuth LinkedIn trực tiếp →{" "}
+                      <a className="underline" href={provResult.oauthStartUrl} target="_blank" rel="noreferrer">Kết nối LinkedIn</a>
+                    </div>
+                  )}
+                  {provResult && (
+                    <div className="text-sm text-muted-foreground">
+                      {provPlatform === 'linkedin' ? (
+                        <button
+                          className="underline"
+                          onClick={() => {
+                            const socialId = (accounts.find(a => a.platform === 'linkedin' && a.username === provUsername) || {}).id
+                            if (socialId) {
+                              const url = `/api/auth/linkedin?socialId=${encodeURIComponent(socialId)}`
+                              window.open(url, '_blank')
+                            }
+                          }}
+                        >
+                          Kết nối OAuth LinkedIn ngay
+                        </button>
+                      ) : null}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </DialogContent>
