@@ -83,8 +83,8 @@ export default function ContentCreationForm() {
   // Khởi tạo giá trị mặc định để tránh fallback ở workflow (hiển thị rõ ràng khi chưa chọn)
   const [tone, setTone] = useState<string>("friendly");
   const [lengthPref, setLengthPref] = useState<string>("short");
-  // Cho phép chọn nhiều nền tảng cùng lúc
-  const [platforms, setPlatforms] = useState<string[]>(["facebook"]);
+  // Platforms - start empty, will be populated from connected accounts
+  const [platforms, setPlatforms] = useState<string[]>([]);
   // AI Image generation
   const [autoGenerateImage, setAutoGenerateImage] = useState(false);
   const [imagePrompt, setImagePrompt] = useState("");
@@ -121,11 +121,11 @@ export default function ContentCreationForm() {
         const res = await fetch('/api/social-accounts');
         const data = await res.json();
         if (data.success && Array.isArray(data.data)) {
-          const platforms = data.data.map((acc: any) => acc.platform.toLowerCase());
-          setConnectedPlatforms(platforms);
-          // Auto-select first connected platform if none selected
-          if (platforms.length > 0 && platforms.length === 0) {
-            setPlatforms([platforms[0]]);
+          const connectedPlatforms = data.data.map((acc: any) => acc.platform.toLowerCase());
+          setConnectedPlatforms(connectedPlatforms);
+          // Auto-select first connected platform
+          if (connectedPlatforms.length > 0 && platforms.length === 0) {
+            setPlatforms([connectedPlatforms[0]]);
           }
         }
       } catch (e) {
