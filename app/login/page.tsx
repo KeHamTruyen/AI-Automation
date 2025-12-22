@@ -45,13 +45,9 @@ export default function LoginPage() {
 
       if (data.success) {
         toast.success("Đăng nhập thành công!");
-        // Lưu token người dùng (dùng cho Workflow A/B)
-        document.cookie = `userToken=${data.token}; path=/;`;
-
-        // Lưu trạng thái đăng nhập
-        document.cookie = "isLoggedIn=true; path=/;";
-  // Sau khi đăng nhập, chuyển thẳng vào dashboard (tạm thời bỏ qua formImportAPI)
-  router.push("/dashboard");
+        // Token đã được set trong HTTP-only cookie (auth-token) bởi server
+        // Middleware sẽ tự động xác thực dựa trên cookie này
+        router.push("/dashboard");
         router.refresh();
       } else {
         setError(data.error || "Đăng nhập thất bại");

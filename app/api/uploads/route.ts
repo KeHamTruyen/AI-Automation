@@ -1,12 +1,29 @@
 import { NextResponse } from "next/server"
 import { PutObjectCommand } from "@aws-sdk/client-s3"
 import { r2Client, r2BucketName, buildR2PublicUrl } from "@/lib/r2"
+import { jwtVerify } from "jose"
 import crypto from "crypto"
 
 export const runtime = 'nodejs'
 
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key")
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+
 export async function POST(request: Request) {
   try {
+    // 🔒 SECURITY: Check authentication
+    const authCookie = request.headers.get('cookie')?.split('; ').find(c => c.startsWith('auth-token='))?.split('=')[1]
+    if (!authCookie) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+
+    try {
+      await jwtVerify(authCookie, JWT_SECRET)
+    } catch {
+      return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 })
+    }
+
     console.log('[uploads] Starting upload request')
     const formData = await request.formData()
     const file = formData.get('file') as any
@@ -16,6 +33,22 @@ export async function POST(request: Request) {
     }
 
     console.log('[uploads] File received:', file.name, 'Size:', file.size, 'Type:', file.type)
+
+    // 🔒 SECURITY: Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ 
+        success: false, 
+        error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB` 
+      }, { status: 413 })
+    }
+
+    // 🔒 SECURITY: Validate file type
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      return NextResponse.json({ 
+        success: false, 
+        error: `Invalid file type. Allowed types: ${ALLOWED_IMAGE_TYPES.join(', ')}` 
+      }, { status: 400 })
+    }
 
     if (!r2BucketName) {
       console.error('[uploads] R2_BUCKET_NAME not configured')

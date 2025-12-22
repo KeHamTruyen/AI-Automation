@@ -4,6 +4,28 @@ import { jwtVerify } from "jose"
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key")
 
+// Simple rate limiting (in-memory, resets on server restart)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
+const RATE_LIMIT_WINDOW = 60 * 1000 // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 100 // 100 requests per minute
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now()
+  const record = rateLimitMap.get(ip)
+  
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW })
+    return true
+  }
+  
+  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false
+  }
+  
+  record.count++
+  return true
+}
+
 // Các route cần authentication
 const protectedRoutes = [
   "/dashboard",
@@ -23,6 +45,22 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = request.cookies.get("auth-token")?.value
 
+  // 🔒 Rate limiting
+  const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown'
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': '60' } }
+    )
+  }
+
+  // 🔒 Security headers
+  const response = NextResponse.next()
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('X-Frame-Options', 'DENY')
+  response.headers.set('X-XSS-Protection', '1; mode=block')
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+
   // Kiểm tra nếu là protected route
   const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route))
   const isAdminRoute = adminRoutes.some((route) => pathname.startsWith(route))
@@ -33,12 +71,16 @@ export async function middleware(request: NextRequest) {
   if (isLoginPage && token) {
     try {
       await jwtVerify(token, JWT_SECRET)
-      return NextResponse.redirect(new URL("/dashboard", request.url))
+      const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.url))
+      // Copy security headers
+      response.headers.forEach((value, key) => redirectResponse.headers.set(key, value))
+      return redirectResponse
     } catch {
       // Token không hợp lệ, xóa và cho phép truy cập login
-      const response = NextResponse.next()
-      response.cookies.delete("auth-token")
-      return response
+      const loginResponse = NextResponse.next()
+      loginResponse.cookies.delete("auth-token")
+      response.headers.forEach((value, key) => loginResponse.headers.set(key, value))
+      return loginResponse
     }
   }
 
@@ -47,21 +89,28 @@ export async function middleware(request: NextRequest) {
     if (token) {
       try {
         await jwtVerify(token, JWT_SECRET)
-        return NextResponse.redirect(new URL("/dashboard", request.url))
+        const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.url))
+        response.headers.forEach((value, key) => redirectResponse.headers.set(key, value))
+        return redirectResponse
       } catch {
-        const response = NextResponse.redirect(new URL("/login", request.url))
-        response.cookies.delete("auth-token")
-        return response
+        const loginResponse = NextResponse.redirect(new URL("/login", request.url))
+        loginResponse.cookies.delete("auth-token")
+        response.headers.forEach((value, key) => loginResponse.headers.set(key, value))
+        return loginResponse
       }
     } else {
-      return NextResponse.redirect(new URL("/login", request.url))
+      const loginResponse = NextResponse.redirect(new URL("/login", request.url))
+      response.headers.forEach((value, key) => loginResponse.headers.set(key, value))
+      return loginResponse
     }
   }
 
   // Xử lý protected routes
   if (isProtectedRoute || isAdminRoute) {
     if (!token) {
-      return NextResponse.redirect(new URL("/login", request.url))
+      const loginResponse = NextResponse.redirect(new URL("/login", request.url))
+      response.headers.forEach((value, key) => loginResponse.headers.set(key, value))
+      return loginResponse
     }
 
     try {
@@ -70,18 +119,21 @@ export async function middleware(request: NextRequest) {
       // Kiểm tra admin route
       const role = String((payload as any).role ?? "").toLowerCase()
       if (isAdminRoute && role !== "admin") {
-        return NextResponse.redirect(new URL("/dashboard", request.url))
+        const dashboardResponse = NextResponse.redirect(new URL("/dashboard", request.url))
+        response.headers.forEach((value, key) => dashboardResponse.headers.set(key, value))
+        return dashboardResponse
       }
 
-      return NextResponse.next()
-    } catch (error) {
-      const response = NextResponse.redirect(new URL("/login", request.url))
-      response.cookies.delete("auth-token")
       return response
+    } catch (error) {
+      const loginResponse = NextResponse.redirect(new URL("/login", request.url))
+      loginResponse.cookies.delete("auth-token")
+      response.headers.forEach((value, key) => loginResponse.headers.set(key, value))
+      return loginResponse
     }
   }
 
-  return NextResponse.next()
+  return response
 }
 
 export const config = {
