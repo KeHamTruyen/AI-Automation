@@ -147,4 +147,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Failed to create draft" }, { status: 500 })
   }
 }
-}
+
