@@ -46,9 +46,8 @@ export default function LoginPage() {
       if (data.success) {
         toast.success("Đăng nhập thành công!");
         // Token đã được set trong HTTP-only cookie (auth-token) bởi server
-        // Middleware sẽ tự động xác thực dựa trên cookie này
-        router.push("/dashboard");
-        router.refresh();
+        // Force full page navigation to ensure cookie is sent
+        window.location.href = "/dashboard";
       } else {
         setError(data.error || "Đăng nhập thất bại");
       }
