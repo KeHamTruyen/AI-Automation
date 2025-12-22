@@ -266,11 +266,6 @@ export default function ContentCreationForm() {
       // Transfer AI-generated images to R2 first
       let finalMediaUrls = mediaUrls;
       if (mediaUrls.length > 0) {
-        toast({
-          title: "Đang lưu ảnh...",
-          description: "Đang upload ảnh lên storage...",
-        });
-        
         const transferResponse = await fetch("/api/media/transfer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -362,11 +357,6 @@ export default function ContentCreationForm() {
     let finalMediaUrls: string[] = [];
     if (mediaFiles.length > 0) {
       try {
-        toast({
-          title: "Đang upload ảnh...",
-          description: `Đang upload ${mediaFiles.length} ảnh lên R2...`,
-        });
-        
         for (const file of mediaFiles) {
           const fd = new FormData();
           fd.append("file", file);
@@ -384,11 +374,6 @@ export default function ContentCreationForm() {
             throw new Error(`Upload failed for ${file.name}`);
           }
         }
-        
-        toast({
-          title: "Upload thành công",
-          description: `Đã upload ${finalMediaUrls.length} ảnh`,
-        });
       } catch (error: any) {
         console.error("Upload error:", error);
         toast({
@@ -402,11 +387,6 @@ export default function ContentCreationForm() {
     } else if (mediaUrls.length > 0) {
       // Transfer AI-generated images (external URLs) to R2
       try {
-        toast({
-          title: "Đang lưu ảnh...",
-          description: "Đang transfer ảnh AI lên storage...",
-        });
-        
         const transferResponse = await fetch("/api/media/transfer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -594,11 +574,6 @@ export default function ContentCreationForm() {
     // Create preview URLs (blob URLs for display)
     const previewUrls = list.map(f => URL.createObjectURL(f));
     setMediaUrls((prev) => [...prev, ...previewUrls]);
-    
-    toast({
-      title: "Đã thêm ảnh",
-      description: `${list.length} ảnh sẽ được upload khi bấm Đăng bài`,
-    });
   };
 
   const removeMediaAt = (index: number) => {
@@ -1142,11 +1117,6 @@ export default function ContentCreationForm() {
                                   let finalMediaUrls: string[] = [];
                                   if (mediaFiles.length > 0) {
                                     try {
-                                      toast({
-                                        title: "Đang upload ảnh...",
-                                        description: `Đang upload ${mediaFiles.length} ảnh lên R2...`,
-                                      });
-                                      
                                       for (const file of mediaFiles) {
                                         const fd = new FormData();
                                         fd.append("file", file);
@@ -1178,11 +1148,6 @@ export default function ContentCreationForm() {
                                   } else if (mediaUrls.length > 0) {
                                     // Transfer AI-generated images (external URLs) to R2
                                     try {
-                                      toast({
-                                        title: "Đang lưu ảnh...",
-                                        description: "Đang transfer ảnh AI lên storage...",
-                                      });
-                                      
                                       const transferResponse = await fetch("/api/media/transfer", {
                                         method: "POST",
                                         headers: { "Content-Type": "application/json" },

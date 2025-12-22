@@ -150,20 +150,6 @@ export default function LoginPage() {
               </Link>
             </div>
           </form>
-
-          <div className="mt-6 p-4 bg-slate-50 rounded-lg">
-            <p className="text-sm font-medium text-slate-700 mb-2">
-              Tài khoản demo:
-            </p>
-            <div className="space-y-1 text-sm text-slate-600">
-              <p>
-                <strong>Admin:</strong> admin@company.com / admin123
-              </p>
-              <p>
-                <strong>User:</strong> user@company.com / user123
-              </p>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
