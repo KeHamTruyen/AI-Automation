@@ -168,6 +168,23 @@ export async function POST(request: NextRequest) {
           console.log(`[n8n provision] Deleted old workflow ${oldId}`)
         } catch {}
       }
+      
+      // Activate ALL existing platforms in the new workflow
+      console.log('[n8n provision] Activating nodes for all existing platforms after recreation')
+      for (const acc of accountsForWorkflow) {
+        try {
+          await setPlatformNodesActive({
+            workflowId: userWorkflowId,
+            platform: acc.platform as any,
+            active: true,
+            credentialId: acc.credentialId,
+            credentialName: acc.credentialName
+          })
+          console.log(`[n8n provision] Activated ${acc.platform} nodes`)
+        } catch (e: any) {
+          console.error(`[n8n provision] Failed to activate ${acc.platform}:`, e.message)
+        }
+      }
     }
 
     // 3) Tạo n8n Credential theo mode

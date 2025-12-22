@@ -1,13 +1,35 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { jwtVerify } from "jose"
+
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key")
 
 export async function GET(req: NextRequest) {
   try {
+    // Authenticate user
+    const authCookie = req.cookies.get("auth-token")?.value
+    if (!authCookie) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
+    }
+
+    let userId: string
+    try {
+      const { payload } = await jwtVerify(authCookie, JWT_SECRET)
+      userId = (payload as any)?.userId as string
+      if (!userId) {
+        return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 })
+      }
+    } catch (e) {
+      return NextResponse.json({ success: false, error: "Invalid or expired token" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(req.url)
     const status = searchParams.get("status") || undefined
     const take = Math.min(Number(searchParams.get("take") || 50), 100)
 
-    const where: any = {}
+    const where: any = {
+      userId: userId  // Filter by current user
+    }
     if (status) {
       where.status = status
     }
