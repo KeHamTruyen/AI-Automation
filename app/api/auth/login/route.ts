@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       // Set HTTP-only cookie
       response.cookies.set("auth-token", token, {
         httpOnly: true,
-        secure: false, // Disabled for HTTP deployment (enable with HTTPS)
+        secure: process.env.NODE_ENV === "production", // Requires HTTPS in production
         sameSite: "lax",
         path: "/",
         maxAge: 24 * 60 * 60, // 24 hours
@@ -175,7 +175,7 @@ async function handleMockLogin(email: string, password: string) {
 
   response.cookies.set("auth-token", token, {
     httpOnly: true,
-    secure: false,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: 24 * 60 * 60,

@@ -11,9 +11,9 @@ export async function POST(request: NextRequest) {
     // Xóa auth cookie
     response.cookies.set("auth-token", "", {
       httpOnly: true,
-      secure: false,
-      path: "/",
+      secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
+      path: "/",
       maxAge: 0,
     })
 
