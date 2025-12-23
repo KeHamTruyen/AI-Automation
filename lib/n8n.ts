@@ -761,6 +761,7 @@ export async function setPlatformNodesActive(opts: {
   active: boolean
   credentialId?: string
   credentialName?: string
+  linkedinUrn?: string // LinkedIn author URN to update jsonBody
 }): Promise<Workflow> {
   const wf = await getWorkflow(opts.workflowId)
   const nodes = Array.isArray(wf.nodes) ? JSON.parse(JSON.stringify(wf.nodes)) : []
@@ -791,8 +792,18 @@ export async function setPlatformNodesActive(opts: {
     // LinkedIn uses httpRequest nodes (HTTP Request, HTTP Request1, HTTP Request2)
     // and a main node with 'linkedin' in the name
     if (name.includes('linkedin')) return true
-    // Also match HTTP Request nodes that have httpHeaderAuth credential (LinkedIn-specific)
-    if (t.includes('httprequest') && n?.credentials?.httpHeaderAuth) return true
+    // Also match HTTP Request nodes that:
+    // 1. Already have httpHeaderAuth credential (LinkedIn-specific)
+    // 2. OR have empty/placeholder credentials structure (from template)
+    // 3. OR match common LinkedIn HTTP Request naming patterns
+    if (t.includes('httprequest')) {
+      // Check if has LinkedIn credential
+      if (n?.credentials?.httpHeaderAuth) return true
+      // Check if it's a numbered HTTP Request node (HTTP Request1, HTTP Request2, etc.)
+      // which are commonly used for LinkedIn in templates
+      const httpRequestMatch = name.match(/^http\s*request\s*\d*$/i)
+      if (httpRequestMatch) return true
+    }
     return false
   }
 
@@ -811,6 +822,26 @@ export async function setPlatformNodesActive(opts: {
           n.credentials.twitterOAuth2Api = { id: opts.credentialId, name: opts.credentialName }
         } else if (plat === 'linkedin') {
           n.credentials.httpHeaderAuth = { id: opts.credentialId, name: opts.credentialName }
+          
+          // Update LinkedIn URN in jsonBody parameters
+          if (opts.linkedinUrn) {
+            const authorUrn = `urn:li:person:${opts.linkedinUrn}`
+            n.parameters = n.parameters || {}
+            const nodeName = String(n.name || '').toLowerCase()
+            
+            // Update jsonBody based on node type
+            if (nodeName.includes('post')) {
+              // Post LinkedIn node - full UGC post body
+              n.parameters.jsonBody = `={{\n  JSON.stringify({\n    author: "${authorUrn}",\n    lifecycleState: "PUBLISHED",\n\n    specificContent: {\n      "com.linkedin.ugc.ShareContent": {\n        shareCommentary: {\n          text: $('Fanout Platforms').item.json.content_text\n        },\n\n        shareMediaCategory: (\n          (\n            $json.asset\n          )\n          ? "IMAGE"\n          : "NONE"\n        ),\n\n        media: (\n          (\n            $json.asset\n          )\n          ? [\n              {\n                status: "READY",\n                media:\n                  $json.asset\n              }\n            ]\n          : []\n        )\n      }\n    },\n\n    visibility: {\n      "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"\n    }\n  })\n}}`
+            } else if (nodeName.includes('http request')) {
+              // HTTP Request nodes - check if it's register upload or post
+              const url = String(n.parameters?.url || '').toLowerCase()
+              if (url.includes('registerupload')) {
+                // HTTP Request (Register Upload) node
+                n.parameters.jsonBody = `{\n  "registerUploadRequest": {\n    "owner": "${authorUrn}",\n    "recipes": ["urn:li:digitalmediaRecipe:feedshare-image"],\n    "serviceRelationships": [\n      {\n        "relationshipType": "OWNER",\n        "identifier": "urn:li:userGeneratedContent"\n      }\n    ]\n  }\n}`
+              }
+            }
+          }
         } else {
           n.credentials.facebookGraphApi = { id: opts.credentialId, name: opts.credentialName }
         }

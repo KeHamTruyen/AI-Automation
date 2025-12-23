@@ -129,7 +129,8 @@ export async function POST(request: NextRequest) {
         credentialId: acc.n8nCredentialId!,
         credentialName: acc.n8nCredentialName!,
         credentialType: acc.platform === 'twitter' ? 'twitterOAuth2Api' : 'facebookGraphApi',
-        nodeId: ((acc as any).metadata as any)?.igUserId
+        nodeId: ((acc as any).metadata as any)?.igUserId,
+        linkedinUrn: (acc as any).linkedinUrn || undefined
       }))
       
       console.log(`[n8n provision] Recreating with ${accountsForWorkflow.length} existing platforms`)
@@ -178,7 +179,8 @@ export async function POST(request: NextRequest) {
             platform: acc.platform as any,
             active: true,
             credentialId: acc.credentialId,
-            credentialName: acc.credentialName
+            credentialName: acc.credentialName,
+            linkedinUrn: acc.linkedinUrn
           })
           console.log(`[n8n provision] Activated ${acc.platform} nodes`)
         } catch (e: any) {
