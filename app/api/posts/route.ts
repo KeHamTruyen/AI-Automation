@@ -132,14 +132,14 @@ export async function POST(req: NextRequest) {
     } catch (mediaErr) {
       console.warn('[api/posts] media normalize failed', mediaErr)
     }
-    if (platforms.length > 1) {
-      const results = [] as Array<{ platform: string; ok: boolean; status: number; data: any; execId?: string }>
-      for (const pf of platforms) {
-        const r = await callOnce(pf)
-        if (!execId && r.execId) execId = r.execId
-        results.push({ platform: pf, ok: r.ok, status: r.status, data: r.data, execId: r.execId })
-      }
-      const allOk = results.every(r => r.ok)
+    
+    // IMPORTANT: Call webhook ONCE with all platforms array - let n8n workflow handle the filtering
+    // This prevents duplicate posts when multiple platforms are selected
+    if (platforms.length > 0) {
+      console.log('[api/posts] calling webhook once with platforms array:', platforms)
+      const r = await callOnce(platforms[0]) // Platform value doesn't matter when platforms array is sent
+      execId = r.execId
+      const allOk = r.ok
 
       // Save published content to database if successful
       if (allOk) {
@@ -168,9 +168,15 @@ export async function POST(req: NextRequest) {
       }
 
       const respHeaders = execId ? { "x-n8n-exec-id": execId } : undefined
+      if (!allOk) {
+        return NextResponse.json(
+          { success: false, error: r.data?.error || "n8n error", status: r.status, data: r.data, execId, targetUrl },
+          { status: r.status || 502, headers: respHeaders },
+        )
+      }
       return NextResponse.json(
-        { success: allOk, results, targetUrl, execId },
-        { status: allOk ? 200 : 207, headers: respHeaders },
+        { success: true, data: r.data, targetUrl, execId },
+        { status: 200, headers: respHeaders },
       )
     } else {
       // Single platform case (explicit or derived)
