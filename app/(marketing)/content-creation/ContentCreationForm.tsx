@@ -606,29 +606,6 @@ export default function ContentCreationForm() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="content-type">Loại nội dung *</Label>
-                <Select value={contentType} onValueChange={setContentType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn loại nội dung" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="social-post">
-                      Social Media Post
-                    </SelectItem>
-                    <SelectItem value="blog-article">Bài viết Blog</SelectItem>
-                    <SelectItem value="video-script">Script Video</SelectItem>
-                    <SelectItem value="email-newsletter">
-                      Email Newsletter
-                    </SelectItem>
-                    <SelectItem value="product-description">
-                      Mô tả sản phẩm
-                    </SelectItem>
-                    <SelectItem value="ad-copy">Quảng cáo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="topic">Prompt *</Label>
                 <Input
                   id="topic"
@@ -1866,26 +1843,6 @@ export default function ContentCreationForm() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label>Loại nội dung</Label>
-                  <div className="space-y-2">
-                    {[
-                      "Social posts",
-                      "Blog articles",
-                      "Email subjects",
-                      "Ad copies",
-                    ].map((type) => (
-                      <label
-                        key={type}
-                        className="flex items-center space-x-2 cursor-pointer"
-                      >
-                        <input type="checkbox" className="rounded" />
-                        <span className="text-sm">{type}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
                 <div className="space-y-2">
                   <Label>Tùy chọn</Label>
                   <div className="space-y-2">
