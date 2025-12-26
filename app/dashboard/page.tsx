@@ -62,58 +62,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <Brain className="w-5 h-5 text-white" />
-              </div>
-              <span className="lg:block hidden text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                AI Marketing Engine
-              </span>
-              <span className="lg:hidden text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                AIME
-              </span>
-            </div>
-            {/* Breadcrumb */}
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink asChild>
-                    <Link href="/brand-analysis" className="flex items-center">
-                      <Home className="w-4 h-4" />
-                    </Link>
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <span className="font-medium">Dashboard</span>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <Input placeholder="Tìm kiếm..." className="pl-10 w-64" />
-            </div>
-            <Button variant="ghost" size="sm">
-              <Bell className="w-5 h-5" />
-            </Button>
-            <Button variant="ghost" size="sm">
-              <Settings className="w-5 h-5" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={handleLogout} title="Đăng xuất">
-              <LogOut className="w-5 h-5" />
-            </Button>
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">A</span>
-            </div>
-          </div>
-        </div>
-      </header>
 
       <div className="flex">
         {/* Sidebar */}
@@ -126,40 +74,16 @@ export default function DashboardPage() {
               <BarChart3 className="w-4 h-4 mr-3" />
               Tổng quan
             </Button>
-            <Link href="/brand-analysis" className="w-full">
-              <Button variant="ghost" className="w-full justify-start">
-                <Brain className="w-4 h-4 mr-3" />
-                Phân tích thương hiệu
-              </Button>
-            </Link>
             <Link href="/content-creation" className="w-full">
               <Button variant="ghost" className="w-full justify-start">
                 <Calendar className="w-4 h-4 mr-3" />
                 Tạo nội dung
               </Button>
             </Link>
-            <Link href="/cms" className="w-full">
-              <Button variant="ghost" className="w-full justify-start">
-                <MessageSquare className="w-4 h-4 mr-3" />
-                Quản lý nội dung
-              </Button>
-            </Link>
-            <Link href="/ai-representative" className="w-full">
-              <Button variant="ghost" className="w-full justify-start">
-                <Bot className="w-4 h-4 mr-3" />
-                AI Avatar
-              </Button>
-            </Link>
             <Link href="/social-accounts" className="w-full">
               <Button variant="ghost" className="w-full justify-start">
                 <Users className="w-4 h-4 mr-3" />
                 Social Accounts
-              </Button>
-            </Link>
-            <Link href="/performance-management" className="w-full">
-              <Button variant="ghost" className="w-full justify-start">
-                <TrendingUp className="w-4 h-4 mr-3" />
-                Báo cáo
               </Button>
             </Link>
             <Link href="/archive" className="w-full">

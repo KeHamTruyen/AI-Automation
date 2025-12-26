@@ -463,6 +463,14 @@ export default function SocialAccountsPage() {
                             toast.success("Kết nối & provision thành công")
                             // Only reload list for non-OAuth modes (token/byo)
                             await loadAccounts()
+                            // Auto-close dialog after successful connection
+                            setIsAddDialogOpen(false)
+                            // Reset form
+                            setProvPlatform('')
+                            setProvName('')
+                            setProvUsername('')
+                            setProvAccessToken('')
+                            setProvResult(null)
                           }
                         } catch (e: any) {
                           console.error(e)
