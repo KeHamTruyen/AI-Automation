@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Nav from "@/components/Nav"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -61,48 +62,10 @@ export default function CMSPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <NextLink href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <Brain className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                AI Marketing Engine
-              </span>
-            </NextLink>
-            <div className="hidden md:flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-              <Button variant="ghost" size="sm" className="bg-white shadow-sm">
-                Content CMS
-              </Button>
-              <NextLink href="/content-creation">
-                <Button variant="ghost" size="sm">
-                  Tạo nội dung
-                </Button>
-              </NextLink>
-              <NextLink href="/archive">
-                <Button variant="ghost" size="sm">
-                  Archive
-                </Button>
-              </NextLink>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="outline">
-              <Users className="w-4 h-4 mr-2" />
-              Chia sẻ
-            </Button>
-            <NextLink href="/dashboard">
-              <Button>Dashboard</Button>
-            </NextLink>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex h-[calc(100vh-73px)]">
+    <>
+      <Nav />
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex h-[calc(100vh-73px)]">
         {/* Sidebar */}
         <aside className="w-80 bg-white border-r flex flex-col">
           {/* Sidebar Header */}
@@ -931,6 +894,7 @@ export default function CMSPage() {
           </Tabs>
         </main>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

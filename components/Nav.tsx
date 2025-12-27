@@ -1,17 +1,27 @@
 "use client";
-import { Brain, Menu } from "lucide-react";
+import { Brain, Menu, LogOut, Settings, User } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import clsx from "clsx";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 function Nav() {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false); // Trạng thái mở/đóng menu mobile
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  // Khi thay đổi kích thước màn hình, nếu >= 768px thì tự đóng menu
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
@@ -24,9 +34,9 @@ function Nav() {
 
   const navItems = [
     {
-      href: "/brand-analysis",
-      label: "Phân tích thương hiệu",
-      color: "from-blue-600 to-cyan-500",
+      href: "/dashboard",
+      label: "Dashboard",
+      color: "from-slate-600 to-gray-500",
     },
     {
       href: "/content-creation",
@@ -34,16 +44,43 @@ function Nav() {
       color: "from-green-600 to-lime-500",
     },
     {
-      href: "/performance-management",
-      label: "Quản lý hiệu suất",
-      color: "from-purple-600 to-indigo-500",
+      href: "/social-accounts",
+      label: "Tài khoản MXH",
+      color: "from-blue-600 to-cyan-500",
     },
+    // {
+    //   href: "/cms",
+    //   label: "CMS",
+    //   color: "from-purple-600 to-indigo-500",
+    // },
     {
-      href: "/ai-representative",
-      label: "AI đại diện",
-      color: "from-pink-500 to-rose-500",
+      href: "/archive",
+      label: "Lưu trữ",
+      color: "from-orange-600 to-amber-500",
     },
   ];
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    
+    try {
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+      
+      if (res.ok) {
+        toast.success("Đăng xuất thành công");
+        router.push("/login");
+        router.refresh();
+      } else {
+        throw new Error("Logout failed");
+      }
+    } catch (error) {
+      toast.error("Lỗi khi đăng xuất");
+      setLoggingOut(false);
+    }
+  };
 
   return (
     <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
@@ -103,11 +140,24 @@ function Nav() {
           </nav>
         </div>
 
-        {/* Dashboard + Mobile Menu */}
+        {/* Dashboard + User Menu */}
         <div className="flex items-center space-x-2">
-          <Link className="ms-2" href="/dashboard">
-            <Button>Dashboard</Button>
-          </Link>
+          {/* User Dropdown Menu with Logout */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full hidden md:flex">
+                <User className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Tài khoản</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} disabled={loggingOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>{loggingOut ? "Đang đăng xuất..." : "Đăng xuất"}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Nút menu mobile */}
           <Dialog.Root open={open} onOpenChange={setOpen}>
@@ -174,6 +224,20 @@ function Nav() {
                         </Link>
                       );
                     })}
+                    
+                    {/* Logout button for mobile */}
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-center"
+                      onClick={() => {
+                        setOpen(false);
+                        handleLogout();
+                      }}
+                      disabled={loggingOut}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>{loggingOut ? "Đang đăng xuất..." : "Đăng xuất"}</span>
+                    </Button>
                   </nav>
 
                   <Dialog.Close asChild>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Nav from "@/components/Nav"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -250,7 +251,9 @@ export default function SocialAccountsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <>
+      <Nav />
+      <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
@@ -848,6 +851,7 @@ export default function SocialAccountsPage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   )
 }

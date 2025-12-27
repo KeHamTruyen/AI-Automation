@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Nav from "@/components/Nav";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -62,7 +63,8 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-
+      <Nav />
+      
       <div className="flex">
         {/* Sidebar */}
         <aside className="w-64 bg-white border-r min-h-screen p-6">
